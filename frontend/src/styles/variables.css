@@ -1,0 +1,128 @@
+:root {
+  --primary-500: #4096FF;
+  --primary-600: #1677FF;
+  --primary-700: #0958D9;
+
+  --grey-100: #F5F5F5;
+  --grey-300: #D9D9D9;
+  --grey-500: #8C8C8C;
+  --grey-700: #434343;
+  --grey-900: #141414;
+
+  --success: #52C41A;
+  --error: #FF4D4F;
+  --warning: #FAAD14;
+
+  --ember-bg: var(--grey-100);
+  --ember-fg: var(--grey-900);
+  --ember-card: #ffffff;
+  --ember-muted: var(--grey-100);
+  --ember-muted-fg: var(--grey-700);
+  --ember-border: var(--grey-300);
+  --ember-sidebar: #ffffff;
+  --ember-accent: rgba(64, 150, 255, 0.1);
+  --ember-primary: var(--primary-600);
+  --ember-primary-hover: var(--primary-700);
+  --ember-primary-soft: rgba(64, 150, 255, 0.12);
+  --ember-ring: rgba(22, 119, 255, 0.18);
+  --ember-chart-1: var(--primary-600);
+  --ember-chart-2: var(--primary-500);
+  --ember-chart-3: var(--primary-700);
+  --ember-chart-4: var(--grey-500);
+  --ember-chart-5: var(--grey-700);
+  --ember-font: "Geist", "Inter", "Segoe UI Variable Display", "Segoe UI", "Helvetica Neue",
+    Arial, sans-serif;
+  --ember-sidebar-width: 16rem;
+  --ember-radius-card: 16px;
+  --ember-radius-control: 10px;
+  --ember-shadow: 0 8px 24px rgba(20, 20, 20, 0.06);
+
+  --jet-black: var(--ember-fg);
+  --strong-cyan: var(--primary-600);
+  --mint-cream: var(--ember-bg);
+  --tropical-red: var(--error);
+  --royal-gold: var(--warning);
+  --focus-blue: var(--primary-600);
+  --client-surface: var(--ember-card);
+  --client-line: var(--ember-border);
+  --client-muted: var(--ember-muted-fg);
+  --client-shadow: var(--ember-shadow);
+  --auth-font: var(--ember-font);
+  --text-muted: var(--ember-muted-fg);
+  --line: var(--ember-border);
+  --card-radius: var(--ember-radius-card);
+  --input-radius: var(--ember-radius-control);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--auth-font);
+  color: var(--jet-black);
+  background-color: var(--mint-cream);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  color: var(--jet-black);
+  background-color: var(--royal-gold);
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+body {
+  color: var(--ember-fg);
+  background-color: var(--ember-bg);
+}
+
+::selection {
+  color: #ffffff;
+  background-color: var(--ember-primary);
+}
+
+a {
+  color: var(--ember-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--ember-primary);
+  box-shadow: 0 0 0 0.2rem var(--ember-ring);
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--ember-primary);
+  --bs-btn-border-color: var(--ember-primary);
+  --bs-btn-hover-bg: var(--ember-primary-hover);
+  --bs-btn-hover-border-color: var(--ember-primary-hover);
+  --bs-btn-active-bg: var(--ember-primary-hover);
+  --bs-btn-active-border-color: var(--ember-primary-hover);
+  --bs-btn-focus-shadow-rgb: 22, 119, 255;
+  color: #ffffff;
+}
+
+.btn-outline-primary,
+.btn-outline-secondary {
+  --bs-btn-color: var(--ember-primary);
+  --bs-btn-border-color: var(--ember-border);
+  --bs-btn-hover-color: var(--ember-primary);
+  --bs-btn-hover-bg: var(--ember-primary-soft);
+  --bs-btn-hover-border-color: var(--ember-primary);
+  --bs-btn-active-color: #ffffff;
+  --bs-btn-active-bg: var(--ember-primary);
+  --bs-btn-active-border-color: var(--ember-primary);
+  --bs-btn-focus-shadow-rgb: 22, 119, 255;
+}
+
