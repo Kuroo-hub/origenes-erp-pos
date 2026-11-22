@@ -1,4 +1,5 @@
 import { Router } from "express";
+import inventoryRoutes from "../modules/inventory/inventoryRoutes.js";
 
 const apiGateway = Router();
 
@@ -11,7 +12,6 @@ apiGateway.get("/health", (req, res) => {
 });
 
 // Aquí registraremos las rutas de cada módulo:
-
-// apiGateway.use("/auth", authRoutes);(Ejemplo)
+apiGateway.use("/inventory", inventoryRoutes);
 
 export default apiGateway;
