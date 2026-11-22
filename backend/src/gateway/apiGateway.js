@@ -1,4 +1,5 @@
 import { Router } from "express";
+import cashFlowRouter from "../modules/cash-flow/cashflowRoutes.js";
 
 const apiGateway = Router();
 
@@ -13,5 +14,6 @@ apiGateway.get("/health", (req, res) => {
 // Aquí registraremos las rutas de cada módulo:
 
 // apiGateway.use("/auth", authRoutes);(Ejemplo)
+apiGateway.use("/cash-flow", cashFlowRouter);
 
 export default apiGateway;
