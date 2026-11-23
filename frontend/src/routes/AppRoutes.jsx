@@ -3,6 +3,7 @@ import LoginPage from '../pages/auth/LoginPage.jsx';
 import ClientPage from '../pages/client/ClientPage.jsx';
 import CashierPage from '../pages/cashier/CashierPage.jsx';
 import HrPage from '../pages/hr/HrPage.jsx';
+import InventoryPage from '../pages/inventory/InventoryPage';
 
 export default function AppRoutes() {
   return (
@@ -12,6 +13,7 @@ export default function AppRoutes() {
       <Route path="/cajero" element={<CashierPage />} />
             <Route path="/rrhh" element={<HrPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/inventario" element={<InventoryPage />} />
     </Routes>
   );
 }

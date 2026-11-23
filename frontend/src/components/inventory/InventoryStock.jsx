@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createInventoryAdjustment } from '../../services/inventoryApi';
+import { IconBox, IconCheckCircle, IconAlertTriangle, IconClockAlert } from './InventoryIcons';
 
 const TYPE_LABELS = {
   RAW_MATERIAL: 'Materia Prima',
@@ -12,7 +13,6 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [onlyAlerts, setOnlyAlerts] = useState(false);
 
-  // Estado para modal/panel de ajuste manual
   const [selectedItem, setSelectedItem] = useState(null);
   const [adjustmentType, setAdjustmentType] = useState('ADJUSTMENT');
   const [adjustmentQty, setAdjustmentQty] = useState('');
@@ -20,7 +20,6 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  // Cálculos de KPIs mediante iteradores de arreglos
   const totalItems = inventory.length;
   const criticalItems = inventory.filter(
     (item) => Number(item.quantity) <= Number(item.minimum_stock)
@@ -28,7 +27,6 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
   const outOfStockCount = inventory.filter((item) => Number(item.quantity) === 0).length;
   const healthyCount = totalItems - criticalItems.length;
 
-  // Filtrado combinado de la tabla
   const filteredInventory = inventory.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'ALL' || item.ingredient_type === typeFilter;
@@ -82,7 +80,6 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
       await onRefresh();
       handleCloseAdjustment();
     } catch {
-      // Actualización optimista local si el backend está en modo offline
       setInventory((prev) =>
         prev.map((inv) => {
           if (inv.ingredient_id !== selectedItem.ingredient_id) return inv;
@@ -104,156 +101,162 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
 
   return (
     <section className="inv-section">
-      {/* Tarjetas de Resumen (KPIs) */}
+      {/* Tarjetas KPI */}
       <div className="inv-kpi-grid">
         <article className="inv-kpi-card">
-          <span className="inv-kpi-card__label">Total de Insumos</span>
-          <strong className="inv-kpi-card__value">{totalItems}</strong>
-          <span className="inv-kpi-card__hint">Catálogo activo en sucursal</span>
+          <div className="inv-kpi-card__icon inv-kpi-card__icon--blue">
+            <IconBox />
+          </div>
+          <div className="inv-kpi-card__body">
+            <span className="inv-kpi-card__label">Total de insumos</span>
+            <strong className="inv-kpi-card__value">{totalItems}</strong>
+            <span className="inv-kpi-card__hint">Insumos registrados</span>
+          </div>
         </article>
 
-        <article className="inv-kpi-card inv-kpi-card--success">
-          <span className="inv-kpi-card__label">Stock Óptimo</span>
-          <strong className="inv-kpi-card__value">{healthyCount}</strong>
-          <span className="inv-kpi-card__hint">Por encima del mínimo</span>
+        <article className="inv-kpi-card">
+          <div className="inv-kpi-card__icon inv-kpi-card__icon--green">
+            <IconCheckCircle />
+          </div>
+          <div className="inv-kpi-card__body">
+            <span className="inv-kpi-card__label">Stock óptimo</span>
+            <strong className="inv-kpi-card__value">{healthyCount}</strong>
+            <span className="inv-kpi-card__hint">Nivel de existencia normal</span>
+          </div>
         </article>
 
-        <article className="inv-kpi-card inv-kpi-card--warning">
-          <span className="inv-kpi-card__label">Alerta Stock Mínimo</span>
-          <strong className="inv-kpi-card__value">{criticalItems.length}</strong>
-          <span className="inv-kpi-card__hint">Requieren reabastecimiento</span>
+        <article className="inv-kpi-card">
+          <div className="inv-kpi-card__icon inv-kpi-card__icon--gold">
+            <IconAlertTriangle />
+          </div>
+          <div className="inv-kpi-card__body">
+            <span className="inv-kpi-card__label">Stock mínimo</span>
+            <strong className="inv-kpi-card__value">{criticalItems.length}</strong>
+            <span className="inv-kpi-card__hint">Requieren reabastecimiento</span>
+          </div>
         </article>
 
-        <article className="inv-kpi-card inv-kpi-card--danger">
-          <span className="inv-kpi-card__label">Agotados</span>
-          <strong className="inv-kpi-card__value">{outOfStockCount}</strong>
-          <span className="inv-kpi-card__hint">Existencia en 0</span>
+        <article className="inv-kpi-card">
+          <div className="inv-kpi-card__icon inv-kpi-card__icon--red">
+            <IconClockAlert />
+          </div>
+          <div className="inv-kpi-card__body">
+            <span className="inv-kpi-card__label">Agotados</span>
+            <strong className="inv-kpi-card__value">{outOfStockCount}</strong>
+            <span className="inv-kpi-card__hint">Existencia en cero</span>
+          </div>
         </article>
       </div>
-
-      {/* Alerta visual destacada si existen insumos críticos */}
-      {criticalItems.length > 0 && (
-        <div className="inv-alert-box" role="alert">
-          <div className="inv-alert-box__content">
-            <strong>Atención de abastecimiento:</strong> Hay {criticalItems.length} insumo(s) en
-            nivel mínimo o agotado ({criticalItems.slice(0, 3).map((i) => i.name).join(', ')}
-            {criticalItems.length > 3 ? '...' : ''}).
-          </div>
-          <button
-            type="button"
-            className="inv-btn inv-btn--outline-warning"
-            onClick={() => setOnlyAlerts((prev) => !prev)}
-          >
-            {onlyAlerts ? 'Ver todos los insumos' : 'Filtrar críticos'}
-          </button>
-        </div>
-      )}
 
       {feedback && (
         <div className={`inv-toast inv-toast--${feedback.type}`}>{feedback.text}</div>
       )}
 
-      {/* Barra de Filtros */}
-      <div className="inv-toolbar">
-        <div className="inv-toolbar__search">
-          <input
-            type="text"
-            placeholder="Buscar insumo por nombre..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="inv-input"
-          />
-        </div>
+      {/* Tarjeta principal contenedora de tabla (igual a "Personal de la empresa" / "Actividad reciente") */}
+      <div className="inv-panel-card">
+        <div className="inv-panel-card__header">
+          <div>
+            <h2 className="inv-panel-card__title">Existencias de la sucursal</h2>
+            <p className="inv-panel-card__subtitle">
+              Inventario detallado de materias primas, empaques y reventa.
+            </p>
+          </div>
 
-        <div className="inv-toolbar__filters">
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="inv-select"
-            aria-label="Filtrar por categoría"
-          >
-            <option value="ALL">Todas las categorías</option>
-            <option value="RAW_MATERIAL">Materia Prima</option>
-            <option value="PACKAGING">Empaque y Servicio</option>
-            <option value="RESALE">Producto Reventa</option>
-          </select>
-
-          <label className="inv-checkbox">
+          <div className="inv-panel-card__actions">
             <input
-              type="checkbox"
-              checked={onlyAlerts}
-              onChange={(e) => setOnlyAlerts(e.target.checked)}
+              type="text"
+              placeholder="Buscar insumo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="inv-input inv-input--sm"
             />
-            <span>Solo stock mínimo</span>
-          </label>
+
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="inv-select inv-select--sm"
+              aria-label="Filtrar por categoría"
+            >
+              <option value="ALL">Todas las categorías</option>
+              <option value="RAW_MATERIAL">Materia Prima</option>
+              <option value="PACKAGING">Empaque y Servicio</option>
+              <option value="RESALE">Producto Reventa</option>
+            </select>
+
+            <button
+              type="button"
+              className={`inv-pill-filter ${onlyAlerts ? 'is-active' : ''}`}
+              onClick={() => setOnlyAlerts((prev) => !prev)}
+            >
+              {onlyAlerts ? `Críticos (${criticalItems.length})` : `${filteredInventory.length} registros`}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {/* Tabla de Existencias */}
-      <div className="inv-table-wrapper">
-        <table className="inv-table">
-          <thead>
-            <tr>
-              <th>Insumo</th>
-              <th>Categoría</th>
-              <th>Existencia Actual</th>
-              <th>Stock Mínimo</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredInventory.length === 0 ? (
+        <div className="inv-table-scroll">
+          <table className="inv-table">
+            <thead>
               <tr>
-                <td colSpan="6" className="inv-table__empty">
-                  No se encontraron insumos con los filtros seleccionados.
-                </td>
+                <th>Insumo</th>
+                <th>Categoría</th>
+                <th>Existencia actual</th>
+                <th>Stock mínimo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
-            ) : (
-              filteredInventory.map((item) => {
-                const qty = Number(item.quantity);
-                const min = Number(item.minimum_stock);
-                const isOut = qty === 0;
-                const isLow = qty > 0 && qty <= min;
+            </thead>
+            <tbody>
+              {filteredInventory.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="inv-table__empty">
+                    No se encontraron insumos con los filtros seleccionados.
+                  </td>
+                </tr>
+              ) : (
+                filteredInventory.map((item) => {
+                  const qty = Number(item.quantity);
+                  const min = Number(item.minimum_stock);
+                  const isOut = qty === 0;
+                  const isLow = qty > 0 && qty <= min;
 
-                return (
-                  <tr key={item.ingredient_id} className={isOut || isLow ? 'is-critical-row' : ''}>
-                    <td className="inv-table__name">{item.name}</td>
-                    <td>
-                      <span className="inv-tag">
-                        {TYPE_LABELS[item.ingredient_type] || item.ingredient_type}
-                      </span>
-                    </td>
-                    <td className="inv-table__num">
-                      <strong>{qty.toLocaleString('es-SV')}</strong> {item.unit}
-                    </td>
-                    <td className="inv-table__num">
-                      {min.toLocaleString('es-SV')} {item.unit}
-                    </td>
-                    <td>
-                      {isOut ? (
-                        <span className="inv-status inv-status--danger">Agotado</span>
-                      ) : isLow ? (
-                        <span className="inv-status inv-status--warning">Stock Mínimo</span>
-                      ) : (
-                        <span className="inv-status inv-status--success">Óptimo</span>
-                      )}
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="inv-btn inv-btn--sm"
-                        onClick={() => handleOpenAdjustment(item)}
-                      >
-                        Ajustar stock
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                  return (
+                    <tr key={item.ingredient_id}>
+                      <td>
+                        <div className="inv-table__name">{item.name}</div>
+                        <div className="inv-table__sub">Unidad: {item.unit}</div>
+                      </td>
+                      <td>{TYPE_LABELS[item.ingredient_type] || item.ingredient_type}</td>
+                      <td className="inv-table__num">
+                        <strong>{qty.toLocaleString('es-SV')}</strong> {item.unit}
+                      </td>
+                      <td className="inv-table__num">
+                        {min.toLocaleString('es-SV')} {item.unit}
+                      </td>
+                      <td>
+                        {isOut ? (
+                          <span className="inv-status inv-status--danger">Agotado</span>
+                        ) : isLow ? (
+                          <span className="inv-status inv-status--warning">Stock mínimo</span>
+                        ) : (
+                          <span className="inv-status inv-status--success">Óptimo</span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="inv-btn inv-btn--sm"
+                          onClick={() => handleOpenAdjustment(item)}
+                        >
+                          Ajustar
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal de Ajuste Manual */}
