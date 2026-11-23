@@ -16,7 +16,7 @@ const DeliverySidebar = ({ activeTab, onSelectTab, pendingCount = 0, isOffline =
           <span className="del-sidebar__title">Orígenes SV</span>
           <span className="del-sidebar__role">Repartidor</span>
         </div>
-      </div>
+      </div>            
 
       <div className="del-sidebar__section-label">MÓDULO</div>
 
