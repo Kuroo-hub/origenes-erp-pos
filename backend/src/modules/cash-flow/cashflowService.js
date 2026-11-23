@@ -1,10 +1,6 @@
+
 import { AppError } from "../../utils/AppError.js";
 import { pool } from "../../config/database.js";
-
-// Convierte errores de validación y reglas de negocio en respuestas HTTP controladas.
-function createError(message, statusCode = 400) {
-    return new AppError(message, statusCode);
-}
 
 import {
     findCashRegisterById,
@@ -23,6 +19,11 @@ import {
     updateCashSessionClose,
     findCashSessionHistory
 } from "./cashflowDao.js";
+
+// Crea errores controlados.
+function createError(message, statusCode = 400) {
+    return new AppError(message, statusCode);
+}
 
 // Ejecuta operaciones dentro de una transacción.
 async function executeTransaction(callback) {
@@ -90,10 +91,17 @@ function validateAmount(amount, allowZero = false) {
 
 // Convierte un monto decimal a centavos enteros.
 function toCents(amount) {
-    const [whole, decimal = ""] = String(amount).split(".");
-    const cents = decimal.padEnd(2, "0");
+    const value = String(amount);
+    const negative = value.startsWith("-");
+    const normalized = negative ? value.slice(1) : value;
 
-    return BigInt(whole) * 100n + BigInt(cents);
+    const [whole, decimal = ""] = normalized.split(".");
+
+    const cents =
+        BigInt(whole) * 100n +
+        BigInt(decimal.padEnd(2, "0"));
+
+    return negative ? -cents : cents;
 }
 
 // Convierte centavos enteros a formato decimal.
@@ -337,8 +345,9 @@ export async function closeCashSessionService({
             );
         }
 
-        // Calcula la diferencia sin usar aritmética decimal flotante.
-        const difference = toCents(validRealAmount) -
+        // Calcula la diferencia en centavos enteros.
+        const difference =
+            toCents(validRealAmount) -
             toCents(expectedCash.monto_esperado);
 
         // Actualiza la sesión como cerrada.
