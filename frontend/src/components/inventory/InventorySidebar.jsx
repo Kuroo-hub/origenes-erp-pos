@@ -1,6 +1,7 @@
 import React from 'react';
 import BrandMark from '../auth/BrandMark';
 import { IconBox, IconReceipt, IconActivity } from './InventoryIcons';
+import OrigenesLogo from '../common/OrigenesLogo';
 
 const NAV_ITEMS = [
   { id: 'stock', label: 'Control de stock', Icon: IconBox },
@@ -12,8 +13,8 @@ const InventorySidebar = ({ activeTab, onSelectTab, alertCount = 0, isOffline = 
   return (
     <aside className="inv-sidebar">
       <div className="inv-sidebar__brand">
-        <BrandMark />
-        <div className="inv-sidebar__brand-text">
+        <OrigenesLogo />
+          <div className="inv-sidebar__brand-text">
           <span className="inv-sidebar__title">Orígenes SV</span>
           <span className="inv-sidebar__role">Inventario</span>
         </div>
