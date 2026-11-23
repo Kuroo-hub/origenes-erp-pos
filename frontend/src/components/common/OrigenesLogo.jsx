@@ -1,31 +1,21 @@
 import React from 'react';
 
-const OrigenesLogo = ({ size = 38 }) => {
+const OrigenesLogo = ({ size = 36 }) => {
   return (
-    <div
+    <img
+      src="/logo-origenes.png"
+      alt="Logo Restaurante Orígenes SV"
+      width={size}
+      height={size}
       style={{
-        width: size,
-        height: size,
+        width: `${size}px`,
+        height: `${size}px`,
+        objectFit: 'contain',
         borderRadius: '10px',
-        backgroundColor: '#eff6ff',
-        border: '1px solid #dbeafe',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '4px',
         flexShrink: 0,
+        display: 'block',
       }}
-    >
-      <img
-        src="/logo-origenes.svg"
-        alt="Logo Restaurante Orígenes SV"
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-        }}
-      />
-    </div>
+    />
   );
 };
 
