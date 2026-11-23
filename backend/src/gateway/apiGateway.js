@@ -17,5 +17,5 @@ apiGateway.get("/health", (req, res) => {
 apiGateway.use("/inventory", inventoryRoutes);
 apiGateway.use("/cash-flow", cashFlowRouter);
 apiGateway.use("/sales", salesRouter);
-
+ 
 export default apiGateway;
