@@ -1,5 +1,5 @@
 import React from 'react';
-import BrandMark from '../auth/BrandMark';
+import OrigenesLogo from '../common/OrigenesLogo';
 import { IconTruck, IconCheckCircle } from './DeliveryIcons';
 
 const NAV_ITEMS = [
@@ -11,7 +11,7 @@ const DeliverySidebar = ({ activeTab, onSelectTab, pendingCount = 0, isOffline =
   return (
     <aside className="del-sidebar">
       <div className="del-sidebar__brand">
-        <BrandMark />
+        <OrigenesLogo />
         <div className="del-sidebar__brand-text">
           <span className="del-sidebar__title">Orígenes SV</span>
           <span className="del-sidebar__role">Repartidor</span>
