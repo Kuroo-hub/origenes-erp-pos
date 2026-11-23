@@ -19,20 +19,31 @@ function formatDate(value) {
 export default function HrEmployeeDetail({ empleado, onCerrar }) {
   if (!empleado) return null;
 
+  const detalles = [
+    { label: 'ID de empleado', value: `#${empleado.employeeId}` },
+    { label: 'Correo electrónico', value: empleado.email },
+    { label: 'Fecha de contratación', value: formatDate(empleado.hireDate) },
+    { label: 'Salario base mensual', value: formatCurrency(empleado.baseSalary) },
+    { label: 'Rol del sistema', value: empleado.role },
+    { label: 'ID de usuario', value: `#${empleado.userId}` },
+    { label: 'Sucursal', value: empleado.branchName },
+    { label: 'ID de sucursal', value: `#${empleado.branchId}` },
+  ];
+
   return (
     <div
-      className="hr-detail-backdrop"
+      className="hr-detail-backdrop cashier-orders__modal-backdrop"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCerrar();
       }}
     >
       <section
-        className="hr-detail-modal"
+        className="hr-detail-modal cashier-orders__modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="hr-detail-title"
       >
-        <header className="hr-detail__header">
+        <header className="hr-detail__header cashier-orders__modal-header">
           <div>
             <span>Ficha del empleado</span>
             <h2 id="hr-detail-title">{empleado.fullName}</h2>
@@ -67,53 +78,14 @@ export default function HrEmployeeDetail({ empleado, onCerrar }) {
           </div>
         </div>
 
-        <div className="hr-detail__grid">
-          <article>
-            <span>ID de empleado</span>
-            <strong>#{empleado.employeeId}</strong>
-          </article>
-
-          <article>
-            <span>Correo electrónico</span>
-            <strong>{empleado.email}</strong>
-          </article>
-
-          <article>
-            <span>Fecha de contratación</span>
-            <strong>{formatDate(empleado.hireDate)}</strong>
-          </article>
-
-          <article>
-            <span>Salario base mensual</span>
-            <strong>{formatCurrency(empleado.baseSalary)}</strong>
-          </article>
-
-          <article>
-            <span>Rol del sistema</span>
-            <strong>{empleado.role}</strong>
-          </article>
-
-          <article>
-            <span>ID de usuario</span>
-            <strong>#{empleado.userId}</strong>
-          </article>
-
-          <article>
-            <span>Sucursal</span>
-            <strong>{empleado.branchName}</strong>
-          </article>
-
-          <article>
-            <span>ID de sucursal</span>
-            <strong>#{empleado.branchId}</strong>
-          </article>
+        <div className="hr-detail__grid cashier-orders__detail-grid">
+          {detalles.map((detalle) => (
+            <div key={detalle.label}>
+              <span>{detalle.label}</span>
+              <strong>{detalle.value ?? 'No disponible'}</strong>
+            </div>
+          ))}
         </div>
-
-        <footer className="hr-detail__footer">
-          <button type="button" onClick={onCerrar}>
-            Cerrar
-          </button>
-        </footer>
       </section>
     </div>
   );

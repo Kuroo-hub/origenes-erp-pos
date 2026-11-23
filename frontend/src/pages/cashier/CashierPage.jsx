@@ -1,10 +1,14 @@
-import { useState } from 'react';
+
+import { useMemo, useState } from 'react';
 import CashierSidebar from '../../components/cashier/CashierSidebar.jsx';
 import CashierTopbar from '../../components/cashier/CashierTopbar.jsx';
 import CashierSummary from '../../components/cashier/CashierSummary.jsx';
 import CashierPOS from '../../components/cashier/CashierPOS.jsx';
 import CashierOrders from '../../components/cashier/CashierOrders.jsx';
-import CashierRegister from '../../components/cashier/CashierRegister.jsx';
+import CashierCashFlow from '../../components/cashier/CashierCashFlow.jsx';
+import { PRODUCTOS_CAJERO } from '../../mocks/CashierMocks.js';
+
+const SUCURSAL_CAJERO = 'Centro Histórico';
 
 const ORDENES_INICIALES = [
   {
@@ -13,6 +17,7 @@ const ORDENES_INICIALES = [
     origen: 'Presencial',
     hora: '09:42',
     estado: 'Pendiente',
+    sucursal: SUCURSAL_CAJERO,
     productos: [
       { nombre: 'Café Americano', cantidad: 2 },
       { nombre: 'Croissant', cantidad: 1 },
@@ -27,6 +32,7 @@ const ORDENES_INICIALES = [
     origen: 'En línea',
     hora: '09:35',
     estado: 'Aceptado',
+    sucursal: SUCURSAL_CAJERO,
     productos: [
       { nombre: 'Capuchino', cantidad: 1 },
       { nombre: 'Cheesecake', cantidad: 2 },
@@ -41,6 +47,7 @@ const ORDENES_INICIALES = [
     origen: 'Presencial',
     hora: '09:28',
     estado: 'En preparación',
+    sucursal: SUCURSAL_CAJERO,
     productos: [
       { nombre: 'Latte', cantidad: 1 },
       { nombre: 'Pan artesanal', cantidad: 2 },
@@ -55,6 +62,7 @@ const ORDENES_INICIALES = [
     origen: 'En línea',
     hora: '09:15',
     estado: 'Listo',
+    sucursal: SUCURSAL_CAJERO,
     productos: [
       { nombre: 'Limonada', cantidad: 2 },
       { nombre: 'Croissant', cantidad: 2 },
@@ -69,6 +77,7 @@ const ORDENES_INICIALES = [
     origen: 'Presencial',
     hora: '09:03',
     estado: 'Entregado',
+    sucursal: SUCURSAL_CAJERO,
     productos: [
       { nombre: 'Café Americano', cantidad: 1 },
     ],
@@ -78,16 +87,41 @@ const ORDENES_INICIALES = [
   },
 ];
 
-const ESTADOS_ACTIVOS = [
-  'Pendiente',
-  'Aceptado',
-  'En preparación',
-  'Listo',
-];
-
 export default function CashierPage() {
   const [seccion, setSeccion] = useState('resumen');
   const [ordenes, setOrdenes] = useState(ORDENES_INICIALES);
+
+  const [productos, setProductos] = useState(() =>
+    PRODUCTOS_CAJERO.map((producto) => ({
+      ...producto,
+      stockPorSucursal: {
+        [SUCURSAL_CAJERO]: producto.stock ?? 0,
+      },
+    }))
+  );
+
+  const productosSucursal = useMemo(
+    () =>
+      productos.map((producto) => {
+        const stock =
+          producto.stockPorSucursal[SUCURSAL_CAJERO] ?? 0;
+
+        return {
+          ...producto,
+          stock,
+          disponible: stock > 0,
+        };
+      }),
+    [productos]
+  );
+
+  const ordenesSucursal = useMemo(
+    () =>
+      ordenes.filter(
+        (orden) => orden.sucursal === SUCURSAL_CAJERO
+      ),
+    [ordenes]
+  );
 
   const registrarPedido = (datosPedido) => {
     const ahora = new Date();
@@ -102,6 +136,7 @@ export default function CashierPage() {
         hour12: false,
       }),
       estado: 'Pendiente',
+      sucursal: SUCURSAL_CAJERO,
       productos: datosPedido.productos,
       total: datosPedido.total,
       metodoPago: datosPedido.metodoPago,
@@ -111,27 +146,35 @@ export default function CashierPage() {
     setOrdenes((actuales) => [nuevoPedido, ...actuales]);
   };
 
-  const actualizarEstado = (id, nuevoEstado) => {
-    setOrdenes((actuales) =>
-      actuales.map((orden) =>
-        orden.id === id ? { ...orden, estado: nuevoEstado } : orden
-      )
+  const descontarStock = (productosVendidos) => {
+    setProductos((actuales) =>
+      actuales.map((producto) => {
+        const vendido = productosVendidos.find(
+          (item) => item.id === producto.id
+        );
+
+        if (!vendido) return producto;
+
+        const stockActual =
+          producto.stockPorSucursal[SUCURSAL_CAJERO] ?? 0;
+
+        return {
+          ...producto,
+          stockPorSucursal: {
+            ...producto.stockPorSucursal,
+            [SUCURSAL_CAJERO]: Math.max(
+              0,
+              stockActual - vendido.cantidad
+            ),
+          },
+        };
+      })
     );
   };
 
-  const ventasTurno = ordenes
+  const ventasTurno = ordenesSucursal
     .filter((orden) => orden.ventaTurno)
     .reduce((total, orden) => total + orden.total, 0);
-
-  const ventasEfectivo = ordenes
-    .filter(
-      (orden) => orden.ventaTurno && orden.metodoPago === 'efectivo'
-    )
-    .reduce((total, orden) => total + orden.total, 0);
-
-  const pedidosActivos = ordenes.filter((orden) =>
-    ESTADOS_ACTIVOS.includes(orden.estado)
-  ).length;
 
   return (
     <div className="cashier-shell">
@@ -144,32 +187,33 @@ export default function CashierPage() {
         <CashierTopbar seccion={seccion} />
 
         <main className="cashier-main">
-          {/* Se mantienen montadas para conservar el estado al navegar. */}
-          <div hidden={seccion !== 'resumen'}>
+          {seccion === 'resumen' && (
             <CashierSummary
-              ordenes={ordenes}
+              ordenes={ordenesSucursal}
               ventasTurno={ventasTurno}
+              sucursal={SUCURSAL_CAJERO}
             />
-          </div>
+          )}
 
-          <div hidden={seccion !== 'pos'}>
-            <CashierPOS onRegistrarPedido={registrarPedido} />
-          </div>
-
-          <div hidden={seccion !== 'ordenes'}>
-            <CashierOrders
-              ordenes={ordenes}
-              onActualizarEstado={actualizarEstado}
+          {seccion === 'pos' && (
+            <CashierPOS
+              sucursal={SUCURSAL_CAJERO}
+              productos={productosSucursal}
+              onDescontarStock={descontarStock}
+              onRegistrarPedido={registrarPedido}
             />
-          </div>
+          )}
 
-          <div hidden={seccion !== 'caja'}>
-            <CashierRegister
-              ventasTurno={ventasTurno}
-              ventasEfectivo={ventasEfectivo}
-              pedidosActivos={pedidosActivos}
+          {seccion === 'ordenes' && (
+            <CashierOrders ordenes={ordenesSucursal} />
+          )}
+
+          {seccion === 'flujo' && (
+            <CashierCashFlow
+              ordenes={ordenesSucursal}
+              sucursal={SUCURSAL_CAJERO}
             />
-          </div>
+          )}
         </main>
       </div>
     </div>

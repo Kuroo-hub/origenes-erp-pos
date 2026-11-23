@@ -1,6 +1,11 @@
 
 import { useMemo, useState } from 'react';
 
+// Mismos valores y reglas del payrollCalculator.js del backend.
+const ISSS_RATE = 0.03;
+const ISSS_CAP = 30;
+const AFP_RATE = 0.0725;
+
 function roundMoney(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
@@ -19,29 +24,40 @@ function calculateIncomeTax(taxableBase) {
   return (taxableBase - 1019.05) * 0.30 + 150.28;
 }
 
-function calculatePayroll(baseSalary, otherDeductions = 0, bonus = 0) {
-  const baseBiweeklySalary = roundMoney(Number(baseSalary) / 2);
-  const bonusAmount = roundMoney(Number(bonus));
+// Réplica local de calculateBiweeklyPayroll del backend.
+function calculateBiweeklyPayroll(
+  baseSalary,
+  otherDeductions = 0,
+  bonus = 0
+) {
+  const monthlySalary = Number(baseSalary);
+  const additionalDeductions = Number(otherDeductions);
+  const employeeBonus = Number(bonus);
+
+  const baseBiweeklySalary = roundMoney(monthlySalary / 2);
+  const bonusAmount = roundMoney(employeeBonus);
   const grossSalary = roundMoney(baseBiweeklySalary + bonusAmount);
 
   const isssDeduction = roundMoney(
-    Math.min(grossSalary * 0.03, 30)
+    Math.min(grossSalary * ISSS_RATE, ISSS_CAP)
   );
 
-  const afpDeduction = roundMoney(grossSalary * 0.0725);
+  const afpDeduction = roundMoney(grossSalary * AFP_RATE);
 
   const taxableBase = roundMoney(
     grossSalary - isssDeduction - afpDeduction
   );
 
-  const incomeTax = roundMoney(calculateIncomeTax(taxableBase));
+  const incomeTax = roundMoney(
+    calculateIncomeTax(taxableBase)
+  );
 
   const netSalary = roundMoney(
     grossSalary -
     isssDeduction -
     afpDeduction -
     incomeTax -
-    Number(otherDeductions)
+    additionalDeductions
   );
 
   return {
@@ -51,7 +67,7 @@ function calculatePayroll(baseSalary, otherDeductions = 0, bonus = 0) {
     isssDeduction,
     afpDeduction,
     incomeTax,
-    otherDeductions: roundMoney(Number(otherDeductions)),
+    otherDeductions: roundMoney(additionalDeductions),
     netSalary,
   };
 }
@@ -72,17 +88,6 @@ function formatDate(value) {
     year: 'numeric',
   });
 }
-
-const CAMPOS_MONETARIOS = [
-  { key: 'baseBiweeklySalary', label: 'Salario quincenal' },
-  { key: 'bonusAmount', label: 'Bonos' },
-  { key: 'grossSalary', label: 'Salario bruto', total: true },
-  { key: 'isssDeduction', label: 'ISSS' },
-  { key: 'afpDeduction', label: 'AFP' },
-  { key: 'incomeTax', label: 'Renta' },
-  { key: 'otherDeductions', label: 'Otras deducciones' },
-  { key: 'netSalary', label: 'Salario neto', total: true },
-];
 
 export default function HrPayroll({ empleados = [] }) {
   const empleadosActivos = useMemo(
@@ -129,6 +134,11 @@ export default function HrPayroll({ empleados = [] }) {
       return;
     }
 
+    if (empleadosActivos.length === 0) {
+      setError('No hay empleados activos para procesar la planilla.');
+      return;
+    }
+
     const periodo = `${startDate}_${endDate}`;
 
     if (periodosProcesados.includes(periodo)) {
@@ -136,28 +146,15 @@ export default function HrPayroll({ empleados = [] }) {
       return;
     }
 
-    // VALIDACIÓN DE BONOS Y DEDUCCIONES
-  const montosInvalidos = empleadosActivos.some((empleado) => {
-    const bonus = Number(bonuses[empleado.userId] || 0);
-    const otherDeductions = Number(deductions[empleado.userId] || 0);
+    const detalles = [];
 
-    return (
-      !Number.isFinite(bonus) ||
-      bonus < 0 ||
-      !Number.isFinite(otherDeductions) ||
-      otherDeductions < 0
-    );
-  });
+    for (const empleado of empleadosActivos) {
+      const bonusValue = bonuses[empleado.userId] ?? '';
+      const deductionValue = deductions[empleado.userId] ?? '';
 
-  if (montosInvalidos) {
-    setError('Los bonos y deducciones deben ser montos válidos y no negativos.');
-    return;
-  }
-
-
-    const detalles = empleadosActivos.map((empleado) => {
-      const bonus = Number(bonuses[empleado.userId] || 0);
-      const otherDeductions = Number(deductions[empleado.userId] || 0);
+      const bonus = bonusValue === '' ? 0 : Number(bonusValue);
+      const otherDeductions =
+        deductionValue === '' ? 0 : Number(deductionValue);
 
       if (
         !Number.isFinite(bonus) ||
@@ -165,21 +162,31 @@ export default function HrPayroll({ empleados = [] }) {
         !Number.isFinite(otherDeductions) ||
         otherDeductions < 0
       ) {
-        throw new Error('Los bonos y deducciones deben ser montos válidos y no negativos.');
+        setError('Los bonos y deducciones deben ser montos válidos y no negativos.');
+        return;
       }
 
-      return {
+      const calculo = calculateBiweeklyPayroll(
+        empleado.baseSalary,
+        otherDeductions,
+        bonus
+      );
+
+      if (calculo.netSalary < 0) {
+        setError(
+          `Las deducciones superan el salario neto de ${empleado.fullName}.`
+        );
+        return;
+      }
+
+      detalles.push({
         employeeId: empleado.employeeId,
         userId: empleado.userId,
         fullName: empleado.fullName,
         jobTitle: empleado.jobTitle,
-        ...calculatePayroll(
-          empleado.baseSalary,
-          otherDeductions,
-          bonus
-        ),
-      };
-    });
+        ...calculo,
+      });
+    }
 
     const totales = detalles.reduce(
       (acumulado, detalle) => ({
@@ -187,7 +194,8 @@ export default function HrPayroll({ empleados = [] }) {
         isssDeduction: acumulado.isssDeduction + detalle.isssDeduction,
         afpDeduction: acumulado.afpDeduction + detalle.afpDeduction,
         incomeTax: acumulado.incomeTax + detalle.incomeTax,
-        otherDeductions: acumulado.otherDeductions + detalle.otherDeductions,
+        otherDeductions:
+          acumulado.otherDeductions + detalle.otherDeductions,
         netSalary: acumulado.netSalary + detalle.netSalary,
       }),
       {
@@ -243,7 +251,7 @@ export default function HrPayroll({ empleados = [] }) {
             <div className="hr-payroll__panel-header">
               <div>
                 <h2>Período de planilla</h2>
-                <p>Define el período y la fecha de pago.</p>
+                <p>Selecciona la primera o segunda quincena del mes.</p>
               </div>
               <i className="bi bi-calendar-range" aria-hidden="true" />
             </div>
@@ -291,6 +299,7 @@ export default function HrPayroll({ empleados = [] }) {
                   Configura bonos y otras deducciones por empleado.
                 </p>
               </div>
+
               <span className="hr-payroll__employee-count">
                 {empleadosActivos.length} activos
               </span>
@@ -390,9 +399,10 @@ export default function HrPayroll({ empleados = [] }) {
             <div>
               <i className="bi bi-check-circle-fill" />
               <div>
-                <h2>Planilla procesada</h2>
+                <h2>Simulación de planilla completada</h2>
                 <p>
-                  Resultado simulado para {resultado.employeeCount} empleados.
+                  Resultado local para {resultado.employeeCount} empleados.
+                  No se ha guardado en la base de datos.
                 </p>
               </div>
             </div>
@@ -419,6 +429,7 @@ export default function HrPayroll({ empleados = [] }) {
                 <span>Fecha de pago</span>
                 <strong>{formatDate(resultado.paymentDate)}</strong>
               </div>
+
               <div>
                 <span>Empleados incluidos</span>
                 <strong>{resultado.employeeCount}</strong>
@@ -429,8 +440,11 @@ export default function HrPayroll({ empleados = [] }) {
           <section className="hr-payroll__totals">
             <article>
               <span>Salario bruto total</span>
-              <strong>{formatCurrency(resultado.totals.grossSalary)}</strong>
+              <strong>
+                {formatCurrency(resultado.totals.grossSalary)}
+              </strong>
             </article>
+
             <article>
               <span>Total de descuentos</span>
               <strong>
@@ -442,9 +456,12 @@ export default function HrPayroll({ empleados = [] }) {
                 )}
               </strong>
             </article>
+
             <article>
               <span>Total neto a pagar</span>
-              <strong>{formatCurrency(resultado.totals.netSalary)}</strong>
+              <strong>
+                {formatCurrency(resultado.totals.netSalary)}
+              </strong>
             </article>
           </section>
 
@@ -479,11 +496,13 @@ export default function HrPayroll({ empleados = [] }) {
                           <small>{detalle.jobTitle}</small>
                         </div>
                       </td>
+
                       <td>{formatCurrency(detalle.grossSalary)}</td>
                       <td>{formatCurrency(detalle.isssDeduction)}</td>
                       <td>{formatCurrency(detalle.afpDeduction)}</td>
                       <td>{formatCurrency(detalle.incomeTax)}</td>
                       <td>{formatCurrency(detalle.otherDeductions)}</td>
+
                       <td className="hr-payroll__net">
                         {formatCurrency(detalle.netSalary)}
                       </td>

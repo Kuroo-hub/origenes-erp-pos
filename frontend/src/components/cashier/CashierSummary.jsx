@@ -1,4 +1,5 @@
-import { formatearMonedaCajero } from '../../mocks/cashierMocks.js';
+
+import { formatearMonedaCajero } from '../../mocks/CashierMocks.js';
 
 const obtenerClaseEstado = (estado) => {
   const clases = {
@@ -12,13 +13,13 @@ const obtenerClaseEstado = (estado) => {
   return clases[estado] ?? 'pending';
 };
 
-export default function CashierSummary({ ordenes, ventasTurno }) {
+export default function CashierSummary({
+  ordenes = [],
+  ventasTurno = 0,
+  sucursal,
+}) {
   const pedidosPendientes = ordenes.filter(
     (pedido) => pedido.estado === 'Pendiente'
-  ).length;
-
-  const pedidosPreparacion = ordenes.filter(
-    (pedido) => pedido.estado === 'En preparación'
   ).length;
 
   const indicadores = [
@@ -39,11 +40,11 @@ export default function CashierSummary({ ordenes, ventasTurno }) {
       color: 'warning',
     },
     {
-      id: 'preparacion',
-      titulo: 'En preparación',
-      valor: String(pedidosPreparacion).padStart(2, '0'),
-      detalle: 'Pedidos en proceso',
-      icono: 'bi-cup-hot',
+      id: 'pedidos',
+      titulo: 'Pedidos registrados',
+      valor: String(ordenes.length).padStart(2, '0'),
+      detalle: 'Pedidos de la sucursal',
+      icono: 'bi-receipt',
       color: 'info',
     },
   ];
@@ -55,13 +56,14 @@ export default function CashierSummary({ ordenes, ventasTurno }) {
       <header className="cashier-section-header">
         <div>
           <h1>Resumen del turno</h1>
-          <p>Consulta la actividad y el estado actual de tu jornada.</p>
+          <p>
+            Consulta la actividad y el estado actual de tu jornada.
+          </p>
         </div>
 
-        <span className="cashier-register-status cashier-register-status--open">
-          <i className="bi bi-circle-fill" aria-hidden="true" />
-          Caja abierta
-        </span>
+        <p className="cashier-summary__branch">
+          <strong>Sucursal:</strong> {sucursal}
+        </p>
       </header>
 
       <div className="cashier-indicators">
@@ -71,7 +73,10 @@ export default function CashierSummary({ ordenes, ventasTurno }) {
             className={`cashier-indicator cashier-indicator--${indicador.color}`}
           >
             <div className="cashier-indicator__icon">
-              <i className={`bi ${indicador.icono}`} aria-hidden="true" />
+              <i
+                className={`bi ${indicador.icono}`}
+                aria-hidden="true"
+              />
             </div>
 
             <div className="cashier-indicator__content">
@@ -87,7 +92,9 @@ export default function CashierSummary({ ordenes, ventasTurno }) {
         <div className="cashier-activity__header">
           <div>
             <h2>Actividad reciente</h2>
-            <p>Últimos pedidos registrados en la sucursal.</p>
+            <p>
+              Últimos pedidos registrados en esta sucursal.
+            </p>
           </div>
         </div>
 
@@ -107,15 +114,24 @@ export default function CashierSummary({ ordenes, ventasTurno }) {
             <tbody>
               {actividadReciente.map((pedido) => (
                 <tr key={pedido.id}>
-                  <td><strong>{pedido.id}</strong></td>
-                  <td>{pedido.cliente}</td>
                   <td>
-                    {pedido.origen === 'En línea'
-                      ? 'Pedido en línea'
-                      : 'Tienda física'}
+                    <strong>{pedido.id}</strong>
                   </td>
+
+                  <td>{pedido.cliente}</td>
+
+                  <td>
+                    <span className="cashier-orders__origin-text">
+                      {pedido.origen}
+                    </span>
+                  </td>
+
                   <td>{pedido.hora}</td>
-                  <td>{formatearMonedaCajero(pedido.total)}</td>
+
+                  <td>
+                    {formatearMonedaCajero(pedido.total)}
+                  </td>
+
                   <td>
                     <span
                       className={`cashier-order-status cashier-order-status--${obtenerClaseEstado(
@@ -130,7 +146,9 @@ export default function CashierSummary({ ordenes, ventasTurno }) {
 
               {actividadReciente.length === 0 && (
                 <tr>
-                  <td colSpan="6">No hay pedidos registrados.</td>
+                  <td colSpan="6">
+                    No hay pedidos registrados.
+                  </td>
                 </tr>
               )}
             </tbody>

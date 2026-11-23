@@ -1,9 +1,8 @@
-
 const TITULOS = {
   resumen: 'Resumen del turno',
   pos: 'Punto de venta',
   ordenes: 'Gestión de órdenes',
-  caja: 'Administración de caja',
+  flujo: 'Flujo de caja',
 };
 
 export default function CashierTopbar({ seccion }) {
@@ -12,7 +11,9 @@ export default function CashierTopbar({ seccion }) {
       <div className="cashier-topbar__crumbs">
         <span>Módulo cajero</span>
         <i className="bi bi-chevron-right" aria-hidden="true" />
-        <strong>{TITULOS[seccion] ?? 'Resumen del turno'}</strong>
+        <strong>
+          {TITULOS[seccion] ?? 'Resumen del turno'}
+        </strong>
       </div>
     </header>
   );

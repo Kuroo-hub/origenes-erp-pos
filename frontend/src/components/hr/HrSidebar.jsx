@@ -1,10 +1,22 @@
 
-import BrandMark from '../auth/BrandMark.jsx';
+import logoOrigenes from '../../public/origenes-logo.svg';
 
 const SECCIONES_RRHH = [
-  { id: 'resumen', etiqueta: 'Resumen', icono: 'bi-grid-1x2' },
-  { id: 'empleados', etiqueta: 'Empleados', icono: 'bi-people' },
-  { id: 'planillas', etiqueta: 'Planillas', icono: 'bi-wallet2' },
+  {
+    id: 'resumen',
+    etiqueta: 'Resumen',
+    icono: 'bi-grid-1x2',
+  },
+  {
+    id: 'empleados',
+    etiqueta: 'Empleados',
+    icono: 'bi-people',
+  },
+  {
+    id: 'planillas',
+    etiqueta: 'Planillas',
+    icono: 'bi-wallet2',
+  },
 ];
 
 const COLORES_SECCION = {
@@ -18,7 +30,11 @@ export default function HrSidebar({ seccion, onSeleccionar }) {
     <aside className="hr-sidebar">
       <div className="hr-sidebar__brand">
         <span className="hr-sidebar__mark">
-          <BrandMark className="hr-sidebar__mark-svg" />
+          <img
+            src={logoOrigenes}
+            alt="Orígenes SV"
+            className="hr-sidebar__mark-svg"
+          />
         </span>
 
         <span className="hr-sidebar__brand-text">

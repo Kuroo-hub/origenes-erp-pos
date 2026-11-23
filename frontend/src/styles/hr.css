@@ -67,6 +67,7 @@
 .hr-activity__table th { padding: 13px 12px; color: var(--ember-muted-fg); background: var(--ember-muted); font-size: 11px; font-weight: 600; text-align: left; }
 .hr-activity__table td { padding: 14px 12px; border-bottom: 1px solid var(--ember-border); color: var(--ember-fg); font-size: 12px; }
 .hr-activity__table tbody tr:last-child td { border-bottom: 0; }
+.hr-activity__table tbody tr:hover td { background: var(--ember-muted); }
 .hr-employee-cell { display: flex; flex-direction: column; gap: 4px; }
 .hr-employee-cell strong { color: var(--ember-fg); font-size: 12px; font-weight: 600; }
 .hr-employee-cell small { color: var(--ember-muted-fg); font-size: 10px; }
@@ -102,6 +103,7 @@
 .hr-employees__table { width: 100%; min-width: 950px; border-collapse: collapse; text-align: left; }
 .hr-employees__table th { padding: 14px 15px; background: var(--ember-muted); color: var(--ember-muted-fg); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
 .hr-employees__table td { padding: 15px; border-top: 1px solid var(--ember-border); color: var(--ember-fg); font-size: 12px; white-space: nowrap; }
+.hr-employees__table tbody tr:hover td { background: var(--ember-muted); }
 .hr-employees__detail-button { display: grid; place-items: center; width: 33px; height: 33px; border: 1px solid var(--ember-border); border-radius: 8px; background: var(--ember-card); color: var(--ember-muted-fg); cursor: pointer; }
 .hr-employees__detail-button:hover { border-color: var(--ember-primary); color: var(--ember-primary); }
 .hr-employees__empty { padding: 45px 15px !important; color: var(--ember-muted-fg) !important; text-align: center; }
@@ -116,6 +118,7 @@
 .hr-detail__header > div > span { color: var(--ember-muted-fg); font-size: 11px; }
 .hr-detail__header h2 { margin: 6px 0 0; color: var(--ember-fg); font-size: 20px; font-weight: 700; }
 .hr-detail__header button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--ember-border); border-radius: 8px; background: var(--ember-card); color: var(--ember-muted-fg); cursor: pointer; }
+.hr-detail__header button:hover { border-color: var(--ember-primary); color: var(--ember-primary); background: var(--ember-primary-soft); }
 .hr-detail__profile { display: flex; align-items: center; gap: 14px; padding: 17px; margin-bottom: 22px; border-radius: 12px; background: var(--ember-muted); }
 .hr-detail__avatar { display: grid; flex: 0 0 48px; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--ember-primary-soft); color: var(--ember-primary); font-size: 23px; }
 .hr-detail__profile > div:last-child { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
@@ -125,9 +128,6 @@
 .hr-detail__grid article { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-bottom: 12px; border-bottom: 1px solid var(--ember-border); }
 .hr-detail__grid article span { color: var(--ember-muted-fg); font-size: 11px; }
 .hr-detail__grid article strong { overflow-wrap: anywhere; color: var(--ember-fg); font-size: 12px; font-weight: 600; }
-.hr-detail__footer { display: flex; justify-content: flex-end; margin-top: 22px; }
-.hr-detail__footer button { min-height: 39px; padding: 9px 20px; border: 0; border-radius: var(--ember-radius-control); background: var(--ember-primary); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
-.hr-detail__footer button:hover { background: var(--ember-primary-hover); }
 @media (max-width: 1000px) {
   .hr-employees__toolbar { grid-template-columns: 1fr 1fr; }
   .hr-employees__search { grid-column: 1 / -1; }
@@ -207,4 +207,161 @@
   .hr-payroll__actions,
   .hr-payroll__success { align-items: stretch; flex-direction: column; }
   .hr-payroll__success button { width: 100%; }
+}
+
+
+/* Ajustes finales RRHH: identidad y consistencia con Cajero */
+.hr-sidebar__mark-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.hr-indicator__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.hr-indicator__icon i {
+  font-size: 27px;
+  line-height: 1;
+}
+
+.hr-indicator--primary .hr-indicator__icon,
+.hr-indicator--success .hr-indicator__icon,
+.hr-indicator--info .hr-indicator__icon {
+  color: #0958d9;
+}
+
+.hr-indicator--warning .hr-indicator__icon {
+  color: #ad6800;
+}
+
+.hr-detail-modal.cashier-orders__modal {
+  max-width: 620px;
+  padding: 24px;
+}
+
+.hr-detail__header.cashier-orders__modal-header {
+  margin-bottom: 22px;
+}
+
+.hr-detail__header.cashier-orders__modal-header button {
+  flex: 0 0 34px;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid {
+  gap: 17px;
+}
+
+.hr-detail__footer {
+  display: none;
+}
+
+@media (max-width: 650px) {
+  .hr-detail-modal.cashier-orders__modal {
+    padding: 18px;
+  }
+}
+
+.hr-payroll__notice {
+  padding: 13px 16px;
+  border: 1px solid #f0d9a8;
+  border-radius: 10px;
+  background: #fffaf0;
+  color: #805b16;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* ========================================
+   RRHH - Detalle de empleado estilo Cajero
+======================================== */
+
+.hr-detail-backdrop.cashier-orders__modal-backdrop {
+  z-index: 2000;
+  backdrop-filter: blur(3px);
+}
+
+.hr-detail-modal.cashier-orders__modal {
+  max-width: 640px;
+  padding: 24px;
+}
+
+.hr-detail__header.cashier-orders__modal-header {
+  margin-bottom: 22px;
+}
+
+.hr-detail__header.cashier-orders__modal-header > div > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-detail__header.cashier-orders__modal-header h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.hr-detail__header.cashier-orders__modal-header button {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  background: var(--ember-card);
+}
+
+.hr-detail__profile {
+  margin-bottom: 22px;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 12px;
+  background: var(--ember-muted);
+  border: 1px solid var(--ember-border);
+  border-radius: 10px;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid > div > span {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid > div > strong {
+  color: var(--ember-fg);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* Estado inactivo: color warning */
+.hr-status--inactive {
+  color: var(--warning);
+  background: rgba(250, 173, 20, 0.13);
+}
+
+@media (max-width: 650px) {
+  .hr-detail-modal.cashier-orders__modal {
+    padding: 18px;
+  }
+
+  .hr-detail__grid.cashier-orders__detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
 }

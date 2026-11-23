@@ -1,13 +1,19 @@
+
 import { useMemo, useState } from 'react';
 import { Alert } from 'reactstrap';
 import CashierCart from './CashierCart.jsx';
+
 import {
   CATEGORIAS_CAJERO,
-  PRODUCTOS_CAJERO,
   formatearMonedaCajero,
-} from '../../mocks/cashierMocks.js';
+} from '../../mocks/CashierMocks.js';
 
-export default function CashierPOS({ onRegistrarPedido }) {
+export default function CashierPOS({
+  sucursal,
+  productos,
+  onRegistrarPedido,
+  onDescontarStock,
+}) {
   const [busqueda, setBusqueda] = useState('');
   const [categoria, setCategoria] = useState('Todos');
   const [carrito, setCarrito] = useState([]);
@@ -16,23 +22,38 @@ export default function CashierPOS({ onRegistrarPedido }) {
   const [notificacion, setNotificacion] = useState('');
 
   const productosFiltrados = useMemo(() => {
-    return PRODUCTOS_CAJERO.filter((producto) => {
+    return productos.filter((producto) => {
       const coincideCategoria =
-        categoria === 'Todos' || producto.categoria === categoria;
+        categoria === 'Todos' ||
+        producto.categoria === categoria;
+
       const coincideBusqueda = producto.nombre
         .toLowerCase()
         .includes(busqueda.toLowerCase());
 
       return coincideCategoria && coincideBusqueda;
     });
-  }, [categoria, busqueda]);
+  }, [productos, categoria, busqueda]);
+
+  const cantidadEnCarrito = (productoId) =>
+    carrito.find((item) => item.id === productoId)?.cantidad ?? 0;
 
   const agregarProducto = (producto) => {
-    if (!producto.disponible) return;
+    const cantidadActual = cantidadEnCarrito(producto.id);
+
+    if (
+      !producto.disponible ||
+      cantidadActual >= producto.stock
+    ) {
+      return;
+    }
 
     setNotificacion('');
+
     setCarrito((previo) => {
-      const existente = previo.find((item) => item.id === producto.id);
+      const existente = previo.find(
+        (item) => item.id === producto.id
+      );
 
       if (existente) {
         return previo.map((item) =>
@@ -49,40 +70,97 @@ export default function CashierPOS({ onRegistrarPedido }) {
   const cambiarCantidad = (productoId, delta) => {
     setCarrito((previo) =>
       previo
-        .map((item) =>
-          item.id === productoId
-            ? { ...item, cantidad: item.cantidad + delta }
-            : item
-        )
+        .map((item) => {
+          if (item.id !== productoId) return item;
+
+          const productoActual = productos.find(
+            (producto) => producto.id === productoId
+          );
+
+          const nuevaCantidad = item.cantidad + delta;
+
+          if (
+            nuevaCantidad < 1 ||
+            nuevaCantidad > (productoActual?.stock ?? 0)
+          ) {
+            return item;
+          }
+
+          return {
+            ...item,
+            cantidad: nuevaCantidad,
+          };
+        })
         .filter((item) => item.cantidad > 0)
     );
   };
 
   const eliminarProducto = (productoId) => {
-    setCarrito((previo) => previo.filter((item) => item.id !== productoId));
+    setCarrito((previo) =>
+      previo.filter((item) => item.id !== productoId)
+    );
   };
 
   const confirmarPedido = () => {
     if (carrito.length === 0) return;
+
+    if (
+      typeof onRegistrarPedido !== 'function' ||
+      typeof onDescontarStock !== 'function'
+    ) {
+      setNotificacion(
+        'No se pudo registrar la venta. Intenta nuevamente.'
+      );
+      return;
+    }
+
+    const inventarioInsuficiente = carrito.some((item) => {
+      const productoActual = productos.find(
+        (producto) => producto.id === item.id
+      );
+
+      return (
+        !productoActual ||
+        item.cantidad > productoActual.stock
+      );
+    });
+
+    if (inventarioInsuficiente) {
+      setNotificacion(
+        'El inventario cambió. Revisa las cantidades antes de confirmar.'
+      );
+      return;
+    }
 
     const total = carrito.reduce(
       (suma, item) => suma + item.precio * item.cantidad,
       0
     );
 
+    const productosVendidos = carrito.map((item) => ({
+      id: item.id,
+      nombre: item.nombre,
+      cantidad: item.cantidad,
+    }));
+
     onRegistrarPedido({
       cliente,
       metodoPago,
       total,
-      productos: carrito.map((item) => ({
-        nombre: item.nombre,
-        cantidad: item.cantidad,
-      })),
+      productos: productosVendidos,
     });
 
-    setNotificacion(
-      `Pedido de ${formatearMonedaCajero(total)} registrado correctamente.`
+    onDescontarStock(
+      carrito.map((item) => ({
+        id: item.id,
+        cantidad: item.cantidad,
+      }))
     );
+
+    setNotificacion(
+      `Venta de ${formatearMonedaCajero(total)} registrada correctamente en ${sucursal}.`
+    );
+
     setCarrito([]);
     setCliente('');
     setMetodoPago('efectivo');
@@ -93,7 +171,9 @@ export default function CashierPOS({ onRegistrarPedido }) {
       <header className="cashier-section-header">
         <div>
           <h1>Punto de venta</h1>
-          <p>Selecciona los productos para registrar un pedido presencial.</p>
+          <p>
+            Registra ventas y consulta el inventario de {sucursal}.
+          </p>
         </div>
       </header>
 
@@ -103,7 +183,7 @@ export default function CashierPOS({ onRegistrarPedido }) {
           fade={false}
           toggle={() => setNotificacion('')}
         >
-          <i className="bi bi-check-circle me-2" />
+          <i className="bi bi-info-circle me-2" aria-hidden="true" />
           {notificacion}
         </Alert>
       )}
@@ -113,10 +193,13 @@ export default function CashierPOS({ onRegistrarPedido }) {
           <div className="cashier-pos__toolbar">
             <div className="cashier-pos__search">
               <i className="bi bi-search" aria-hidden="true" />
+
               <input
                 type="search"
                 value={busqueda}
-                onChange={(evento) => setBusqueda(evento.target.value)}
+                onChange={(evento) =>
+                  setBusqueda(evento.target.value)
+                }
                 placeholder="Buscar productos..."
                 aria-label="Buscar productos"
               />
@@ -127,7 +210,9 @@ export default function CashierPOS({ onRegistrarPedido }) {
                 <button
                   key={opcion}
                   type="button"
-                  className={categoria === opcion ? 'is-active' : ''}
+                  className={
+                    categoria === opcion ? 'is-active' : ''
+                  }
                   onClick={() => setCategoria(opcion)}
                 >
                   {opcion}
@@ -137,45 +222,66 @@ export default function CashierPOS({ onRegistrarPedido }) {
           </div>
 
           <div className="cashier-pos__products">
-            {productosFiltrados.map((producto) => (
-              <article className="cashier-product" key={producto.id}>
-                <div className="cashier-product__image">
-                  <i className={`bi ${producto.imagen}`} aria-hidden="true" />
-                </div>
+            {productosFiltrados.map((producto) => {
+              const sinStock = producto.stock <= 0;
 
-                <div className="cashier-product__content">
-                  <span className="cashier-product__category">
-                    {producto.categoria}
-                  </span>
-                  <h3>{producto.nombre}</h3>
-                  <p>{producto.descripcion}</p>
+              const limiteAlcanzado =
+                cantidadEnCarrito(producto.id) >= producto.stock;
 
-                  <div className="cashier-product__footer">
-                    <strong>{formatearMonedaCajero(producto.precio)}</strong>
-                    <button
-                      type="button"
-                      onClick={() => agregarProducto(producto)}
-                      disabled={!producto.disponible}
-                      aria-label={`Agregar ${producto.nombre}`}
-                    >
-                      <i className="bi bi-plus-lg" />
-                    </button>
+              return (
+                <article
+                  className="cashier-product"
+                  key={producto.id}
+                >
+                  <div className="cashier-product__image">
+                    <i
+                      className={`bi ${producto.imagen}`}
+                      aria-hidden="true"
+                    />
                   </div>
-                </div>
 
-                {!producto.disponible && (
-                  <span className="cashier-product__unavailable">
-                    No disponible
-                  </span>
-                )}
-              </article>
-            ))}
+                  <div className="cashier-product__content">
+                    <span className="cashier-product__category">
+                      {producto.categoria}
+                    </span>
+
+                    <h3>{producto.nombre}</h3>
+                    <p>{producto.descripcion}</p>
+
+                    <div className="cashier-product__footer">
+                      <strong>
+                        {formatearMonedaCajero(producto.precio)}
+                      </strong>
+
+                      <span>Stock: {producto.stock}</span>
+
+                      <button
+                        type="button"
+                        onClick={() => agregarProducto(producto)}
+                        disabled={sinStock || limiteAlcanzado}
+                        aria-label={`Agregar ${producto.nombre}`}
+                      >
+                        <i className="bi bi-plus-lg" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {sinStock && (
+                    <span className="cashier-product__unavailable">
+                      Sin existencias
+                    </span>
+                  )}
+                </article>
+              );
+            })}
 
             {productosFiltrados.length === 0 && (
               <div className="cashier-pos__empty">
-                <i className="bi bi-search" />
+                <i className="bi bi-search" aria-hidden="true" />
                 <strong>No se encontraron productos</strong>
-                <span>Prueba con otra búsqueda o categoría.</span>
+                <span>
+                  Prueba con otra búsqueda o categoría.
+                </span>
               </div>
             )}
           </div>
@@ -190,6 +296,7 @@ export default function CashierPOS({ onRegistrarPedido }) {
           onCambiarCantidad={cambiarCantidad}
           onEliminar={eliminarProducto}
           onConfirmar={confirmarPedido}
+          sucursal={sucursal}
         />
       </div>
     </section>

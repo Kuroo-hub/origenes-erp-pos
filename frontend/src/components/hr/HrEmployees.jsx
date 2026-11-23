@@ -23,9 +23,9 @@ export default function HrEmployees({ empleados = [] }) {
 
     return empleados.filter((empleado) => {
       const coincideBusqueda =
-        empleado.fullName.toLowerCase().includes(termino) ||
-        empleado.email.toLowerCase().includes(termino) ||
-        empleado.jobTitle.toLowerCase().includes(termino);
+  (empleado.fullName ?? '').toLowerCase().includes(termino) ||
+  (empleado.email ?? '').toLowerCase().includes(termino) ||
+  (empleado.jobTitle ?? '').toLowerCase().includes(termino);
 
       const coincideEstado =
         estado === 'todos' ||
@@ -168,14 +168,13 @@ export default function HrEmployees({ empleados = [] }) {
 
                     <td>
                       <button
-                        type="button"
-                        className="hr-employees__detail-button"
-                        onClick={() => setEmpleadoSeleccionado(empleado)}
-                        aria-label={`Ver detalle de ${empleado.fullName}`}
-                        title="Ver detalle"
-                      >
-                        <i className="bi bi-eye" aria-hidden="true" />
-                      </button>
+  type="button"
+  className="cashier-orders__detail-button"
+  onClick={() => setEmpleadoSeleccionado(empleado)}
+  aria-label={`Ver detalle de ${empleado.nombre} ${empleado.apellido}`}
+>
+  Ver detalle
+</button>
                     </td>
                   </tr>
                 ))

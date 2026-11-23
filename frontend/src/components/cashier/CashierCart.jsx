@@ -1,5 +1,15 @@
 
-import { formatearMonedaCajero, METODOS_PAGO_CAJERO } from '../../mocks/cashierMocks.js';
+import {
+  formatearMonedaCajero,
+  METODOS_PAGO_CAJERO,
+} from '../../mocks/CashierMocks.js';
+
+const ICONOS_METODO = {
+  efectivo: 'bi-cash-coin',
+  tarjeta: 'bi-credit-card',
+  bitcoin: 'bi-currency-bitcoin',
+  chivo: 'bi-wallet2',
+};
 
 export default function CashierCart({
   items,
@@ -10,7 +20,13 @@ export default function CashierCart({
   onCambiarCantidad,
   onEliminar,
   onConfirmar,
+  sucursal,
 }) {
+  const cantidadProductos = items.reduce(
+    (total, item) => total + item.cantidad,
+    0
+  );
+
   const subtotal = items.reduce(
     (total, item) => total + item.precio * item.cantidad,
     0
@@ -18,21 +34,32 @@ export default function CashierCart({
 
   return (
     <aside className="cashier-cart">
-      <div className="cashier-cart__header">
+      <header className="cashier-cart__header">
         <div>
-          <h2>Pedido actual</h2>
-          <p>{items.reduce((total, item) => total + item.cantidad, 0)} productos</p>
+          <h2>Carrito</h2>
+          <p>
+            {cantidadProductos} productos
+            {sucursal ? ` · ${sucursal}` : ''}
+          </p>
         </div>
-        <i className="bi bi-cart3" aria-hidden="true" />
-      </div>
+
+        <span className="cashier-cart__header-icon">
+          <i className="bi bi-bag" aria-hidden="true" />
+        </span>
+      </header>
 
       <div className="cashier-cart__customer">
-        <label htmlFor="cashier-cliente">Nombre del cliente (opcional)</label>
+        <label htmlFor="cashier-cliente">
+          Nombre del cliente (opcional)
+        </label>
+
         <input
           id="cashier-cliente"
           type="text"
           value={cliente}
-          onChange={(evento) => onCambiarCliente(evento.target.value)}
+          onChange={(evento) =>
+            onCambiarCliente(evento.target.value)
+          }
           placeholder="Nombre del cliente"
           maxLength={80}
         />
@@ -43,21 +70,35 @@ export default function CashierCart({
           <div className="cashier-cart__empty">
             <i className="bi bi-basket3" aria-hidden="true" />
             <strong>Tu carrito está vacío</strong>
-            <span>Selecciona productos del menú para comenzar.</span>
+            <span>
+              Selecciona productos del menú para comenzar.
+            </span>
           </div>
         ) : (
           items.map((item) => (
             <article className="cashier-cart-item" key={item.id}>
               <div className="cashier-cart-item__info">
                 <strong>{item.nombre}</strong>
-                <span>{formatearMonedaCajero(item.precio)}</span>
+
+                <span>
+                  {formatearMonedaCajero(item.precio)} c/u
+                </span>
+
+                <small>
+                  Subtotal:{' '}
+                  {formatearMonedaCajero(
+                    item.precio * item.cantidad
+                  )}
+                </small>
               </div>
 
               <div className="cashier-cart-item__actions">
                 <div className="cashier-quantity">
                   <button
                     type="button"
-                    onClick={() => onCambiarCantidad(item.id, -1)}
+                    onClick={() =>
+                      onCambiarCantidad(item.id, -1)
+                    }
                     aria-label={`Disminuir cantidad de ${item.nombre}`}
                   >
                     <i className="bi bi-dash" />
@@ -67,7 +108,9 @@ export default function CashierCart({
 
                   <button
                     type="button"
-                    onClick={() => onCambiarCantidad(item.id, 1)}
+                    onClick={() =>
+                      onCambiarCantidad(item.id, 1)
+                    }
                     aria-label={`Aumentar cantidad de ${item.nombre}`}
                   >
                     <i className="bi bi-plus" />
@@ -79,6 +122,7 @@ export default function CashierCart({
                   className="cashier-cart-item__remove"
                   onClick={() => onEliminar(item.id)}
                   aria-label={`Eliminar ${item.nombre}`}
+                  title="Eliminar producto"
                 >
                   <i className="bi bi-trash3" />
                 </button>
@@ -88,20 +132,37 @@ export default function CashierCart({
         )}
       </div>
 
-      <div className="cashier-cart__payment">
-        <label htmlFor="cashier-metodo-pago">Método de pago</label>
-        <select
-          id="cashier-metodo-pago"
-          value={metodoPago}
-          onChange={(evento) => onCambiarMetodo(evento.target.value)}
-        >
+      <section className="cashier-cart__payment">
+        <h3>Método de pago</h3>
+
+        <div className="cashier-cart__payment-options">
           {METODOS_PAGO_CAJERO.map((metodo) => (
-            <option key={metodo.id} value={metodo.id}>
-              {metodo.etiqueta}
-            </option>
+            <label
+              key={metodo.id}
+              className={`cashier-cart__payment-option ${
+                metodoPago === metodo.id ? 'is-selected' : ''
+              }`}
+            >
+              <input
+                type="radio"
+                name="cashier-metodo-pago"
+                value={metodo.id}
+                checked={metodoPago === metodo.id}
+                onChange={() => onCambiarMetodo(metodo.id)}
+              />
+
+              <i
+                className={`bi ${
+                  ICONOS_METODO[metodo.id] ?? 'bi-wallet2'
+                }`}
+                aria-hidden="true"
+              />
+
+              <span>{metodo.etiqueta}</span>
+            </label>
           ))}
-        </select>
-      </div>
+        </div>
+      </section>
 
       <div className="cashier-cart__totals">
         <div>
@@ -121,8 +182,8 @@ export default function CashierCart({
         disabled={items.length === 0}
         onClick={onConfirmar}
       >
-        <i className="bi bi-check-circle me-2" />
-        Confirmar pedido
+        <i className="bi bi-check-circle" aria-hidden="true" />
+        Registrar venta
       </button>
     </aside>
   );

@@ -16,6 +16,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Cafés',
     disponible: true,
     imagen: 'bi-cup-hot',
+    stock: 25,
   },
   {
     id: 2,
@@ -25,6 +26,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Cafés',
     disponible: true,
     imagen: 'bi-cup-hot-fill',
+    stock: 18,
   },
   {
     id: 3,
@@ -34,6 +36,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Cafés',
     disponible: true,
     imagen: 'bi-cup',
+    stock: 16,
   },
   {
     id: 4,
@@ -43,6 +46,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Pastelería',
     disponible: true,
     imagen: 'bi-egg-fried',
+    stock: 30,
   },
   {
     id: 5,
@@ -52,6 +56,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Pastelería',
     disponible: true,
     imagen: 'bi-cake2',
+    stock: 12,
   },
   {
     id: 6,
@@ -61,6 +66,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Panadería',
     disponible: true,
     imagen: 'bi-basket',
+    stock: 22,
   },
   {
     id: 7,
@@ -70,6 +76,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Bebidas frías',
     disponible: true,
     imagen: 'bi-cup-straw',
+    stock: 20,
   },
   {
     id: 8,
@@ -79,6 +86,7 @@ export const PRODUCTOS_CAJERO = [
     categoria: 'Bebidas frías',
     disponible: false,
     imagen: 'bi-cup-straw',
+    stock: 0,
   },
 ];
 
