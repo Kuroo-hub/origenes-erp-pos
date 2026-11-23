@@ -1,0 +1,70 @@
+export const INITIAL_DELIVERIES_MOCK = [
+  {
+    order_id: 'ORD-1048',
+    branch_id: 1,
+    customer_name: 'María López',
+    customer_phone: '7845-1290',
+    delivery_address: 'Colonia Escalón, Calle La Mascota #412, San Salvador',
+    address_reference: 'Portón negro frente a parqueo corporativo',
+    items: [
+      { name: 'Pollo a la plancha', quantity: 1, price: 7.50 },
+      { name: 'Horchata salvadoreña', quantity: 1, price: 2.25 },
+    ],
+    total_amount: 11.02,
+    payment_method: 'CASH',
+    payment_status: 'PENDING_COLLECTION', // Debe cobrar el repartidor
+    delivery_status: 'READY', // Listo para recoger en sucursal
+    created_at: '19:40',
+  },
+  {
+    order_id: 'ORD-1047',
+    branch_id: 1,
+    customer_name: 'Carlos Méndez',
+    customer_phone: '7120-4488',
+    delivery_address: 'Residencial San Luis, Av. Principal Casa #18, San Salvador',
+    address_reference: 'Segundo pasaje a la derecha, casa de dos plantas',
+    items: [
+      { name: 'Hamburguesa clasica', quantity: 2, price: 5.50 },
+      { name: 'Limonada', quantity: 2, price: 2.00 },
+    ],
+    total_amount: 16.95,
+    payment_method: 'CARD',
+    payment_status: 'PAID_ONLINE', // Ya pagado en app
+    delivery_status: 'IN_TRANSIT', // En camino
+    created_at: '19:25',
+  },
+  {
+    order_id: 'ORD-1045',
+    branch_id: 1,
+    customer_name: 'José Hernández',
+    customer_phone: '7699-3310',
+    delivery_address: 'Boulevard Constitución, Condominio Mirador Apt 3B, San Salvador',
+    address_reference: 'Dejar en caseta de vigilancia con autorización',
+    items: [
+      { name: 'Camaron al ajillo', quantity: 1, price: 9.50 },
+      { name: 'Flan', quantity: 1, price: 2.75 },
+    ],
+    total_amount: 13.84,
+    payment_method: 'CHIVO',
+    payment_status: 'PAID_ONLINE',
+    delivery_status: 'DELIVERED',
+    created_at: '18:50',
+  },
+  {
+    order_id: 'ORD-2012',
+    branch_id: 2,
+    customer_name: 'Sofía Castro',
+    customer_phone: '7410-8821',
+    delivery_address: 'Colonia El Palmar, 15 Calle Poniente #24, Santa Ana',
+    address_reference: 'Casa esquina color beige',
+    items: [
+      { name: 'Carne asada con papas', quantity: 2, price: 8.50 },
+      { name: 'Jugo naranja', quantity: 2, price: 2.25 },
+    ],
+    total_amount: 24.30,
+    payment_method: 'CASH',
+    payment_status: 'PENDING_COLLECTION',
+    delivery_status: 'READY',
+    created_at: '19:45',
+  },
+];
