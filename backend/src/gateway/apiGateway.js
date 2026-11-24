@@ -1,6 +1,7 @@
 import { Router } from "express";
 import inventoryRoutes from "../modules/inventory/inventoryRoutes.js";
 import cashFlowRouter from "../modules/cash-flow/cashflowRoutes.js";
+import salesRouter from "../modules/sales/salesRoutes.js";
 
 const apiGateway = Router();
 
@@ -15,5 +16,6 @@ apiGateway.get("/health", (req, res) => {
 // Aquí registraremos las rutas de cada módulo:
 apiGateway.use("/inventory", inventoryRoutes);
 apiGateway.use("/cash-flow", cashFlowRouter);
-
+apiGateway.use("/sales", salesRouter);
+ 
 export default apiGateway;
