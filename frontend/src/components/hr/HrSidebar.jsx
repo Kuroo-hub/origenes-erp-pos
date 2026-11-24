@@ -17,12 +17,18 @@ const SECCIONES_RRHH = [
     etiqueta: 'Planillas',
     icono: 'bi-wallet2',
   },
+  {
+    id: 'contratacion',
+    etiqueta: 'Contratación',
+    icono: 'bi-person-plus',
+  },
 ];
 
 const COLORES_SECCION = {
   resumen: 'hr-nav-item__dot--resumen',
   empleados: 'hr-nav-item__dot--empleados',
   planillas: 'hr-nav-item__dot--planillas',
+  contratacion: 'hr-nav-item__dot--contratacion',
 };
 
 export default function HrSidebar({ seccion, onSeleccionar, onLogout }) {

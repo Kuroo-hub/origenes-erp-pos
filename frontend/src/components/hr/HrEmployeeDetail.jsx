@@ -25,6 +25,8 @@ export default function HrEmployeeDetail({ empleado, onCerrar }) {
     { label: 'Fecha de contratación', value: formatDate(empleado.hireDate) },
     { label: 'Salario base mensual', value: formatCurrency(empleado.baseSalary) },
     { label: 'Rol del sistema', value: empleado.role },
+    { label: 'Usuario de acceso', value: empleado.username },
+    { label: 'Contraseña temporal', value: empleado.temporaryPassword },
     { label: 'ID de usuario', value: `#${empleado.userId}` },
     { label: 'Sucursal', value: empleado.branchName },
     { label: 'ID de sucursal', value: `#${empleado.branchId}` },

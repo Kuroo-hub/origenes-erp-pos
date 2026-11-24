@@ -147,6 +147,10 @@
   background-color: var(--ember-chart-3);
 }
 
+.hr-nav-item__dot--contratacion {
+  background-color: var(--success);
+}
+
 .hr-nav-item.is-active .hr-nav-item__dot {
   background-color: #1677ff;
 }
@@ -1408,5 +1412,169 @@
   .hr-detail__grid.cashier-orders__detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
+  }
+}
+
+.hr-hiring__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.hr-hiring__form,
+.hr-hiring__aside {
+  padding: 24px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+}
+
+.hr-hiring__form {
+  background: var(--ember-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-hiring__form h2,
+.hr-hiring__aside h2 {
+  margin: 0;
+  color: var(--ember-fg);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.hr-hiring__alert {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.hr-hiring__alert--error {
+  color: #cf1322;
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+}
+
+.hr-hiring__alert--success {
+  color: #237804;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.hr-hiring__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.hr-hiring__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.hr-hiring__field span {
+  color: var(--ember-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hr-hiring__field input,
+.hr-hiring__field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  color: var(--ember-fg);
+  background: var(--ember-card);
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+  outline: 0;
+  font: 13px var(--ember-font);
+}
+
+.hr-hiring__field input:focus,
+.hr-hiring__field select:focus {
+  border-color: var(--ember-primary);
+  box-shadow: 0 0 0 3px var(--ember-ring);
+}
+
+.hr-hiring__submit {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 11px 16px;
+  color: #ffffff;
+  background: var(--ember-primary);
+  border: 0;
+  border-radius: var(--ember-radius-control);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hr-hiring__submit:hover {
+  background: var(--ember-primary-hover);
+}
+
+.hr-hiring__aside {
+  background: var(--ember-primary-soft);
+}
+
+.hr-hiring__aside-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 14px;
+  color: var(--ember-primary);
+  background: var(--ember-card);
+  border-radius: 11px;
+  font-size: 19px;
+}
+
+.hr-hiring__aside p {
+  margin: 10px 0 16px;
+  color: var(--ember-muted-fg);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.hr-hiring__aside ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hr-hiring__aside li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--ember-fg);
+  font-size: 12px;
+}
+
+.hr-hiring__aside li i {
+  color: var(--ember-primary);
+}
+
+@media (max-width: 900px) {
+  .hr-hiring__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .hr-hiring__grid {
+    grid-template-columns: 1fr;
   }
 }

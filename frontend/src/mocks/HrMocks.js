@@ -1,4 +1,21 @@
 
+export const SUCURSALES_RRHH = [
+  { id: 1, nombre: 'Sucursal Centro' },
+  { id: 2, nombre: 'Sucursal Centro Histórico' },
+  { id: 3, nombre: 'Sucursal Santa Tecla' },
+  { id: 4, nombre: 'Sucursal Escalón' },
+  { id: 5, nombre: 'Sucursal Antiguo Cuscatlán' },
+];
+
+export const ROLES_RRHH = [
+  { id: 'ADMINISTRATOR', etiqueta: 'Administrador' },
+  { id: 'MANAGER', etiqueta: 'Gerente' },
+  { id: 'EMPLOYEE', etiqueta: 'Empleado' },
+  { id: 'HR', etiqueta: 'Recursos humanos' },
+  { id: 'CUSTOMER', etiqueta: 'Cliente' },
+  { id: 'INVENTORY_MANAGER', etiqueta: 'Encargado de inventario' },
+];
+
 export const EMPLEADOS_INICIALES = [
   {
     employeeId: 1,
@@ -8,7 +25,7 @@ export const EMPLEADOS_INICIALES = [
     hireDate: '2024-03-15',
     baseSalary: 950,
     email: 'maria.lopez@origenes.com',
-    role: 'ADMIN',
+    role: 'ADMINISTRATOR',
     active: true,
     branchId: 1,
     branchName: 'Sucursal Centro',
@@ -21,7 +38,7 @@ export const EMPLEADOS_INICIALES = [
     hireDate: '2024-06-10',
     baseSalary: 450,
     email: 'carlos.mendez@origenes.com',
-    role: 'CASHIER',
+    role: 'EMPLOYEE',
     active: true,
     branchId: 1,
     branchName: 'Sucursal Centro Historico',

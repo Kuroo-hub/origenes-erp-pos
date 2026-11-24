@@ -130,6 +130,7 @@ export default function HrEmployees({ empleados = [] }) {
               <tr>
                 <th>Empleado</th>
                 <th>Cargo</th>
+                <th>Cuenta</th>
                 <th>Sucursal</th>
                 <th>Fecha de ingreso</th>
                 <th>Salario mensual</th>
@@ -150,6 +151,12 @@ export default function HrEmployees({ empleados = [] }) {
                     </td>
 
                     <td>{empleado.jobTitle}</td>
+                    <td>
+                      <div className="hr-employee-cell">
+                        <strong>{empleado.username ?? '—'}</strong>
+                        <small>{empleado.role}</small>
+                      </div>
+                    </td>
                     <td>{empleado.branchName}</td>
                     <td>{formatDate(empleado.hireDate)}</td>
                     <td>{formatCurrency(empleado.baseSalary)}</td>
@@ -171,7 +178,7 @@ export default function HrEmployees({ empleados = [] }) {
   type="button"
   className="cashier-orders__detail-button"
   onClick={() => setEmpleadoSeleccionado(empleado)}
-  aria-label={`Ver detalle de ${empleado.nombre} ${empleado.apellido}`}
+  aria-label={`Ver detalle de ${empleado.fullName}`}
 >
   Ver detalle
 </button>
@@ -180,7 +187,7 @@ export default function HrEmployees({ empleados = [] }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="hr-employees__empty">
+                  <td colSpan="8" className="hr-employees__empty">
                     <i className="bi bi-search" />
                     <strong>No se encontraron empleados</strong>
                     <span>Prueba modificando los filtros de búsqueda.</span>

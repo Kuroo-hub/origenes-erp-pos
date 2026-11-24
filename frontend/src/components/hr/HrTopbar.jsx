@@ -3,6 +3,7 @@ const TITULOS = {
   resumen: 'Resumen de recursos humanos',
   empleados: 'Gestión de empleados',
   planillas: 'Gestión de planillas',
+  contratacion: 'Contratación de personal',
 };
 
 export default function HrTopbar({ seccion }) {
