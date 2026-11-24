@@ -11,6 +11,8 @@ const ESTADOS = [
   'Entregado',
 ];
 
+const ESTADOS_CAMBIO = ESTADOS.filter((estado) => estado !== 'Todos');
+
 const obtenerClaseEstado = (estado) => {
   const clases = {
     Pendiente: 'cashier-order-status--pending',
@@ -23,11 +25,14 @@ const obtenerClaseEstado = (estado) => {
   return clases[estado] ?? '';
 };
 
-export default function CashierOrders({ ordenes = [] }) {
+export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState('Todos');
   const [origen, setOrigen] = useState('Todos');
-  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
+  const [idSeleccionada, setIdSeleccionada] = useState(null);
+
+  const ordenSeleccionada =
+    ordenes.find((orden) => orden.id === idSeleccionada) ?? null;
 
   const ordenesFiltradas = useMemo(() => {
     return ordenes.filter((orden) => {
@@ -51,12 +56,16 @@ export default function CashierOrders({ ordenes = [] }) {
     });
   }, [ordenes, busqueda, estado, origen]);
 
+  const cambiarEstadoOrden = (id, nuevoEstado) => {
+    onCambiarEstado?.(id, nuevoEstado);
+  };
+
   return (
     <section className="cashier-orders">
       <header className="cashier-section-header">
         <div>
           <h1>Pedidos</h1>
-          <p>Consulta los pedidos registrados en tu sucursal.</p>
+          <p>Consulta y actualiza los pedidos registrados en tu sucursal.</p>
         </div>
       </header>
 
@@ -133,20 +142,42 @@ export default function CashierOrders({ ordenes = [] }) {
                 </td>
 
                 <td>
-                  <span
-                    className={`cashier-order-status ${obtenerClaseEstado(
-                      orden.estado
-                    )}`}
-                  >
-                    {orden.estado}
-                  </span>
+                  <div className="cashier-orders__estado-celda">
+                    <span
+                      className={`cashier-order-status ${obtenerClaseEstado(
+                        orden.estado
+                      )}`}
+                    >
+                      {orden.estado}
+                    </span>
+                    {orden.tipoEntrega === 'domicilio' ? (
+                      <span className="cashier-orders__estado-bloqueado">
+                        <i className="bi bi-lock" aria-hidden="true" />
+                        Delivery
+                      </span>
+                    ) : (
+                      <select
+                        value={orden.estado}
+                        onChange={(evento) =>
+                          cambiarEstadoOrden(orden.id, evento.target.value)
+                        }
+                        aria-label={`Cambiar estado de ${orden.id}`}
+                      >
+                        {ESTADOS_CAMBIO.map((opcion) => (
+                          <option key={opcion} value={opcion}>
+                            {opcion}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                 </td>
 
                 <td>
                   <button
                     type="button"
                     className="cashier-orders__detail-button"
-                    onClick={() => setOrdenSeleccionada(orden)}
+                    onClick={() => setIdSeleccionada(orden.id)}
                     aria-label={`Ver detalle de ${orden.id}`}
                   >
                     Ver detalle
@@ -171,7 +202,7 @@ export default function CashierOrders({ ordenes = [] }) {
           className="cashier-orders__modal-backdrop"
           onMouseDown={(evento) => {
             if (evento.target === evento.currentTarget) {
-              setOrdenSeleccionada(null);
+              setIdSeleccionada(null);
             }
           }}
         >
@@ -191,7 +222,7 @@ export default function CashierOrders({ ordenes = [] }) {
 
               <button
                 type="button"
-                onClick={() => setOrdenSeleccionada(null)}
+                onClick={() => setIdSeleccionada(null)}
                 aria-label="Cerrar detalle"
               >
                 <i className="bi bi-x-lg" />
@@ -217,9 +248,40 @@ export default function CashierOrders({ ordenes = [] }) {
 
                 <div>
                   <span>Estado</span>
-                  <strong>{ordenSeleccionada.estado}</strong>
+                  {ordenSeleccionada.tipoEntrega === 'domicilio' ? (
+                    <strong>
+                      {ordenSeleccionada.estado} · gestionado por Delivery
+                    </strong>
+                  ) : (
+                    <select
+                      value={ordenSeleccionada.estado}
+                      onChange={(evento) =>
+                        cambiarEstadoOrden(
+                          ordenSeleccionada.id,
+                          evento.target.value
+                        )
+                      }
+                      aria-label={`Cambiar estado de ${ordenSeleccionada.id}`}
+                    >
+                      {ESTADOS_CAMBIO.map((opcion) => (
+                        <option key={opcion} value={opcion}>
+                          {opcion}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
+
+              {ordenSeleccionada.tipoEntrega === 'domicilio' && (
+                <div className="cashier-orders__detail-delivery">
+                  <span>Entrega a domicilio</span>
+                  <strong>
+                    {ordenSeleccionada.direccion}, Casa #
+                    {ordenSeleccionada.numeroCasa} · {ordenSeleccionada.telefono}
+                  </strong>
+                </div>
+              )}
 
               <h3>Productos</h3>
 

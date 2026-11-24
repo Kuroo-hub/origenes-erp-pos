@@ -18,8 +18,19 @@ export default function CashierPOS({
   const [categoria, setCategoria] = useState('Todos');
   const [carrito, setCarrito] = useState([]);
   const [cliente, setCliente] = useState('');
+  const [entrega, setEntrega] = useState({
+    tipo: 'local',
+    direccion: '',
+    numeroCasa: '',
+    telefono: '',
+  });
+  const [tiempoPreparacion, setTiempoPreparacion] = useState(15);
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [notificacion, setNotificacion] = useState('');
+
+  const cambiarEntrega = (campo, valor) => {
+    setEntrega((previo) => ({ ...previo, [campo]: valor }));
+  };
 
   const productosFiltrados = useMemo(() => {
     return productos.filter((producto) => {
@@ -105,6 +116,18 @@ export default function CashierPOS({
     if (carrito.length === 0) return;
 
     if (
+      entrega.tipo === 'domicilio' &&
+      (!entrega.direccion.trim() ||
+        !entrega.numeroCasa.trim() ||
+        !entrega.telefono.trim())
+    ) {
+      setNotificacion(
+        'Completa dirección, número de casa y teléfono para la entrega.'
+      );
+      return;
+    }
+
+    if (
       typeof onRegistrarPedido !== 'function' ||
       typeof onDescontarStock !== 'function'
     ) {
@@ -141,11 +164,17 @@ export default function CashierPOS({
       id: item.id,
       nombre: item.nombre,
       cantidad: item.cantidad,
+      precio: item.precio,
     }));
 
     onRegistrarPedido({
       cliente,
       metodoPago,
+      tipoEntrega: entrega.tipo,
+      direccion: entrega.direccion,
+      numeroCasa: entrega.numeroCasa,
+      telefono: entrega.telefono,
+      tiempoPreparacion,
       total,
       productos: productosVendidos,
     });
@@ -158,11 +187,20 @@ export default function CashierPOS({
     );
 
     setNotificacion(
-      `Venta de ${formatearMonedaCajero(total)} registrada correctamente en ${sucursal}.`
+      entrega.tipo === 'domicilio'
+        ? `Venta de ${formatearMonedaCajero(total)} registrada y enviada a entregas en ${sucursal}.`
+        : `Venta de ${formatearMonedaCajero(total)} registrada correctamente en ${sucursal}.`
     );
 
     setCarrito([]);
     setCliente('');
+    setEntrega({
+      tipo: 'local',
+      direccion: '',
+      numeroCasa: '',
+      telefono: '',
+    });
+    setTiempoPreparacion(15);
     setMetodoPago('efectivo');
   };
 
@@ -291,6 +329,10 @@ export default function CashierPOS({
           items={carrito}
           cliente={cliente}
           onCambiarCliente={setCliente}
+          entrega={entrega}
+          onCambiarEntrega={cambiarEntrega}
+          tiempoPreparacion={tiempoPreparacion}
+          onCambiarTiempo={setTiempoPreparacion}
           metodoPago={metodoPago}
           onCambiarMetodo={setMetodoPago}
           onCambiarCantidad={cambiarCantidad}

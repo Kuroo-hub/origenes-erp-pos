@@ -25,7 +25,7 @@ const COLORES_SECCION = {
   planillas: 'hr-nav-item__dot--planillas',
 };
 
-export default function HrSidebar({ seccion, onSeleccionar }) {
+export default function HrSidebar({ seccion, onSeleccionar, onLogout }) {
   return (
     <aside className="hr-sidebar">
       <div className="hr-sidebar__brand">
@@ -65,6 +65,14 @@ export default function HrSidebar({ seccion, onSeleccionar }) {
           </button>
         ))}
       </nav>
+
+      <div className="hr-sidebar__footer">
+        <span className="hr-sidebar__status-text">Modo demostración</span>
+        <button type="button" className="hr-sidebar__logout" onClick={onLogout}>
+          <i className="bi bi-box-arrow-right" aria-hidden="true" />
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
     </aside>
   );
 }

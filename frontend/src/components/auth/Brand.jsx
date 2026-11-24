@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import BrandMark from './BrandMark';
+import logoOrigenes from '../../public/origenes-logo.svg';
 
 export default function Brand({
   size = 'md',
@@ -9,7 +9,7 @@ export default function Brand({
 }) {
   const content = (
     <>
-      <BrandMark />
+      <img src={logoOrigenes} className="brand__mark" alt="Orígenes SV" />
 
       <span className="brand__text">
         <span className="brand__line">

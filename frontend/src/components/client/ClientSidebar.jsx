@@ -7,7 +7,7 @@ const COLORES_SECCION = {
   configuracion: 'client-nav-item__dot--configuracion',
 };
 
-export default function ClientSidebar({ seccion, onSeleccionar }) {
+export default function ClientSidebar({ seccion, onSeleccionar, onLogout }) {
   return (
     <aside className="client-sidebar">
       <div className="client-sidebar__brand">
@@ -37,6 +37,14 @@ export default function ClientSidebar({ seccion, onSeleccionar }) {
           </button>
         ))}
       </nav>
+
+      <div className="client-sidebar__footer">
+        <span className="client-sidebar__status-text">Modo demostración</span>
+        <button type="button" className="client-sidebar__logout" onClick={onLogout}>
+          <i className="bi bi-box-arrow-right" aria-hidden="true" />
+          <span>Cerrar sesión</span>
+        </button>
+      </div>
     </aside>
   );
 }
