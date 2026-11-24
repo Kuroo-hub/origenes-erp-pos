@@ -1,5 +1,6 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import HrSidebar from '../../components/hr/HrSidebar.jsx';
 import HrTopbar from '../../components/hr/HrTopbar.jsx';
 import HrSummary from '../../components/hr/HrSummary.jsx';
@@ -9,14 +10,21 @@ import { EMPLEADOS_INICIALES } from '../../mocks/HrMocks.js';
 import '../../styles/hr.css';
 
 export default function HrPage() {
+  const navigate = useNavigate();
   const [seccion, setSeccion] = useState('resumen');
   const [empleados] = useState(EMPLEADOS_INICIALES);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   return (
     <div className="hr-shell">
       <HrSidebar
         seccion={seccion}
         onSeleccionar={setSeccion}
+        onLogout={handleLogout}
       />
 
       <div className="hr-workspace">

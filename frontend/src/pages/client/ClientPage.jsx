@@ -201,12 +201,17 @@ export default function ClientPage() {
 
   const finalizarSesion = async () => {
     await cerrarSesion();
-    navigate('/');
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
   return (
     <div className="client-shell">
-      <ClientSidebar seccion={seccion} onSeleccionar={setSeccion} />
+      <ClientSidebar
+        seccion={seccion}
+        onSeleccionar={setSeccion}
+        onLogout={finalizarSesion}
+      />
 
       <div className="client-workspace">
         <ClientTopbar seccion={seccion} />

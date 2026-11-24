@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DeliverySidebar from '../../components/delivery/DeliverySidebar';
 import DeliveryTopbar from '../../components/delivery/DeliveryTopbar';
@@ -11,6 +11,7 @@ import {
   IconPhone,
 } from '../../components/delivery/DeliveryIcons';
 import { getDeliveryOrders, updateDeliveryStatus } from '../../services/deliveryApi';
+import { useOrders } from '../../context/OrderContext.jsx';
 import { INITIAL_DELIVERIES_MOCK } from '../../mocks/DeliveryMocks';
 import '../../styles/delivery.css';
 
@@ -22,13 +23,56 @@ const PAYMENT_LABELS = {
 };
 
 const DELIVERY_STATUS_META = {
+  PREPARING: { label: 'En preparación', badge: 'blue' },
   READY: { label: 'Listo en sucursal', badge: 'warning' },
   IN_TRANSIT: { label: 'En camino', badge: 'blue' },
   DELIVERED: { label: 'Entregado', badge: 'success' },
 };
 
+const METODOS_DELIVERY = {
+  efectivo: 'CASH',
+  tarjeta: 'CARD',
+  bitcoin: 'BITCOIN',
+  chivo: 'CHIVO',
+};
+
+const ordenADelivery = (orden) => {
+  const deliveryStatus =
+    orden.deliveryStatus ??
+    (orden.estado === 'Entregado'
+      ? 'DELIVERED'
+      : orden.estado === 'Listo'
+        ? 'READY'
+        : 'PREPARING');
+
+  return {
+    order_id: orden.id,
+    branch_id: orden.sucursalId,
+    customer_name: orden.cliente,
+    customer_phone: orden.telefono,
+    delivery_address: `${orden.direccion}, Casa #${orden.numeroCasa}`,
+    items: orden.productos.map((producto) => ({
+      name: producto.nombre,
+      quantity: producto.cantidad,
+      price: Number(producto.precio ?? 0),
+    })),
+    total_amount: Number(orden.total),
+    payment_method: METODOS_DELIVERY[orden.metodoPago] ?? 'CASH',
+    payment_status:
+      deliveryStatus === 'DELIVERED'
+        ? 'COLLECTED'
+        : orden.metodoPago === 'efectivo'
+          ? 'PENDING_COLLECTION'
+          : 'PAID_ONLINE',
+    delivery_status: deliveryStatus,
+    created_at: orden.hora,
+    fromCashier: true,
+  };
+};
+
 const DeliveryPage = () => {
   const navigate = useNavigate();
+  const { ordenes, cambiarEstadoEntrega } = useOrders();
   const [activeTab, setActiveTab] = useState('active');
   const [selectedBranch, setSelectedBranch] = useState(1);
 
@@ -55,9 +99,29 @@ const DeliveryPage = () => {
     loadDeliveries(selectedBranch);
   }, [selectedBranch, loadDeliveries]);
 
-  // Cálculos con iteradores de arreglos
-  const activeOrders = orders.filter((o) => o.delivery_status !== 'DELIVERED');
-  const deliveredOrders = orders.filter((o) => o.delivery_status === 'DELIVERED');
+  const pedidosCajero = useMemo(
+    () =>
+      ordenes
+        .filter(
+          (orden) =>
+            orden.tipoEntrega === 'domicilio' &&
+            orden.sucursalId === selectedBranch
+        )
+        .map(ordenADelivery),
+    [ordenes, selectedBranch]
+  );
+
+  const pedidos = useMemo(() => {
+    const idsCajero = new Set(pedidosCajero.map((pedido) => pedido.order_id));
+
+    return [
+      ...pedidosCajero,
+      ...orders.filter((pedido) => !idsCajero.has(pedido.order_id)),
+    ];
+  }, [pedidosCajero, orders]);
+
+  const activeOrders = pedidos.filter((o) => o.delivery_status !== 'DELIVERED');
+  const deliveredOrders = pedidos.filter((o) => o.delivery_status === 'DELIVERED');
   const inTransitCount = activeOrders.filter((o) => o.delivery_status === 'IN_TRANSIT').length;
 
   const cashToCollect = activeOrders
@@ -66,6 +130,24 @@ const DeliveryPage = () => {
 
   const handleAdvanceStatus = async (order, nextStatus) => {
     setFeedback(null);
+
+    const mensaje =
+      nextStatus === 'READY'
+        ? `Pedido ${order.order_id} marcado listo en cocina.`
+        : nextStatus === 'IN_TRANSIT'
+          ? `Pedido ${order.order_id} marcado en camino hacia ${order.customer_name}.`
+          : `Pedido ${order.order_id} entregado correctamente.`;
+
+    if (order.fromCashier) {
+      cambiarEstadoEntrega(
+        order.order_id,
+        nextStatus,
+        nextStatus === 'DELIVERED' ? 'Entregado' : 'Listo'
+      );
+      setFeedback({ type: 'success', text: mensaje });
+      return;
+    }
+
     const nextPaymentStatus =
       nextStatus === 'DELIVERED' ? 'COLLECTED' : order.payment_status;
 
@@ -85,13 +167,7 @@ const DeliveryPage = () => {
       );
     }
 
-    setFeedback({
-      type: 'success',
-      text:
-        nextStatus === 'IN_TRANSIT'
-          ? `Pedido ${order.order_id} marcado en camino hacia ${order.customer_name}.`
-          : `Pedido ${order.order_id} entregado correctamente.`,
-    });
+    setFeedback({ type: 'success', text: mensaje });
   };
 
   const handleLogout = () => {
@@ -257,6 +333,16 @@ const DeliveryPage = () => {
 
                       {/* Botones de Acción */}
                       <div className="del-order-card__actions">
+                        {order.delivery_status === 'PREPARING' && (
+                          <button
+                            type="button"
+                            className="del-btn del-btn--primary"
+                            onClick={() => handleAdvanceStatus(order, 'READY')}
+                          >
+                            Marcar listo en cocina
+                          </button>
+                        )}
+
                         {order.delivery_status === 'READY' && (
                           <button
                             type="button"
