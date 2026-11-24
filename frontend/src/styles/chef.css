@@ -441,9 +441,3 @@
     margin-left: 0;
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .chef-order--critico {
-    animation: none;
-  }
-}

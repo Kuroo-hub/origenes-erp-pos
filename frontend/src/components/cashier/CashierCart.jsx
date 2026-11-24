@@ -26,6 +26,7 @@ export default function CashierCart({
   onCambiarCantidad,
   onEliminar,
   onConfirmar,
+  cajaAbierta = true,
   sucursal,
 }) {
   const cantidadProductos = items.reduce(
@@ -276,11 +277,11 @@ export default function CashierCart({
       <button
         type="button"
         className="cashier-cart__confirm"
-        disabled={items.length === 0}
+        disabled={items.length === 0 || !cajaAbierta}
         onClick={onConfirmar}
       >
         <i className="bi bi-check-circle" aria-hidden="true" />
-        Registrar venta
+        {cajaAbierta ? 'Registrar venta' : 'Caja cerrada'}
       </button>
     </aside>
   );

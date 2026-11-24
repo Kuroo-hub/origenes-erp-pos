@@ -25,10 +25,10 @@
   position: sticky;
   top: 0;
   display: flex;
-  flex: 0 0 16rem;
+  flex: 0 0 var(--ember-sidebar-width);
   flex-direction: column;
   gap: 1.5rem;
-  width: 16rem;
+  width: var(--ember-sidebar-width);
   height: 100vh;
   padding: 1.1rem 0.75rem;
   background-color: var(--ember-sidebar);
@@ -248,40 +248,6 @@
   font-size: 13px;
 }
 
-.hr-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  padding: 30px;
-  border: 1px dashed var(--ember-border);
-  border-radius: var(--ember-radius-card);
-  background: var(--ember-card);
-  text-align: center;
-}
-
-.hr-placeholder>i {
-  margin-bottom: 15px;
-  color: var(--ember-primary);
-  font-size: 38px;
-}
-
-.hr-placeholder h2 {
-  margin: 0 0 8px;
-  color: var(--ember-fg);
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.hr-placeholder p {
-  max-width: 400px;
-  margin: 0;
-  color: var(--ember-muted-fg);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
 .hr-shell button:focus-visible {
   outline: 2px solid var(--ember-primary);
   outline-offset: 2px;
@@ -324,12 +290,6 @@
   .hr-section-header {
     align-items: flex-start;
     flex-direction: column;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hr-nav-item {
-    transition: none;
   }
 }
 
@@ -697,23 +657,6 @@
 
 .hr-employees__table tbody tr:hover td {
   background: var(--ember-muted);
-}
-
-.hr-employees__detail-button {
-  display: grid;
-  place-items: center;
-  width: 33px;
-  height: 33px;
-  border: 1px solid var(--ember-border);
-  border-radius: 8px;
-  background: var(--ember-card);
-  color: var(--ember-muted-fg);
-  cursor: pointer;
-}
-
-.hr-employees__detail-button:hover {
-  border-color: var(--ember-primary);
-  color: var(--ember-primary);
 }
 
 .hr-employees__empty {
@@ -1291,43 +1234,6 @@
   color: #ad6800;
 }
 
-.hr-detail-modal.cashier-orders__modal {
-  max-width: 620px;
-  padding: 24px;
-}
-
-.hr-detail__header.cashier-orders__modal-header {
-  margin-bottom: 22px;
-}
-
-.hr-detail__header.cashier-orders__modal-header button {
-  flex: 0 0 34px;
-}
-
-.hr-detail__grid.cashier-orders__detail-grid {
-  gap: 17px;
-}
-
-.hr-detail__footer {
-  display: none;
-}
-
-@media (max-width: 650px) {
-  .hr-detail-modal.cashier-orders__modal {
-    padding: 18px;
-  }
-}
-
-.hr-payroll__notice {
-  padding: 13px 16px;
-  border: 1px solid #f0d9a8;
-  border-radius: 10px;
-  background: #fffaf0;
-  color: #805b16;
-  font-size: 12px;
-  line-height: 1.55;
-}
-
 /* ========================================
    RRHH - Detalle de empleado estilo Cajero
 ======================================== */
@@ -1363,10 +1269,6 @@
   width: 38px;
   height: 38px;
   background: var(--ember-card);
-}
-
-.hr-detail__profile {
-  margin-bottom: 22px;
 }
 
 .hr-detail__grid.cashier-orders__detail-grid {
@@ -1483,6 +1385,11 @@
   color: var(--ember-fg);
   font-size: 12px;
   font-weight: 600;
+}
+
+.hr-hiring__field small {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
 }
 
 .hr-hiring__field input,

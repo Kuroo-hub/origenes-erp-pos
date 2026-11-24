@@ -1,5 +1,6 @@
 
 import { useMemo, useState } from 'react';
+import { etiquetaRolRRHH } from '../../mocks/HrMocks.js';
 
 // Mismos valores y reglas del payrollCalculator.js del backend.
 const ISSS_RATE = 0.03;
@@ -183,7 +184,7 @@ export default function HrPayroll({ empleados = [] }) {
         employeeId: empleado.employeeId,
         userId: empleado.userId,
         fullName: empleado.fullName,
-        jobTitle: empleado.jobTitle,
+        jobTitle: etiquetaRolRRHH(empleado.role ?? empleado.jobTitle),
         ...calculo,
       });
     }
@@ -314,7 +315,7 @@ export default function HrPayroll({ empleados = [] }) {
                   >
                     <div className="hr-payroll__employee-info">
                       <strong>{empleado.fullName}</strong>
-                      <span>{empleado.jobTitle}</span>
+                      <span>{etiquetaRolRRHH(empleado.role ?? empleado.jobTitle)}</span>
                       <small>
                         Salario mensual: {formatCurrency(empleado.baseSalary)}
                       </small>

@@ -11,12 +11,13 @@ import {
   getInventoryMovements,
 } from '../../services/inventoryApi';
 import { INITIAL_INVENTORY_MOCK, INITIAL_PURCHASES_MOCK, INITIAL_MOVEMENTS_MOCK } from '../../mocks/InventoryMocks';
+import { useOrders } from '../../context/OrderContext.jsx';
 import '../../styles/inventory.css';
 
 const InventoryPage = () => {
   const navigate = useNavigate();
+  const { sucursalId, seleccionarSucursal } = useOrders();
   const [activeTab, setActiveTab] = useState('stock');
-  const [selectedBranch, setSelectedBranch] = useState(1);
 
   const [inventory, setInventory] = useState([]);
   const [purchases, setPurchases] = useState([]);
@@ -49,8 +50,8 @@ const InventoryPage = () => {
   }, []);
 
   useEffect(() => {
-    loadBranchData(selectedBranch);
-  }, [selectedBranch, loadBranchData]);
+    loadBranchData(sucursalId);
+  }, [sucursalId, loadBranchData]);
 
   // Contador global de alertas de stock mínimo para mostrar en el badge del Sidebar
   const lowStockCount = inventory.filter(
@@ -74,8 +75,8 @@ const InventoryPage = () => {
       <div className="inv-main">
         <InventoryTopbar
           activeTab={activeTab}
-          selectedBranch={selectedBranch}
-          onChangeBranch={setSelectedBranch}
+          selectedBranch={sucursalId}
+          onChangeBranch={seleccionarSucursal}
         />
 
         {usingOfflineData && (
@@ -91,21 +92,21 @@ const InventoryPage = () => {
             <>
               {activeTab === 'stock' && (
                 <InventoryStock
-                  branchId={selectedBranch}
+                  branchId={sucursalId}
                   inventory={inventory}
                   setInventory={setInventory}
-                  onRefresh={() => loadBranchData(selectedBranch)}
+                  onRefresh={() => loadBranchData(sucursalId)}
                 />
               )}
 
               {activeTab === 'purchases' && (
                 <InventoryPurchases
-                  branchId={selectedBranch}
+                  branchId={sucursalId}
                   inventory={inventory}
                   purchases={purchases}
                   setPurchases={setPurchases}
                   setInventory={setInventory}
-                  onRefresh={() => loadBranchData(selectedBranch)}
+                  onRefresh={() => loadBranchData(sucursalId)}
                 />
               )}
 

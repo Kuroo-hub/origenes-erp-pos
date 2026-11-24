@@ -1,9 +1,5 @@
 import React from 'react';
-
-const BRANCHES = [
-  { branch_id: 1, name: 'Sucursal San Salvador' },
-  { branch_id: 2, name: 'Sucursal Santa Ana' },
-];
+import { SUCURSALES_TOPBAR as BRANCHES } from '../../mocks/SucursalesMocks.js';
 
 const TAB_META = {
   active: {

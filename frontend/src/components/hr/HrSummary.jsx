@@ -1,4 +1,6 @@
 
+import { etiquetaRolRRHH } from '../../mocks/HrMocks.js';
+
 function formatCurrency(value) {
   return new Intl.NumberFormat('es-SV', {
     style: 'currency',
@@ -130,7 +132,7 @@ export default function HrSummary({ empleados = [] }) {
                       </div>
                     </td>
 
-                    <td>{empleado.jobTitle}</td>
+                    <td>{etiquetaRolRRHH(empleado.role)}</td>
                     <td>{empleado.branchName}</td>
                     <td>{formatDate(empleado.hireDate)}</td>
                     <td>{formatCurrency(empleado.baseSalary)}</td>

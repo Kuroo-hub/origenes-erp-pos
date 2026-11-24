@@ -72,9 +72,13 @@ const ordenADelivery = (orden) => {
 
 const DeliveryPage = () => {
   const navigate = useNavigate();
-  const { ordenes, cambiarEstadoEntrega } = useOrders();
+  const {
+    ordenes,
+    cambiarEstadoEntrega,
+    sucursalId,
+    seleccionarSucursal,
+  } = useOrders();
   const [activeTab, setActiveTab] = useState('active');
-  const [selectedBranch, setSelectedBranch] = useState(1);
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,8 +100,8 @@ const DeliveryPage = () => {
   }, []);
 
   useEffect(() => {
-    loadDeliveries(selectedBranch);
-  }, [selectedBranch, loadDeliveries]);
+    loadDeliveries(sucursalId);
+  }, [sucursalId, loadDeliveries]);
 
   const pedidosCajero = useMemo(
     () =>
@@ -105,10 +109,10 @@ const DeliveryPage = () => {
         .filter(
           (orden) =>
             orden.tipoEntrega === 'domicilio' &&
-            orden.sucursalId === selectedBranch
+            orden.sucursalId === sucursalId
         )
         .map(ordenADelivery),
-    [ordenes, selectedBranch]
+    [ordenes, sucursalId]
   );
 
   const pedidos = useMemo(() => {
@@ -156,7 +160,7 @@ const DeliveryPage = () => {
         delivery_status: nextStatus,
         payment_status: nextPaymentStatus,
       });
-      await loadDeliveries(selectedBranch);
+      await loadDeliveries(sucursalId);
     } catch {
       setOrders((prev) =>
         prev.map((item) =>
@@ -188,8 +192,8 @@ const DeliveryPage = () => {
       <div className="del-main">
         <DeliveryTopbar
           activeTab={activeTab}
-          selectedBranch={selectedBranch}
-          onChangeBranch={setSelectedBranch}
+          selectedBranch={sucursalId}
+          onChangeBranch={seleccionarSucursal}
         />
 
         {usingOfflineData && (

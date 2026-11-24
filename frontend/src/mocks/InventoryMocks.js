@@ -1,5 +1,5 @@
 export const INITIAL_INVENTORY_MOCK = [
-  // Sucursal 1: San Salvador
+  // Sucursal 1: Centro Histórico
   { inventory_id: 1, branch_id: 1, ingredient_id: 1, name: 'Chicken', ingredient_type: 'RAW_MATERIAL', unit: 'g', quantity: 9800, minimum_stock: 1500 },
   { inventory_id: 2, branch_id: 1, ingredient_id: 2, name: 'Ground beef', ingredient_type: 'RAW_MATERIAL', unit: 'g', quantity: 5000, minimum_stock: 1000 },
   { inventory_id: 3, branch_id: 1, ingredient_id: 3, name: 'Beef', ingredient_type: 'RAW_MATERIAL', unit: 'g', quantity: 450, minimum_stock: 1000 }, // Alerta stock mínimo
@@ -19,6 +19,12 @@ export const INITIAL_INVENTORY_MOCK = [
   { inventory_id: 15, branch_id: 2, ingredient_id: 43, name: 'Large flat plate', ingredient_type: 'PACKAGING', unit: 'unit', quantity: 300, minimum_stock: 30 },
   { inventory_id: 16, branch_id: 2, ingredient_id: 49, name: 'Fork', ingredient_type: 'PACKAGING', unit: 'unit', quantity: 25, minimum_stock: 50 }, // Alerta stock mínimo
   { inventory_id: 17, branch_id: 2, ingredient_id: 55, name: 'Napkin', ingredient_type: 'PACKAGING', unit: 'unit', quantity: 2000, minimum_stock: 100 },
+
+  // Sucursal 3: San Miguel
+  { inventory_id: 18, branch_id: 3, ingredient_id: 1, name: 'Chicken', ingredient_type: 'RAW_MATERIAL', unit: 'g', quantity: 3400, minimum_stock: 900 },
+  { inventory_id: 19, branch_id: 3, ingredient_id: 8, name: 'Rice', ingredient_type: 'RAW_MATERIAL', unit: 'g', quantity: 8100, minimum_stock: 1200 },
+  { inventory_id: 20, branch_id: 3, ingredient_id: 27, name: 'Milk', ingredient_type: 'RAW_MATERIAL', unit: 'ml', quantity: 4200, minimum_stock: 800 },
+  { inventory_id: 21, branch_id: 3, ingredient_id: 43, name: 'Large flat plate', ingredient_type: 'PACKAGING', unit: 'unit', quantity: 180, minimum_stock: 40 },
 ];
 
 export const INITIAL_PURCHASES_MOCK = [
@@ -61,6 +67,19 @@ export const INITIAL_PURCHASES_MOCK = [
     outstanding_amount: 63.0,
     status: 'PARTIAL',
   },
+  {
+    purchase_id: 4,
+    payable_id: 5,
+    branch_id: 3,
+    supplier_name: 'Bebidas Orientales',
+    invoice_number: 'FAC-005',
+    purchase_date: '2026-11-18 08:45',
+    subtotal: 166.0,
+    vat: 21.58,
+    total: 187.58,
+    outstanding_amount: 187.58,
+    status: 'PENDING',
+  },
 ];
 
 export const INITIAL_MOVEMENTS_MOCK = [
@@ -70,4 +89,5 @@ export const INITIAL_MOVEMENTS_MOCK = [
   { movement_id: 4, branch_id: 1, ingredient_name: 'Rice', unit: 'g', movement_type: 'CONSUMPTION', quantity: 100, reason: 'Consumo por venta (Pollo a la plancha)', created_at: '2026-11-17 13:15', user_email: 'empleado@origenessv.com' },
   { movement_id: 5, branch_id: 1, ingredient_name: 'Potato', unit: 'g', movement_type: 'ADJUSTMENT', quantity: 500, reason: 'Ajuste por merma', created_at: '2026-11-17 17:00', user_email: 'inventario@origenessv.com' },
   { movement_id: 6, branch_id: 2, ingredient_name: 'Napkin', unit: 'unit', movement_type: 'IN', quantity: 2000, reason: 'Compra factura FAC-003', created_at: '2026-11-17 11:15', user_email: 'inventario@origenessv.com' },
+  { movement_id: 7, branch_id: 3, ingredient_name: 'Chicken', unit: 'g', movement_type: 'IN', quantity: 4000, reason: 'Compra factura FAC-005', created_at: '2026-11-18 08:45', user_email: 'inventario@origenessv.com' },
 ];

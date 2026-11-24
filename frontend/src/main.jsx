@@ -5,7 +5,6 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './styles/variables.css';
 import './styles/auth.css';
-import './styles/client.css';
 import './styles/cashier.css';
 
 import App from './App.jsx';

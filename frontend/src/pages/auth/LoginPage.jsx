@@ -33,8 +33,14 @@ const MODULOS = [
   },
   { ruta: '/repartidor', etiqueta: 'Repartidor', icono: 'bi-truck', detalle: 'Entregas' },
   {
+    ruta: '/manager',
+    etiqueta: 'Manager',
+    icono: 'bi-cash-coin',
+    detalle: 'Resumen, caja y flujo',
+  },
+  {
     ruta: '/gerencia',
-    etiqueta: 'Gerencia',
+    etiqueta: 'Owner',
     icono: 'bi-bar-chart-line',
     detalle: 'Reportes y finanzas',
   },

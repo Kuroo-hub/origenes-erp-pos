@@ -3,18 +3,17 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CashierSidebar from '../../components/cashier/CashierSidebar.jsx';
 import CashierTopbar from '../../components/cashier/CashierTopbar.jsx';
-import CashierSummary from '../../components/cashier/CashierSummary.jsx';
 import CashierPOS from '../../components/cashier/CashierPOS.jsx';
 import CashierOrders from '../../components/cashier/CashierOrders.jsx';
-import CashierCashFlow from '../../components/cashier/CashierCashFlow.jsx';
 import { PRODUCTOS_CAJERO } from '../../mocks/CashierMocks.js';
 import { useOrders, SUCURSALES } from '../../context/OrderContext.jsx';
 
 export default function CashierPage() {
   const navigate = useNavigate();
-  const [seccion, setSeccion] = useState('resumen');
+  const [seccion, setSeccion] = useState('pos');
   const {
     ordenesSucursal,
+    cajaAbierta,
     sucursalId,
     sucursal,
     sucursales,
@@ -106,10 +105,6 @@ export default function CashierPage() {
     );
   };
 
-  const ventasTurno = ordenesSucursal
-    .filter((orden) => orden.ventaTurno)
-    .reduce((total, orden) => total + orden.total, 0);
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
@@ -132,18 +127,23 @@ export default function CashierPage() {
         />
 
         <main className="cashier-main">
-          {seccion === 'resumen' && (
-            <CashierSummary
-              ordenes={ordenesSucursal}
-              ventasTurno={ventasTurno}
-              sucursal={sucursal}
-            />
+          {!cajaAbierta && (
+            <div className="cashier-caja-banner">
+              <i className="bi bi-lock-fill" />
+              <div>
+                <strong>Caja cerrada</strong>
+                <span>
+                  Manager debe abrir la caja de {sucursal} para registrar ventas.
+                </span>
+              </div>
+            </div>
           )}
 
           {seccion === 'pos' && (
             <CashierPOS
               sucursal={sucursal}
               productos={productosSucursal}
+              cajaAbierta={cajaAbierta}
               onDescontarStock={descontarStock}
               onRegistrarPedido={registrarVenta}
             />
@@ -153,13 +153,6 @@ export default function CashierPage() {
             <CashierOrders
               ordenes={ordenesSucursal}
               onCambiarEstado={cambiarEstado}
-            />
-          )}
-
-          {seccion === 'flujo' && (
-            <CashierCashFlow
-              ordenes={ordenesSucursal}
-              sucursal={sucursal}
             />
           )}
         </main>

@@ -10,12 +10,14 @@ import {
 } from '../../components/owner/OwnerIcons';
 import { getOwnerDashboard } from '../../services/ownerApi';
 import { OWNER_DASHBOARD_MOCK } from '../../mocks/OwnerMocks';
+import { useOrders } from '../../context/OrderContext.jsx';
 import '../../styles/owner.css';
 
 const OwnerPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedBranch, setSelectedBranch] = useState('ALL');
+  const { cajas } = useOrders();
 
   const [dashboard, setDashboard] = useState(OWNER_DASHBOARD_MOCK);
   const [loading, setLoading] = useState(true);
@@ -179,6 +181,7 @@ const OwnerPage = () => {
                         <tbody>
                           {visibleBranches.map((b) => {
                             const margin = Number(b.monthly_revenue) - Number(b.monthly_expenses);
+                            const cajaAbierta = cajas[b.branch_id]?.abierta ?? false;
                             return (
                               <tr key={b.branch_id}>
                                 <td>
@@ -194,8 +197,14 @@ const OwnerPage = () => {
                                   <strong>${margin.toFixed(2)}</strong>
                                 </td>
                                 <td>
-                                  <span className="own-status own-status--success">
-                                    Caja abierta
+                                  <span
+                                    className={`own-status ${
+                                      cajaAbierta
+                                        ? 'own-status--success'
+                                        : 'own-status--warning'
+                                    }`}
+                                  >
+                                    {cajaAbierta ? 'Caja abierta' : 'Caja cerrada'}
                                   </span>
                                 </td>
                               </tr>
@@ -315,15 +324,26 @@ const OwnerPage = () => {
               {/* Pestaña 3: Supervisión de Sucursales */}
               {activeTab === 'branches' && (
                 <div className="own-branches-grid">
-                  {visibleBranches.map((b) => (
-                    <article key={b.branch_id} className="own-branch-card">
-                      <div className="own-branch-card__header">
-                        <div>
-                          <h3 className="own-branch-card__title">{b.name}</h3>
-                          <p className="own-branch-card__address">{b.address}</p>
+                  {visibleBranches.map((b) => {
+                    const cajaAbierta = cajas[b.branch_id]?.abierta ?? false;
+
+                    return (
+                      <article key={b.branch_id} className="own-branch-card">
+                        <div className="own-branch-card__header">
+                          <div>
+                            <h3 className="own-branch-card__title">{b.name}</h3>
+                            <p className="own-branch-card__address">{b.address}</p>
+                          </div>
+                          <span
+                            className={`own-status ${
+                              cajaAbierta
+                                ? 'own-status--success'
+                                : 'own-status--warning'
+                            }`}
+                          >
+                            {cajaAbierta ? 'Caja abierta' : 'Caja cerrada'}
+                          </span>
                         </div>
-                        <span className="own-status own-status--success">Operativa</span>
-                      </div>
 
                       <div className="own-branch-card__metrics">
                         <div className="own-branch-metric">
@@ -343,8 +363,9 @@ const OwnerPage = () => {
                           <strong>${Number(b.monthly_revenue).toFixed(2)}</strong>
                         </div>
                       </div>
-                    </article>
-                  ))}
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </>

@@ -15,13 +15,13 @@ const OwnerSidebar = ({ activeTab, onSelectTab, isOffline = false, onLogout }) =
         <OrigenesLogo />
         <div className="own-sidebar__brand-text">
           <span className="own-sidebar__title">Orígenes SV</span>
-          <span className="own-sidebar__role">Gerencia General</span>
+          <span className="own-sidebar__role">Owner</span>
         </div>
       </div>
 
       <div className="own-sidebar__section-label">MÓDULO</div>
 
-      <nav className="own-sidebar__nav" aria-label="Navegación de gerencia">
+      <nav className="own-sidebar__nav" aria-label="Navegación de Owner">
         {NAV_ITEMS.map(({ id, label, Icon }) => {
           const isActive = activeTab === id;
           return (

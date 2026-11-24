@@ -3,12 +3,12 @@ import { useState } from 'react';
 import {
   ROLES_RRHH,
   SUCURSALES_RRHH,
+  etiquetaRolRRHH,
 } from '../../mocks/HrMocks.js';
 
 const FORMULARIO_INICIAL = {
   fullName: '',
   email: '',
-  jobTitle: '',
   branchId: String(SUCURSALES_RRHH[0].id),
   baseSalary: '',
   role: ROLES_RRHH[0].id,
@@ -16,7 +16,7 @@ const FORMULARIO_INICIAL = {
 
 const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function HrHiring({ onContratar }) {
+export default function HrHiring({ empleados = [], onContratar }) {
   const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
   const [mensaje, setMensaje] = useState(null);
 
@@ -29,20 +29,31 @@ export default function HrHiring({ onContratar }) {
   };
 
   const validarFormulario = () => {
-    if (formulario.fullName.trim().length < 3) {
+    const nombre = formulario.fullName.trim();
+    const correo = formulario.email.trim().toLowerCase();
+    const salario = Number(formulario.baseSalary);
+
+    if (nombre.length < 3 || !/[a-záéíóúñ]/i.test(nombre)) {
       return 'Escribe el nombre completo del empleado.';
     }
-    if (!PATRON_CORREO.test(formulario.email.trim())) {
+    if (!PATRON_CORREO.test(correo)) {
       return 'Ingresa un correo electrónico válido.';
     }
-    if (formulario.jobTitle.trim().length < 3) {
-      return 'Ingresa el cargo que desempeñará.';
+    if (!/[a-z0-9]/i.test(correo.split('@')[0])) {
+      return 'El correo debe contener letras o números antes del @.';
+    }
+    if (
+      empleados.some(
+        (empleado) => (empleado.email ?? '').toLowerCase() === correo
+      )
+    ) {
+      return 'Ya existe un empleado registrado con ese correo.';
     }
     if (!SUCURSALES_RRHH.some((sucursal) => String(sucursal.id) === formulario.branchId)) {
       return 'Selecciona una sucursal válida.';
     }
-    if (Number(formulario.baseSalary) <= 0) {
-      return 'El salario mensual debe ser mayor a cero.';
+    if (!Number.isFinite(salario) || salario <= 0) {
+      return 'El salario mensual debe ser un número mayor a cero.';
     }
     return null;
   };
@@ -59,7 +70,7 @@ export default function HrHiring({ onContratar }) {
     const credenciales = onContratar({
       fullName: formulario.fullName.trim(),
       email: formulario.email.trim().toLowerCase(),
-      jobTitle: formulario.jobTitle.trim(),
+      jobTitle: etiquetaRolRRHH(formulario.role),
       branchId: Number(formulario.branchId),
       baseSalary: Number(formulario.baseSalary),
       role: formulario.role,
@@ -130,17 +141,6 @@ export default function HrHiring({ onContratar }) {
             </label>
 
             <label className="hr-hiring__field">
-              <span>Cargo</span>
-              <input
-                type="text"
-                value={formulario.jobTitle}
-                onChange={actualizarCampo('jobTitle')}
-                placeholder="Ej. Cajera"
-                maxLength={60}
-              />
-            </label>
-
-            <label className="hr-hiring__field">
               <span>Sucursal</span>
               <select
                 value={formulario.branchId}
@@ -178,6 +178,7 @@ export default function HrHiring({ onContratar }) {
                   </option>
                 ))}
               </select>
+              <small>El cargo se define automáticamente con el rol.</small>
             </label>
           </div>
 
@@ -208,7 +209,7 @@ export default function HrHiring({ onContratar }) {
             </li>
             <li>
               <i className="bi bi-check2" aria-hidden="true" />
-              Rol asignado según el puesto
+              Cargo asignado automáticamente según el rol
             </li>
           </ul>
         </aside>

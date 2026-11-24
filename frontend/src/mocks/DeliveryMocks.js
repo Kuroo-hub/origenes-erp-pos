@@ -1,6 +1,6 @@
 export const INITIAL_DELIVERIES_MOCK = [
   {
-    order_id: 'ORD-1048',
+    order_id: 'ORD-3048',
     branch_id: 1,
     customer_name: 'María López',
     customer_phone: '7845-1290',
@@ -17,7 +17,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     created_at: '19:40',
   },
   {
-    order_id: 'ORD-1047',
+    order_id: 'ORD-3047',
     branch_id: 1,
     customer_name: 'Carlos Méndez',
     customer_phone: '7120-4488',
@@ -34,7 +34,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     created_at: '19:25',
   },
   {
-    order_id: 'ORD-1045',
+    order_id: 'ORD-3045',
     branch_id: 1,
     customer_name: 'José Hernández',
     customer_phone: '7699-3310',
@@ -51,7 +51,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     created_at: '18:50',
   },
   {
-    order_id: 'ORD-2012',
+    order_id: 'ORD-3012',
     branch_id: 2,
     customer_name: 'Sofía Castro',
     customer_phone: '7410-8821',
@@ -66,5 +66,22 @@ export const INITIAL_DELIVERIES_MOCK = [
     payment_status: 'PENDING_COLLECTION',
     delivery_status: 'READY',
     created_at: '19:45',
+  },
+  {
+    order_id: 'ORD-3025',
+    branch_id: 3,
+    customer_name: 'Diego Alvarenga',
+    customer_phone: '7240-5518',
+    delivery_address: 'Av. Roosevelt #318, Barrio El Calvario, San Miguel',
+    address_reference: 'Casa con portón azul, frente a farmacia',
+    items: [
+      { name: 'Pollo a la plancha', quantity: 1, price: 7.50 },
+      { name: 'Horchata salvadoreña', quantity: 2, price: 2.25 },
+    ],
+    total_amount: 12.45,
+    payment_method: 'CASH',
+    payment_status: 'PENDING_COLLECTION',
+    delivery_status: 'PREPARING',
+    created_at: '19:52',
   },
 ];

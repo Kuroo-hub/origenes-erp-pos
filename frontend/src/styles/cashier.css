@@ -25,10 +25,10 @@
   position: sticky;
   top: 0;
   display: flex;
-  flex: 0 0 16rem;
+  flex: 0 0 var(--ember-sidebar-width);
   flex-direction: column;
   gap: 1.5rem;
-  width: 16rem;
+  width: var(--ember-sidebar-width);
   height: 100vh;
   padding: 1.1rem 0.75rem;
   background: var(--ember-sidebar);
@@ -143,10 +143,6 @@
 
 .cashier-nav-item__dot--ordenes {
   background: var(--ember-chart-3);
-}
-
-.cashier-nav-item__dot--caja {
-  background: var(--ember-chart-4);
 }
 
 .cashier-nav-item.is-active .cashier-nav-item__dot {
@@ -448,8 +444,7 @@
   margin-bottom: 22px;
 }
 
-.cashier-pos__search,
-.cashier-orders__search {
+.cashier-pos__search {
   display: flex;
   align-items: center;
   gap: 11px;
@@ -465,8 +460,7 @@
   font-size: 16px;
 }
 
-.cashier-pos__search input,
-.cashier-orders__search input {
+.cashier-pos__search input {
   width: 100%;
   min-width: 0;
   border: 0;
@@ -476,14 +470,12 @@
   font: 13px var(--ember-font);
 }
 
-.cashier-pos__search:focus-within,
-.cashier-orders__search:focus-within {
+.cashier-pos__search:focus-within {
   border-color: var(--ember-primary);
   box-shadow: 0 0 0 3px var(--ember-ring);
 }
 
-.cashier-pos__search input::placeholder,
-.cashier-orders__search input::placeholder {
+.cashier-pos__search input::placeholder {
   color: var(--ember-muted-fg);
 }
 
@@ -1020,32 +1012,10 @@
   gap: 22px;
 }
 
-.cashier-orders__count {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-}
-
-.cashier-orders__count strong {
-  color: var(--ember-fg);
-  font-size: 25px;
-}
-
-.cashier-orders__count span {
-  color: var(--ember-muted-fg);
-  font-size: 12px;
-}
-
 .cashier-orders__filters {
   display: grid;
   grid-template-columns: minmax(220px, 1fr) 190px 170px;
   gap: 12px;
-}
-
-.cashier-orders__search {
-  min-height: 43px;
-  padding: 0 13px;
 }
 
 .cashier-orders__filters select {
@@ -1092,10 +1062,6 @@
   border-top: 1px solid var(--ember-border);
   font-size: 13px;
   white-space: nowrap;
-}
-
-.cashier-orders__id {
-  color: var(--ember-primary);
 }
 
 .cashier-orders__origin-text {
@@ -1351,28 +1317,6 @@
   font-weight: 700;
 }
 
-.cashier-orders__modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 22px;
-}
-
-.cashier-orders__modal-close {
-  padding: 10px 16px;
-  color: var(--ember-fg);
-  background: var(--ember-muted);
-  border: 0;
-  border-radius: var(--ember-radius-control);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.cashier-orders__modal-close:hover {
-  background: var(--ember-accent);
-}
-
 .cashier-cashflow {
   display: flex;
   flex-direction: column;
@@ -1523,13 +1467,6 @@
     flex-direction: column;
   }
 
-  .cashier-orders__search {
-    grid-column: 1 / -1;
-  }
-
-  .cashier-orders__count {
-    align-items: flex-start;
-  }
 }
 
 @media (max-width: 600px) {
@@ -1578,16 +1515,8 @@
     grid-template-columns: 1fr;
   }
 
-  .cashier-orders__search {
-    grid-column: auto;
-  }
-
   .cashier-orders__modal {
     padding: 18px;
-  }
-
-  .cashier-orders__detail-grid {
-    grid-template-columns: 1fr;
   }
 
   .cashier-cart__payment-option {
@@ -1597,17 +1526,6 @@
 
   .cashier-cart__payment-option span {
     font-size: 10px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-
-  .cashier-nav-item,
-  .cashier-product,
-  .cashier-pos__categories button,
-  .cashier-product__footer button,
-  .cashier-cart__confirm {
-    transition: none;
   }
 }
 
@@ -1655,10 +1573,6 @@
   color: var(--ember-primary);
 }
 
-.cashier-orders__modal-close {
-  min-width: 100px;
-}
-
 @media (max-width: 480px) {
   .cashier-orders__modal-backdrop {
     align-items: flex-end;
@@ -1674,4 +1588,35 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
   }
+}
+
+.cashier-caja-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+  color: #912018;
+  background: #fee4e2;
+  border: 1px solid #fecdca;
+  border-radius: 12px;
+}
+
+.cashier-caja-banner > i {
+  font-size: 20px;
+}
+
+.cashier-caja-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cashier-caja-banner strong {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.cashier-caja-banner span {
+  font-size: 0.78rem;
 }

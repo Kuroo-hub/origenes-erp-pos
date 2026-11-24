@@ -2,11 +2,6 @@ import logoOrigenes from '../../public/origenes-logo.svg';
 
 const SECCIONES_CAJERO = [
   {
-    id: 'resumen',
-    etiqueta: 'Resumen',
-    icono: 'bi-grid-1x2',
-  },
-  {
     id: 'pos',
     etiqueta: 'Punto de venta',
     icono: 'bi-cart3',
@@ -16,18 +11,11 @@ const SECCIONES_CAJERO = [
     etiqueta: 'Órdenes',
     icono: 'bi-clipboard-check',
   },
-  {
-    id: 'flujo',
-    etiqueta: 'Flujo de caja',
-    icono: 'bi-graph-up-arrow',
-  },
 ];
 
 const COLORES_SECCION = {
-  resumen: 'cashier-nav-item__dot--resumen',
   pos: 'cashier-nav-item__dot--pos',
   ordenes: 'cashier-nav-item__dot--ordenes',
-  flujo: 'cashier-nav-item__dot--caja',
 };
 
 export default function CashierSidebar({

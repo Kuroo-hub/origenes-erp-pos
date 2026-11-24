@@ -1,9 +1,10 @@
 import React from 'react';
+import { SUCURSALES_TOPBAR } from '../../mocks/SucursalesMocks.js';
 
 const TAB_META = {
   overview: {
     crumb: 'Resumen ejecutivo',
-    title: 'Panel de Gerencia',
+    title: 'Panel de Owner',
     subtitle: 'Indicadores financieros, rendimiento por sucursal y platos más vendidos.',
   },
   finance: {
@@ -24,7 +25,7 @@ const OwnerTopbar = ({ activeTab, selectedBranch, onChangeBranch }) => {
   return (
     <header className="own-header-wrapper">
       <div className="own-breadcrumb">
-        <span className="own-breadcrumb__root">Módulo gerencia</span>
+        <span className="own-breadcrumb__root">Módulo Owner</span>
         <span className="own-breadcrumb__sep">›</span>
         <span className="own-breadcrumb__current">{current.crumb}</span>
       </div>
@@ -43,8 +44,11 @@ const OwnerTopbar = ({ activeTab, selectedBranch, onChangeBranch }) => {
             onChange={(e) => onChangeBranch(e.target.value)}
           >
             <option value="ALL">Todas las sucursales</option>
-            <option value="1">Sucursal San Salvador</option>
-            <option value="2">Sucursal Santa Ana</option>
+            {SUCURSALES_TOPBAR.map((sucursal) => (
+              <option key={sucursal.branch_id} value={sucursal.branch_id}>
+                {sucursal.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
 export default function CashierPOS({
   sucursal,
   productos,
+  cajaAbierta = true,
   onRegistrarPedido,
   onDescontarStock,
 }) {
@@ -113,6 +114,11 @@ export default function CashierPOS({
   };
 
   const confirmarPedido = () => {
+    if (!cajaAbierta) {
+      setNotificacion('La caja está cerrada. Manager debe abrirla para vender.');
+      return;
+    }
+
     if (carrito.length === 0) return;
 
     if (
@@ -217,7 +223,7 @@ export default function CashierPOS({
 
       {notificacion && (
         <Alert
-          color="success"
+          color={notificacion.includes('cerrada') ? 'warning' : 'success'}
           fade={false}
           toggle={() => setNotificacion('')}
         >
@@ -296,7 +302,7 @@ export default function CashierPOS({
                       <button
                         type="button"
                         onClick={() => agregarProducto(producto)}
-                        disabled={sinStock || limiteAlcanzado}
+                        disabled={!cajaAbierta || sinStock || limiteAlcanzado}
                         aria-label={`Agregar ${producto.nombre}`}
                       >
                         <i className="bi bi-plus-lg" />
@@ -338,6 +344,7 @@ export default function CashierPOS({
           onCambiarCantidad={cambiarCantidad}
           onEliminar={eliminarProducto}
           onConfirmar={confirmarPedido}
+          cajaAbierta={cajaAbierta}
           sucursal={sucursal}
         />
       </div>

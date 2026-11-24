@@ -49,7 +49,7 @@ export default function HrPage() {
         ...datos,
         employeeId,
         userId: 200 + employeeId,
-        branchName: sucursal?.nombre ?? 'Sucursal Centro',
+        branchName: sucursal?.nombre ?? 'Centro Histórico',
         hireDate: new Date().toISOString().slice(0, 10),
         active: true,
         username,
@@ -95,7 +95,10 @@ export default function HrPage() {
           </div>
 
           <div hidden={seccion !== 'contratacion'}>
-            <HrHiring onContratar={contratarEmpleado} />
+            <HrHiring
+              empleados={empleados}
+              onContratar={contratarEmpleado}
+            />
           </div>
         </main>
       </div>

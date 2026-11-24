@@ -1,4 +1,6 @@
 
+import { etiquetaRolRRHH } from '../../mocks/HrMocks.js';
+
 function formatCurrency(value) {
   return new Intl.NumberFormat('es-SV', {
     style: 'currency',
@@ -24,9 +26,12 @@ export default function HrEmployeeDetail({ empleado, onCerrar }) {
     { label: 'Correo electrónico', value: empleado.email },
     { label: 'Fecha de contratación', value: formatDate(empleado.hireDate) },
     { label: 'Salario base mensual', value: formatCurrency(empleado.baseSalary) },
-    { label: 'Rol del sistema', value: empleado.role },
-    { label: 'Usuario de acceso', value: empleado.username },
-    { label: 'Contraseña temporal', value: empleado.temporaryPassword },
+    { label: 'Rol del sistema', value: etiquetaRolRRHH(empleado.role) },
+    { label: 'Usuario de acceso', value: empleado.username ?? 'No disponible' },
+    {
+      label: 'Contraseña temporal',
+      value: empleado.temporaryPassword ?? 'No disponible',
+    },
     { label: 'ID de usuario', value: `#${empleado.userId}` },
     { label: 'Sucursal', value: empleado.branchName },
     { label: 'ID de sucursal', value: `#${empleado.branchId}` },
@@ -66,7 +71,7 @@ export default function HrEmployeeDetail({ empleado, onCerrar }) {
           </div>
 
           <div>
-            <strong>{empleado.jobTitle}</strong>
+            <strong>{etiquetaRolRRHH(empleado.role)}</strong>
             <span>{empleado.branchName}</span>
             <span
               className={`hr-status ${

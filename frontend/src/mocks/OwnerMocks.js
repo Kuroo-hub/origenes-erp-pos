@@ -1,10 +1,13 @@
+import { SUCURSALES } from './SucursalesMocks.js';
+
+const [centro, santaAna, sanMiguel] = SUCURSALES;
+
 export const OWNER_DASHBOARD_MOCK = {
   branches: [
     {
-      branch_id: 1,
-      name: 'Sucursal San Salvador',
-      address: 'Av. Libertad 123, San Salvador',
-      cash_register_status: 'OPEN',
+      branch_id: centro.branch_id,
+      name: centro.name,
+      address: centro.direccion,
       monthly_revenue: 14850.50,
       monthly_expenses: 4920.00,
       orders_count: 642,
@@ -12,15 +15,24 @@ export const OWNER_DASHBOARD_MOCK = {
       low_stock_alerts: 4,
     },
     {
-      branch_id: 2,
-      name: 'Sucursal Santa Ana',
-      address: '15 Calle Poniente #24, Santa Ana',
-      cash_register_status: 'OPEN',
+      branch_id: santaAna.branch_id,
+      name: santaAna.name,
+      address: santaAna.direccion,
       monthly_revenue: 9420.75,
       monthly_expenses: 3180.50,
       orders_count: 418,
       active_staff: 8,
       low_stock_alerts: 1,
+    },
+    {
+      branch_id: sanMiguel.branch_id,
+      name: sanMiguel.name,
+      address: sanMiguel.direccion,
+      monthly_revenue: 6780.25,
+      monthly_expenses: 2410.75,
+      orders_count: 295,
+      active_staff: 6,
+      low_stock_alerts: 2,
     },
   ],
   top_products: [
@@ -33,8 +45,8 @@ export const OWNER_DASHBOARD_MOCK = {
   payables: [
     {
       payable_id: 2,
-      branch_id: 1,
-      branch_name: 'Sucursal San Salvador',
+      branch_id: centro.branch_id,
+      branch_name: centro.name,
       supplier_name: 'Carnes El Buen Corte',
       invoice_number: 'FAC-002',
       due_date: '2026-11-30',
@@ -44,8 +56,8 @@ export const OWNER_DASHBOARD_MOCK = {
     },
     {
       payable_id: 3,
-      branch_id: 2,
-      branch_name: 'Sucursal Santa Ana',
+      branch_id: santaAna.branch_id,
+      branch_name: santaAna.name,
       supplier_name: 'Empaques y Servicio SV',
       invoice_number: 'FAC-003',
       due_date: '2026-11-28',
@@ -55,13 +67,24 @@ export const OWNER_DASHBOARD_MOCK = {
     },
     {
       payable_id: 4,
-      branch_id: 1,
-      branch_name: 'Sucursal San Salvador',
+      branch_id: centro.branch_id,
+      branch_name: centro.name,
       supplier_name: 'Distribuidora La Cosecha',
       invoice_number: 'FAC-004',
       due_date: '2026-12-05',
       total: 339.00,
       outstanding_amount: 339.00,
+      status: 'PENDING',
+    },
+    {
+      payable_id: 5,
+      branch_id: sanMiguel.branch_id,
+      branch_name: sanMiguel.name,
+      supplier_name: 'Bebidas Orientales',
+      invoice_number: 'FAC-005',
+      due_date: '2026-12-08',
+      total: 188.00,
+      outstanding_amount: 188.00,
       status: 'PENDING',
     },
   ],

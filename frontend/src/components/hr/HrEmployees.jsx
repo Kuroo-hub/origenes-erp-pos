@@ -1,6 +1,10 @@
 
 import { useMemo, useState } from 'react';
 import HrEmployeeDetail from './HrEmployeeDetail.jsx';
+import {
+  SUCURSALES_RRHH,
+  etiquetaRolRRHH,
+} from '../../mocks/HrMocks.js';
 
 export default function HrEmployees({ empleados = [] }) {
   const [busqueda, setBusqueda] = useState('');
@@ -8,24 +12,16 @@ export default function HrEmployees({ empleados = [] }) {
   const [sucursal, setSucursal] = useState('todas');
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
 
-  const sucursales = useMemo(
-    () => [...new Map(
-      empleados.map((empleado) => [
-        empleado.branchId,
-        empleado.branchName,
-      ])
-    ).entries()],
-    [empleados]
-  );
+  const sucursales = SUCURSALES_RRHH.map((item) => [item.id, item.nombre]);
 
   const empleadosFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
 
     return empleados.filter((empleado) => {
       const coincideBusqueda =
-  (empleado.fullName ?? '').toLowerCase().includes(termino) ||
-  (empleado.email ?? '').toLowerCase().includes(termino) ||
-  (empleado.jobTitle ?? '').toLowerCase().includes(termino);
+        (empleado.fullName ?? '').toLowerCase().includes(termino) ||
+        (empleado.email ?? '').toLowerCase().includes(termino) ||
+        etiquetaRolRRHH(empleado.role).toLowerCase().includes(termino);
 
       const coincideEstado =
         estado === 'todos' ||
@@ -150,11 +146,11 @@ export default function HrEmployees({ empleados = [] }) {
                       </div>
                     </td>
 
-                    <td>{empleado.jobTitle}</td>
+                    <td>{etiquetaRolRRHH(empleado.role)}</td>
                     <td>
                       <div className="hr-employee-cell">
                         <strong>{empleado.username ?? '—'}</strong>
-                        <small>{empleado.role}</small>
+                        <small>{etiquetaRolRRHH(empleado.role)}</small>
                       </div>
                     </td>
                     <td>{empleado.branchName}</td>
