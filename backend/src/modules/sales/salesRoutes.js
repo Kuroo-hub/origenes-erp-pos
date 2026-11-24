@@ -13,4 +13,4 @@ router.get("/", getSalesHistoryController);
 router.get("/:id", getSaleByIdController);
 router.patch("/:id/cancel", cancelSaleController);
 
-export default salesRouter;
+export default router;

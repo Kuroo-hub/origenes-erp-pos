@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { AppError } from "../../utils/AppError.js";
 import { pool } from "../../config/database.js";
+import { consumeSaleProduct } from "../inventory/inventoryService.js";
 import {
     findActiveBranchById,
     findActiveUserById,
@@ -243,6 +244,16 @@ export async function registerSaleService({
             amount: totalStr,
             reference: paymentReference
         });
+
+        // Descuenta las existencias de los productos vendidos.
+        for (const detail of preparedDetails) {
+            await consumeSaleProduct(client, {
+                branchId: validBranchId,
+                productId: detail.productId,
+                quantity: detail.quantity,
+                userId: validUserId
+            });
+        }
 
         // Devuelve el comprobante fiscal completo.
         return {

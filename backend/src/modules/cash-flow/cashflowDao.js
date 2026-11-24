@@ -1,12 +1,17 @@
-// cashflowDao.js
+
 import { pool } from "../../config/database.js";
 
-// Busca una caja y bloquea su registro durante la transacción.
+// Busca una caja y la bloquea durante la transacción.
 export async function findCashRegisterById(client, cashRegisterId) {
     const result = await client.query(
-        `SELECT id, branch_id, nombre, estado
-         FROM cash_registers
-         WHERE id = $1
+        `SELECT
+            cash_register_id,
+            branch_id,
+            name,
+            active,
+            CASE WHEN active THEN 'ACTIVO' ELSE 'INACTIVO' END AS estado
+         FROM cash_register
+         WHERE cash_register_id = $1
          FOR UPDATE`,
         [cashRegisterId]
     );
@@ -14,24 +19,29 @@ export async function findCashRegisterById(client, cashRegisterId) {
     return result.rows[0] ?? null;
 }
 
-// Busca un cajero activo.
+// Busca un usuario activo.
 export async function findActiveCashier(client, userId) {
     const result = await client.query(
-        `SELECT id, nombre_completo, estado
-         FROM users
-         WHERE id = $1
-         AND estado = 'ACTIVO'`,
+        `SELECT
+            u.user_id,
+            u.email,
+            u.active,
+            COALESCE(e.full_name, u.email) AS nombre_completo
+         FROM app_user u
+         LEFT JOIN employee e ON e.user_id = u.user_id
+         WHERE u.user_id = $1
+         AND u.active = TRUE`,
         [userId]
     );
 
     return result.rows[0] ?? null;
 }
 
-// Comprueba que el usuario esté asignado a la sucursal.
+// Comprueba que el empleado pertenezca a la sucursal.
 export async function findUserBranch(client, userId, branchId) {
     const result = await client.query(
         `SELECT user_id, branch_id
-         FROM user_branches
+         FROM employee
          WHERE user_id = $1
          AND branch_id = $2`,
         [userId, branchId]
@@ -43,10 +53,18 @@ export async function findUserBranch(client, userId, branchId) {
 // Busca una sesión abierta para una caja.
 export async function findActiveSessionByRegister(client, cashRegisterId) {
     const result = await client.query(
-        `SELECT id, cash_register_id, user_id, estado
-         FROM cash_sessions
+        `SELECT
+            shift_id AS id,
+            cash_register_id,
+            user_id,
+            status,
+            CASE
+                WHEN status = 'OPEN' THEN 'ABIERTA'
+                ELSE 'CERRADA'
+            END AS estado
+         FROM cash_shift
          WHERE cash_register_id = $1
-         AND estado = 'ABIERTA'`,
+         AND status = 'OPEN'`,
         [cashRegisterId]
     );
 
@@ -59,13 +77,22 @@ export async function createCashSession(
     { cashRegisterId, userId, initialAmount }
 ) {
     const result = await client.query(
-        `INSERT INTO cash_sessions (
+        `INSERT INTO cash_shift (
             cash_register_id,
             user_id,
-            monto_inicial
+            opening_amount,
+            status
          )
-         VALUES ($1, $2, $3)
-         RETURNING *`,
+         VALUES ($1, $2, $3, 'OPEN')
+         RETURNING
+            *,
+            shift_id AS id,
+            opening_date AS fecha_apertura,
+            opening_amount AS monto_inicial,
+            CASE
+                WHEN status = 'OPEN' THEN 'ABIERTA'
+                ELSE 'CERRADA'
+            END AS estado`,
         [cashRegisterId, userId, initialAmount]
     );
 
@@ -76,24 +103,26 @@ export async function createCashSession(
 export async function findAllActiveCashSessions() {
     const result = await pool.query(
         `SELECT
-            cs.id,
+            cs.shift_id AS id,
             cs.cash_register_id AS "cashRegisterId",
             cs.user_id AS "userId",
-            cs.fecha_apertura AS "fechaApertura",
-            cs.monto_inicial AS "montoInicial",
-            cs.estado,
-            cr.nombre AS "nombreCaja",
-            b.nombre AS "nombreSucursal",
-            u.nombre_completo AS "nombreCajero"
-         FROM cash_sessions cs
-         INNER JOIN cash_registers cr
-            ON cr.id = cs.cash_register_id
-         INNER JOIN branches b
-            ON b.id = cr.branch_id
-         INNER JOIN users u
-            ON u.id = cs.user_id
-         WHERE cs.estado = 'ABIERTA'
-         ORDER BY cs.fecha_apertura DESC`
+            cs.opening_date AS "fechaApertura",
+            cs.opening_amount AS "montoInicial",
+            'ABIERTA' AS estado,
+            cr.name AS "nombreCaja",
+            b.name AS "nombreSucursal",
+            COALESCE(e.full_name, u.email) AS "nombreCajero"
+         FROM cash_shift cs
+         INNER JOIN cash_register cr
+            ON cr.cash_register_id = cs.cash_register_id
+         INNER JOIN branch b
+            ON b.branch_id = cr.branch_id
+         INNER JOIN app_user u
+            ON u.user_id = cs.user_id
+         LEFT JOIN employee e
+            ON e.user_id = u.user_id
+         WHERE cs.status = 'OPEN'
+         ORDER BY cs.opening_date DESC`
     );
 
     return result.rows;
@@ -104,18 +133,29 @@ export async function findCashSessionById(sessionId) {
     const result = await pool.query(
         `SELECT
             cs.*,
-            cr.nombre AS "nombreCaja",
+            cs.shift_id AS id,
+            cs.opening_date AS fecha_apertura,
+            cs.closing_date AS fecha_cierre,
+            cs.opening_amount AS monto_inicial,
+            cs.closing_amount AS monto_final_real,
+            CASE
+                WHEN cs.status = 'OPEN' THEN 'ABIERTA'
+                ELSE 'CERRADA'
+            END AS estado,
+            cr.name AS "nombreCaja",
             cr.branch_id AS "branchId",
-            b.nombre AS "nombreSucursal",
-            u.nombre_completo AS "nombreCajero"
-         FROM cash_sessions cs
-         INNER JOIN cash_registers cr
-            ON cr.id = cs.cash_register_id
-         INNER JOIN branches b
-            ON b.id = cr.branch_id
-         INNER JOIN users u
-            ON u.id = cs.user_id
-         WHERE cs.id = $1`,
+            b.name AS "nombreSucursal",
+            COALESCE(e.full_name, u.email) AS "nombreCajero"
+         FROM cash_shift cs
+         INNER JOIN cash_register cr
+            ON cr.cash_register_id = cs.cash_register_id
+         INNER JOIN branch b
+            ON b.branch_id = cr.branch_id
+         INNER JOIN app_user u
+            ON u.user_id = cs.user_id
+         LEFT JOIN employee e
+            ON e.user_id = u.user_id
+         WHERE cs.shift_id = $1`,
         [sessionId]
     );
 
@@ -125,9 +165,15 @@ export async function findCashSessionById(sessionId) {
 // Obtiene una sesión y bloquea su registro.
 export async function findCashSessionForUpdate(client, sessionId) {
     const result = await client.query(
-        `SELECT *
-         FROM cash_sessions
-         WHERE id = $1
+        `SELECT
+            *,
+            shift_id AS id,
+            CASE
+                WHEN status = 'OPEN' THEN 'ABIERTA'
+                ELSE 'CERRADA'
+            END AS estado
+         FROM cash_shift
+         WHERE shift_id = $1
          FOR UPDATE`,
         [sessionId]
     );
@@ -135,42 +181,53 @@ export async function findCashSessionForUpdate(client, sessionId) {
     return result.rows[0] ?? null;
 }
 
-// Obtiene los datos descriptivos de una sesión dentro de una transacción.
+// Obtiene los datos descriptivos de una sesión.
 export async function findCashSessionDetails(client, sessionId) {
     const result = await client.query(
         `SELECT
             cs.*,
-            cr.nombre AS "nombreCaja",
+            cs.shift_id AS id,
+            cs.opening_date AS fecha_apertura,
+            cs.closing_date AS fecha_cierre,
+            cs.opening_amount AS monto_inicial,
+            cs.closing_amount AS monto_final_real,
+            CASE
+                WHEN cs.status = 'OPEN' THEN 'ABIERTA'
+                ELSE 'CERRADA'
+            END AS estado,
+            cr.name AS "nombreCaja",
             cr.branch_id AS "branchId",
-            b.nombre AS "nombreSucursal",
-            u.nombre_completo AS "nombreCajero"
-         FROM cash_sessions cs
-         INNER JOIN cash_registers cr
-            ON cr.id = cs.cash_register_id
-         INNER JOIN branches b
-            ON b.id = cr.branch_id
-         INNER JOIN users u
-            ON u.id = cs.user_id
-         WHERE cs.id = $1`,
+            b.name AS "nombreSucursal",
+            COALESCE(e.full_name, u.email) AS "nombreCajero"
+         FROM cash_shift cs
+         INNER JOIN cash_register cr
+            ON cr.cash_register_id = cs.cash_register_id
+         INNER JOIN branch b
+            ON b.branch_id = cr.branch_id
+         INNER JOIN app_user u
+            ON u.user_id = cs.user_id
+         LEFT JOIN employee e
+            ON e.user_id = u.user_id
+         WHERE cs.shift_id = $1`,
         [sessionId]
     );
 
     return result.rows[0] ?? null;
 }
 
-// Obtiene las ventas completadas agrupadas por método de pago.
+// Obtiene los pagos de las ventas completadas.
 export async function findSessionPayments(client, sessionId) {
     const result = await client.query(
         `SELECT
-            sp.metodo,
-            COALESCE(SUM(sp.monto), 0) AS total
-         FROM sales s
-         INNER JOIN sale_payments sp
-            ON sp.sale_id = s.id
-         WHERE s.cash_session_id = $1
-         AND s.estado = 'COMPLETADA'
-         GROUP BY sp.metodo
-         ORDER BY sp.metodo`,
+            sp.payment_method AS metodo,
+            COALESCE(SUM(sp.amount), 0) AS total
+         FROM sale_payment sp
+         INNER JOIN invoice i
+            ON i.invoice_id = sp.invoice_id
+         WHERE sp.shift_id = $1
+         AND i.status = 'PAID'
+         GROUP BY sp.payment_method
+         ORDER BY sp.payment_method`,
         [sessionId]
     );
 
@@ -182,15 +239,19 @@ export async function findSessionMovementsSummary(client, sessionId) {
     const result = await client.query(
         `SELECT
             COALESCE(
-                SUM(CASE WHEN tipo = 'INGRESO' THEN monto ELSE 0 END),
-                0
+                SUM(CASE
+                    WHEN movement_type = 'INCOME' THEN amount
+                    ELSE 0
+                END), 0
             ) AS total_ingresos,
             COALESCE(
-                SUM(CASE WHEN tipo = 'EGRESO' THEN monto ELSE 0 END),
-                0
+                SUM(CASE
+                    WHEN movement_type = 'EXPENSE' THEN amount
+                    ELSE 0
+                END), 0
             ) AS total_egresos
-         FROM cash_movements
-         WHERE cash_session_id = $1`,
+         FROM cash_movement
+         WHERE shift_id = $1`,
         [sessionId]
     );
 
@@ -202,31 +263,31 @@ export async function findExpectedCash(client, sessionId) {
     const result = await client.query(
         `SELECT
             (
-                cs.monto_inicial
+                cs.opening_amount
                 + COALESCE((
-                    SELECT SUM(sp.monto)
-                    FROM sales s
-                    INNER JOIN sale_payments sp
-                        ON sp.sale_id = s.id
-                    WHERE s.cash_session_id = cs.id
-                    AND s.estado = 'COMPLETADA'
-                    AND sp.metodo = 'EFECTIVO'
+                    SELECT SUM(sp.amount)
+                    FROM sale_payment sp
+                    INNER JOIN invoice i
+                        ON i.invoice_id = sp.invoice_id
+                    WHERE sp.shift_id = cs.shift_id
+                    AND i.status = 'PAID'
+                    AND sp.payment_method = 'CASH'
                 ), 0)
                 + COALESCE((
-                    SELECT SUM(cm.monto)
-                    FROM cash_movements cm
-                    WHERE cm.cash_session_id = cs.id
-                    AND cm.tipo = 'INGRESO'
+                    SELECT SUM(cm.amount)
+                    FROM cash_movement cm
+                    WHERE cm.shift_id = cs.shift_id
+                    AND cm.movement_type = 'INCOME'
                 ), 0)
                 - COALESCE((
-                    SELECT SUM(cm.monto)
-                    FROM cash_movements cm
-                    WHERE cm.cash_session_id = cs.id
-                    AND cm.tipo = 'EGRESO'
+                    SELECT SUM(cm.amount)
+                    FROM cash_movement cm
+                    WHERE cm.shift_id = cs.shift_id
+                    AND cm.movement_type = 'EXPENSE'
                 ), 0)
             ) AS monto_esperado
-         FROM cash_sessions cs
-         WHERE cs.id = $1`,
+         FROM cash_shift cs
+         WHERE cs.shift_id = $1`,
         [sessionId]
     );
 
@@ -236,40 +297,49 @@ export async function findExpectedCash(client, sessionId) {
 // Registra un ingreso o egreso manual.
 export async function createCashMovement(
     client,
-    { sessionId, userId, type, amount, concept }
+    { sessionId, type, amount, concept }
 ) {
+    const movementType = type === "INGRESO" ? "INCOME" : "EXPENSE";
+
     const result = await client.query(
-        `INSERT INTO cash_movements (
-            cash_session_id,
-            user_id,
-            tipo,
-            monto,
-            concepto
+        `INSERT INTO cash_movement (
+            shift_id,
+            movement_type,
+            description,
+            amount
          )
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [sessionId, userId, type, amount, concept]
+         VALUES ($1, $2, $3, $4)
+         RETURNING
+            *,
+            cash_movement_id AS id`,
+        [sessionId, movementType, concept, amount]
     );
 
     return result.rows[0];
 }
 
-// Cierra la sesión y guarda los montos de cierre.
+// Cierra la sesión y guarda el efectivo contado.
 export async function updateCashSessionClose(
     client,
-    { sessionId, expectedAmount, realAmount }
+    { sessionId, realAmount }
 ) {
     const result = await client.query(
-        `UPDATE cash_sessions
+        `UPDATE cash_shift
          SET
-            fecha_cierre = CURRENT_TIMESTAMP,
-            monto_final_sistema = $2,
-            monto_final_real = $3,
-            estado = 'CERRADA'
-         WHERE id = $1
-         AND estado = 'ABIERTA'
-         RETURNING *`,
-        [sessionId, expectedAmount, realAmount]
+            closing_date = CURRENT_TIMESTAMP,
+            closing_amount = $2,
+            status = 'CLOSED'
+         WHERE shift_id = $1
+         AND status = 'OPEN'
+         RETURNING
+            *,
+            shift_id AS id,
+            opening_date AS fecha_apertura,
+            closing_date AS fecha_cierre,
+            opening_amount AS monto_inicial,
+            closing_amount AS monto_final_real,
+            'CERRADA' AS estado`,
+        [sessionId, realAmount]
     );
 
     return result.rows[0] ?? null;
@@ -279,24 +349,28 @@ export async function updateCashSessionClose(
 export async function findCashSessionHistory(limit, offset) {
     const result = await pool.query(
         `SELECT
-            cs.id,
-            cs.fecha_apertura AS "fechaApertura",
-            cs.fecha_cierre AS "fechaCierre",
-            cs.monto_inicial AS "montoInicial",
-            cs.monto_final_sistema AS "montoFinalSistema",
-            cs.monto_final_real AS "montoFinalReal",
-            cs.estado,
-            cr.nombre AS "nombreCaja",
-            b.nombre AS "nombreSucursal",
-            u.nombre_completo AS "nombreCajero"
-         FROM cash_sessions cs
-         INNER JOIN cash_registers cr
-            ON cr.id = cs.cash_register_id
-         INNER JOIN branches b
-            ON b.id = cr.branch_id
-         INNER JOIN users u
-            ON u.id = cs.user_id
-         ORDER BY cs.fecha_apertura DESC
+            cs.shift_id AS id,
+            cs.opening_date AS "fechaApertura",
+            cs.closing_date AS "fechaCierre",
+            cs.opening_amount AS "montoInicial",
+            cs.closing_amount AS "montoFinalReal",
+            CASE
+                WHEN cs.status = 'OPEN' THEN 'ABIERTA'
+                ELSE 'CERRADA'
+            END AS estado,
+            cr.name AS "nombreCaja",
+            b.name AS "nombreSucursal",
+            COALESCE(e.full_name, u.email) AS "nombreCajero"
+         FROM cash_shift cs
+         INNER JOIN cash_register cr
+            ON cr.cash_register_id = cs.cash_register_id
+         INNER JOIN branch b
+            ON b.branch_id = cr.branch_id
+         INNER JOIN app_user u
+            ON u.user_id = cs.user_id
+         LEFT JOIN employee e
+            ON e.user_id = u.user_id
+         ORDER BY cs.opening_date DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]
     );

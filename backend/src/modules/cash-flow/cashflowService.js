@@ -68,11 +68,11 @@ function validateId(id, fieldName = "ID") {
     return value;
 }
 
-// Valida montos compatibles con NUMERIC(10,2).
+// Valida montos compatibles con NUMERIC(12,2).
 function validateAmount(amount, allowZero = false) {
     const value = String(amount ?? "");
 
-    if (!/^\d{1,8}(\.\d{1,2})?$/.test(value)) {
+    if (!/^\d{1,10}(\.\d{1,2})?$/.test(value)) {
         throw createError("El formato del monto no es válido.");
     }
 
@@ -261,8 +261,8 @@ export async function addCashMovementService({
         throw createError("Debe proporcionar un concepto.");
     }
 
-    if (concept.trim().length > 255) {
-        throw createError("El concepto no puede superar 255 caracteres.");
+    if (concept.trim().length > 150) {
+        throw createError("El concepto no puede superar 150 caracteres.");
     }
 
     return executeTransaction(async (client) => {
@@ -350,10 +350,8 @@ export async function closeCashSessionService({
             toCents(validRealAmount) -
             toCents(expectedCash.monto_esperado);
 
-        // Actualiza la sesión como cerrada.
         const closedSession = await updateCashSessionClose(client, {
             sessionId: id,
-            expectedAmount: expectedCash.monto_esperado,
             realAmount: validRealAmount
         });
 

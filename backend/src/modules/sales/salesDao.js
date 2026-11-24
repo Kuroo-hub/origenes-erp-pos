@@ -43,7 +43,8 @@ export async function findOpenCashShiftById(client, shiftId) {
          FROM cash_shift cs
          INNER JOIN cash_register cr
             ON cr.cash_register_id = cs.cash_register_id
-         WHERE cs.shift_id = $1`,
+         WHERE cs.shift_id = $1
+          FOR UPDATE OF cs`,
         [shiftId]
     );
 
