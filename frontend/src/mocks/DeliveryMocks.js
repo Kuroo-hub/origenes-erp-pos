@@ -4,6 +4,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     branch_id: 1,
     customer_name: 'María López',
     customer_phone: '7845-1290',
+    origen: 'Por llamada',
     delivery_address: 'Colonia Escalón, Calle La Mascota #412, San Salvador',
     address_reference: 'Portón negro frente a parqueo corporativo',
     items: [
@@ -12,8 +13,8 @@ export const INITIAL_DELIVERIES_MOCK = [
     ],
     total_amount: 11.02,
     payment_method: 'CASH',
-    payment_status: 'PENDING_COLLECTION', // Debe cobrar el repartidor
-    delivery_status: 'READY', // Listo para recoger en sucursal
+    payment_status: 'PENDING_COLLECTION',
+    delivery_status: 'READY',
     created_at: '19:40',
   },
   {
@@ -21,6 +22,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     branch_id: 1,
     customer_name: 'Carlos Méndez',
     customer_phone: '7120-4488',
+    origen: 'Por llamada',
     delivery_address: 'Residencial San Luis, Av. Principal Casa #18, San Salvador',
     address_reference: 'Segundo pasaje a la derecha, casa de dos plantas',
     items: [
@@ -28,9 +30,9 @@ export const INITIAL_DELIVERIES_MOCK = [
       { name: 'Limonada', quantity: 2, price: 2.00 },
     ],
     total_amount: 16.95,
-    payment_method: 'CARD',
-    payment_status: 'PAID_ONLINE', // Ya pagado en app
-    delivery_status: 'IN_TRANSIT', // En camino
+    payment_method: 'CASH',
+    payment_status: 'PENDING_COLLECTION',
+    delivery_status: 'READY',
     created_at: '19:25',
   },
   {
@@ -38,6 +40,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     branch_id: 1,
     customer_name: 'José Hernández',
     customer_phone: '7699-3310',
+    origen: 'Por llamada',
     delivery_address: 'Boulevard Constitución, Condominio Mirador Apt 3B, San Salvador',
     address_reference: 'Dejar en caseta de vigilancia con autorización',
     items: [
@@ -45,8 +48,8 @@ export const INITIAL_DELIVERIES_MOCK = [
       { name: 'Flan', quantity: 1, price: 2.75 },
     ],
     total_amount: 13.84,
-    payment_method: 'CHIVO',
-    payment_status: 'PAID_ONLINE',
+    payment_method: 'CASH',
+    payment_status: 'COLLECTED',
     delivery_status: 'DELIVERED',
     created_at: '18:50',
   },
@@ -55,6 +58,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     branch_id: 2,
     customer_name: 'Sofía Castro',
     customer_phone: '7410-8821',
+    origen: 'Por llamada',
     delivery_address: 'Colonia El Palmar, 15 Calle Poniente #24, Santa Ana',
     address_reference: 'Casa esquina color beige',
     items: [
@@ -72,6 +76,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     branch_id: 3,
     customer_name: 'Diego Alvarenga',
     customer_phone: '7240-5518',
+    origen: 'Por llamada',
     delivery_address: 'Av. Roosevelt #318, Barrio El Calvario, San Miguel',
     address_reference: 'Casa con portón azul, frente a farmacia',
     items: [
@@ -81,7 +86,7 @@ export const INITIAL_DELIVERIES_MOCK = [
     total_amount: 12.45,
     payment_method: 'CASH',
     payment_status: 'PENDING_COLLECTION',
-    delivery_status: 'PREPARING',
+    delivery_status: 'READY',
     created_at: '19:52',
   },
 ];

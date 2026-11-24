@@ -34,7 +34,7 @@ export const getDeliveryOrders = async (branchId) => {
 };
 
 /**
- * Actualiza el estado de entrega de un pedido (IN_TRANSIT, DELIVERED).
+ * Actualiza el estado de entrega de un pedido (READY, IN_TRANSIT, DELIVERED).
  */
 export const updateDeliveryStatus = async (orderId, payload) => {
   return await request(`/${orderId}/delivery-status`, {

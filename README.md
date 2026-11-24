@@ -104,9 +104,10 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Superar el stock disponible | El carrito no permite agregar más unidades que el stock. |
 | Elegir entrega a domicilio sin dirección, casa o teléfono | Se muestra el mensaje de datos incompletos. |
 | Confirmar una venta local | El pedido aparece en Cocina y en la sección Órdenes del Cajero. |
-| Confirmar una venta a domicilio | El pedido aparece en Repartidor con estado `PREPARING`. |
+| Confirmar una venta a domicilio | El pedido aparece en Repartidor como `Por llamada` con estado `READY`. |
 | Cambiar de sucursal | Cambia el encabezado, el stock mostrado y la caja de esa sucursal. |
 | Cambiar estado de un pedido local | El estado se actualiza en la lista de órdenes. |
+| Cambiar estado de un pedido por llamada | El Cajero lo ve bloqueado como `Delivery`; en Repartidor se gestionan `ORD-3048` y `ORD-3047`. |
 
 ---
 
@@ -115,7 +116,7 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 **Funcionalidad**
 
 - Tablero de solo lectura para las órdenes de la sucursal activa.
-- Muestra únicamente estados activos: `Pendiente`, `Aceptado` y `En preparación`.
+- Muestra únicamente estados activos: `Pendiente` y `En preparación`.
 - Calcula urgencia según el tiempo objetivo del pedido.
 - Actualiza tiempos en vivo cada segundo.
 - Indica pedidos para entrega a domicilio.
@@ -190,19 +191,21 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 **Funcionalidad**
 
 - Gestión de entregas activas e historial.
-- Recibe pedidos a domicilio creados desde Cajero.
-- Flujo de estados: `PREPARING → READY → IN_TRANSIT → DELIVERED`.
+- Recibe pedidos a domicilio creados desde Cajero; se identifican como `Por llamada`.
+- Flujo de estados: `READY → IN_TRANSIT → DELIVERED`.
+- El repartidor marca `Pedido recogido` y luego `Entregado`.
 - Muestra dirección, teléfono, método de pago y monto a cobrar.
-- Al entregar, marca el pago como cobrado cuando corresponde.
+- Los pedidos por llamada se cobran en efectivo contra entrega y el pago pasa a `COLLECTED` al entregar.
 - Usa la sucursal compartida del contexto.
 - Si el backend no responde, utiliza datos de demostración.
+- En modo demostración, la sucursal 1 parte con dos entregas activas: `ORD-3048` y `ORD-3047`.
 
 **Verificación**
 
 | Caso | Resultado esperado |
 | --- | --- |
-| Crear un pedido a domicilio desde Cajero | Aparece en Repartidor con estado `PREPARING`. |
-| Avanzar el estado | Pasa a `READY`, luego `IN_TRANSIT` y finalmente `DELIVERED`. |
+| Crear un pedido a domicilio desde Cajero | Aparece en Repartidor como `Por llamada` con estado `READY`. |
+| Avanzar el estado | Pasa a `IN_TRANSIT` con `Pedido recogido` y luego a `DELIVERED` con `Entregado`. |
 | Revisar pedido con pago pendiente | Se muestra el monto a cobrar al entregar. |
 | Confirmar la entrega | El pedido pasa al historial y el pago queda cobrado si era efectivo. |
 | Cambiar de sucursal | La lista se filtra por la sucursal activa. |

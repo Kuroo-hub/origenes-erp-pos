@@ -1,10 +1,10 @@
 
 import { formatearMonedaCajero } from '../../mocks/CashierMocks.js';
+import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
 
 const obtenerClaseEstado = (estado) => {
   const clases = {
     Pendiente: 'pending',
-    Aceptado: 'accepted',
     'En preparación': 'preparing',
     Listo: 'ready',
     Entregado: 'delivered',
@@ -122,7 +122,7 @@ export default function CashierSummary({
 
                   <td>
                     <span className="cashier-orders__origin-text">
-                      {pedido.origen}
+                      {obtenerOrigenPedido(pedido)}
                     </span>
                   </td>
 

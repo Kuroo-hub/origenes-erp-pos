@@ -248,12 +248,6 @@
   border-color: #ffe58f;
 }
 
-.chef-order__estado--aceptado {
-  color: #237804;
-  background-color: #f6ffed;
-  border-color: #b7eb8f;
-}
-
 .chef-order__timer {
   display: flex;
   flex-wrap: wrap;

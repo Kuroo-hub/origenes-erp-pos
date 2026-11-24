@@ -3,7 +3,7 @@ import ChefOrderCard from '../../components/chef/ChefOrderCard.jsx';
 import { useOrders } from '../../context/OrderContext.jsx';
 import '../../styles/chef.css';
 
-const ESTADOS_ACTIVOS = ['Pendiente', 'Aceptado', 'En preparación'];
+const ESTADOS_ACTIVOS = ['Pendiente', 'En preparación'];
 const ORDEN_URGENCIA = { critico: 0, advertencia: 1, normal: 2 };
 
 const obtenerMinutos = (createdAt, ahora) =>

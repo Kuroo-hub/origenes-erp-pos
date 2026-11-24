@@ -332,6 +332,14 @@
   color: #9ca3af;
 }
 
+.del-order-card__origin {
+  display: block;
+  margin-top: 4px;
+  color: #1677ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 .del-order-card__name {
   margin: 0;
   font-size: 1.05rem;

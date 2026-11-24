@@ -11,21 +11,20 @@ import {
   IconPhone,
 } from '../../components/delivery/DeliveryIcons';
 import { getDeliveryOrders, updateDeliveryStatus } from '../../services/deliveryApi';
-import { useOrders } from '../../context/OrderContext.jsx';
+import { useOrders, obtenerOrigenPedido } from '../../context/OrderContext.jsx';
 import { INITIAL_DELIVERIES_MOCK } from '../../mocks/DeliveryMocks';
 import '../../styles/delivery.css';
 
 const PAYMENT_LABELS = {
   CASH: 'Efectivo contra entrega',
-  CARD: 'Tarjeta (Pagado en línea)',
-  BITCOIN: 'Bitcoin (Pagado en línea)',
-  CHIVO: 'Chivo Wallet (Pagado en línea)',
+  CARD: 'Tarjeta (Pagado)',
+  BITCOIN: 'Bitcoin (Pagado)',
+  CHIVO: 'Chivo Wallet (Pagado)',
 };
 
 const DELIVERY_STATUS_META = {
-  PREPARING: { label: 'En preparación', badge: 'blue' },
   READY: { label: 'Listo en sucursal', badge: 'warning' },
-  IN_TRANSIT: { label: 'En camino', badge: 'blue' },
+  IN_TRANSIT: { label: 'Pedido recogido', badge: 'blue' },
   DELIVERED: { label: 'Entregado', badge: 'success' },
 };
 
@@ -39,17 +38,14 @@ const METODOS_DELIVERY = {
 const ordenADelivery = (orden) => {
   const deliveryStatus =
     orden.deliveryStatus ??
-    (orden.estado === 'Entregado'
-      ? 'DELIVERED'
-      : orden.estado === 'Listo'
-        ? 'READY'
-        : 'PREPARING');
+    (orden.estado === 'Entregado' ? 'DELIVERED' : 'READY');
 
   return {
     order_id: orden.id,
     branch_id: orden.sucursalId,
     customer_name: orden.cliente,
     customer_phone: orden.telefono,
+    origen: obtenerOrigenPedido(orden),
     delivery_address: `${orden.direccion}, Casa #${orden.numeroCasa}`,
     items: orden.productos.map((producto) => ({
       name: producto.nombre,
@@ -126,7 +122,7 @@ const DeliveryPage = () => {
 
   const activeOrders = pedidos.filter((o) => o.delivery_status !== 'DELIVERED');
   const deliveredOrders = pedidos.filter((o) => o.delivery_status === 'DELIVERED');
-  const inTransitCount = activeOrders.filter((o) => o.delivery_status === 'IN_TRANSIT').length;
+  const pickedUpCount = activeOrders.filter((o) => o.delivery_status === 'IN_TRANSIT').length;
 
   const cashToCollect = activeOrders
     .filter((o) => o.payment_status === 'PENDING_COLLECTION')
@@ -136,11 +132,9 @@ const DeliveryPage = () => {
     setFeedback(null);
 
     const mensaje =
-      nextStatus === 'READY'
-        ? `Pedido ${order.order_id} marcado listo en cocina.`
-        : nextStatus === 'IN_TRANSIT'
-          ? `Pedido ${order.order_id} marcado en camino hacia ${order.customer_name}.`
-          : `Pedido ${order.order_id} entregado correctamente.`;
+      nextStatus === 'IN_TRANSIT'
+        ? `Pedido ${order.order_id} marcado como recogido.`
+        : `Pedido ${order.order_id} entregado correctamente.`;
 
     if (order.fromCashier) {
       cambiarEstadoEntrega(
@@ -221,9 +215,9 @@ const DeliveryPage = () => {
                 <IconTruck />
               </div>
               <div className="del-kpi-card__body">
-                <span className="del-kpi-card__label">En camino</span>
-                <strong className="del-kpi-card__value">{inTransitCount}</strong>
-                <span className="del-kpi-card__hint">En tránsito al cliente</span>
+                <span className="del-kpi-card__label">Pedidos recogidos</span>
+                <strong className="del-kpi-card__value">{pickedUpCount}</strong>
+                <span className="del-kpi-card__hint">Recogidos por el repartidor</span>
               </div>
             </article>
 
@@ -275,6 +269,9 @@ const DeliveryPage = () => {
                         <div>
                           <span className="del-order-card__id">{order.order_id}</span>
                           <span className="del-order-card__time"> · {order.created_at}</span>
+                          {order.origen && (
+                            <span className="del-order-card__origin">{order.origen}</span>
+                          )}
                         </div>
                         <span className={`del-status del-status--${statusMeta.badge}`}>
                           {statusMeta.label}
@@ -337,23 +334,13 @@ const DeliveryPage = () => {
 
                       {/* Botones de Acción */}
                       <div className="del-order-card__actions">
-                        {order.delivery_status === 'PREPARING' && (
-                          <button
-                            type="button"
-                            className="del-btn del-btn--primary"
-                            onClick={() => handleAdvanceStatus(order, 'READY')}
-                          >
-                            Marcar listo en cocina
-                          </button>
-                        )}
-
-                        {order.delivery_status === 'READY' && (
+                        {order.delivery_status !== 'IN_TRANSIT' && (
                           <button
                             type="button"
                             className="del-btn del-btn--primary"
                             onClick={() => handleAdvanceStatus(order, 'IN_TRANSIT')}
                           >
-                            Iniciar entrega en ruta
+                            Pedido recogido
                           </button>
                         )}
 
@@ -363,9 +350,7 @@ const DeliveryPage = () => {
                             className="del-btn del-btn--success"
                             onClick={() => handleAdvanceStatus(order, 'DELIVERED')}
                           >
-                            {mustCollect
-                              ? `Confirmar cobro ($${Number(order.total_amount).toFixed(2)}) y entrega`
-                              : 'Confirmar pedido entregado'}
+                            Entregado
                           </button>
                         )}
                       </div>

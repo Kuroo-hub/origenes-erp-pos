@@ -1,11 +1,11 @@
 
 import { useMemo, useState } from 'react';
 import { formatearMonedaCajero } from '../../mocks/CashierMocks.js';
+import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
 
 const ESTADOS = [
   'Todos',
   'Pendiente',
-  'Aceptado',
   'En preparación',
   'Listo',
   'Entregado',
@@ -16,7 +16,6 @@ const ESTADOS_CAMBIO = ESTADOS.filter((estado) => estado !== 'Todos');
 const obtenerClaseEstado = (estado) => {
   const clases = {
     Pendiente: 'cashier-order-status--pending',
-    Aceptado: 'cashier-order-status--accepted',
     'En preparación': 'cashier-order-status--preparing',
     Listo: 'cashier-order-status--ready',
     Entregado: 'cashier-order-status--delivered',
@@ -24,6 +23,8 @@ const obtenerClaseEstado = (estado) => {
 
   return clases[estado] ?? '';
 };
+
+const esPedidoPorLlamada = (orden) => obtenerOrigenPedido(orden) === 'Por llamada';
 
 export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
   const [busqueda, setBusqueda] = useState('');
@@ -46,7 +47,7 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
         estado === 'Todos' || orden.estado === estado;
 
       const coincideOrigen =
-        origen === 'Todos' || orden.origen === origen;
+        origen === 'Todos' || obtenerOrigenPedido(orden) === origen;
 
       return (
         coincideBusqueda &&
@@ -100,7 +101,7 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
         >
           <option value="Todos">Todos los orígenes</option>
           <option value="Presencial">Presencial</option>
-          <option value="En línea">En línea</option>
+          <option value="Por llamada">Por llamada</option>
         </select>
       </div>
 
@@ -129,7 +130,7 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
 
                 <td>
                   <span className="cashier-orders__origin-text">
-                    {orden.origen}
+                    {obtenerOrigenPedido(orden)}
                   </span>
                 </td>
 
@@ -150,7 +151,7 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
                     >
                       {orden.estado}
                     </span>
-                    {orden.tipoEntrega === 'domicilio' ? (
+                    {esPedidoPorLlamada(orden) ? (
                       <span className="cashier-orders__estado-bloqueado">
                         <i className="bi bi-lock" aria-hidden="true" />
                         Delivery
@@ -238,7 +239,7 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
 
                 <div>
                   <span>Origen</span>
-                  <strong>{ordenSeleccionada.origen}</strong>
+                  <strong>{obtenerOrigenPedido(ordenSeleccionada)}</strong>
                 </div>
 
                 <div>
@@ -248,7 +249,7 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
 
                 <div>
                   <span>Estado</span>
-                  {ordenSeleccionada.tipoEntrega === 'domicilio' ? (
+                  {esPedidoPorLlamada(ordenSeleccionada) ? (
                     <strong>
                       {ordenSeleccionada.estado} · gestionado por Delivery
                     </strong>

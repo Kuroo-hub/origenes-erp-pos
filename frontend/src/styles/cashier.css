@@ -1087,7 +1087,6 @@
   background: #fffbe6;
 }
 
-.cashier-order-status--accepted,
 .cashier-order-status--ready,
 .cashier-order-status--delivered {
   color: #237804;

@@ -51,7 +51,8 @@ export default function CashierPage() {
     registrarPedido({
       id: `ORD-${Date.now()}`,
       cliente: datosPedido.cliente.trim() || 'Cliente presencial',
-      origen: 'Presencial',
+      origen:
+        datosPedido.tipoEntrega === 'domicilio' ? 'Por llamada' : 'Presencial',
       hora: ahora.toLocaleTimeString('es-SV', {
         hour: '2-digit',
         minute: '2-digit',
@@ -63,7 +64,7 @@ export default function CashierPage() {
       sucursal,
       tipoEntrega: datosPedido.tipoEntrega ?? 'local',
       deliveryStatus:
-        datosPedido.tipoEntrega === 'domicilio' ? 'PREPARING' : null,
+        datosPedido.tipoEntrega === 'domicilio' ? 'READY' : null,
       direccion: datosPedido.direccion ?? '',
       numeroCasa: datosPedido.numeroCasa ?? '',
       telefono: datosPedido.telefono ?? '',

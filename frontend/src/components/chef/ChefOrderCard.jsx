@@ -1,7 +1,8 @@
+import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
+
 export default function ChefOrderCard({ orden, minutos, tiempo, urgencia }) {
   const claseEstado = {
     Pendiente: 'pendiente',
-    Aceptado: 'aceptado',
     'En preparación': 'preparando',
   }[orden.estado] ?? 'pendiente';
 
@@ -36,7 +37,7 @@ export default function ChefOrderCard({ orden, minutos, tiempo, urgencia }) {
         </span>
         <span>
           <i className="bi bi-arrow-repeat" aria-hidden="true" />
-          {orden.origen}
+          {obtenerOrigenPedido(orden)}
         </span>
         {orden.tipoEntrega === 'domicilio' && (
           <span className="chef-order__delivery">

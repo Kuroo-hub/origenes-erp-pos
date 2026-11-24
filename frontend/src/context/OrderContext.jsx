@@ -4,6 +4,9 @@ import { SUCURSALES } from '../mocks/SucursalesMocks.js';
 
 export { SUCURSALES };
 
+export const obtenerOrigenPedido = (orden) =>
+  orden?.tipoEntrega === 'domicilio' ? 'Por llamada' : (orden?.origen ?? 'Presencial');
+
 const OrderContext = createContext(null);
 
 const crearEstadoCajas = () =>
