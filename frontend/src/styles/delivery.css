@@ -1,0 +1,595 @@
+.del-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  color: #1f2937;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Sidebar idéntico al sistema */
+.del-sidebar {
+  width: 230px;
+  background: #ffffff;
+  border-right: 1px solid #eaecf0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  flex-shrink: 0;
+}
+
+.del-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 20px;
+}
+
+.del-sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.del-sidebar__title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.del-sidebar__role {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.del-sidebar__section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  padding: 8px 10px 6px;
+}
+
+.del-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.del-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.del-sidebar__item:hover {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.del-sidebar__item.is-active {
+  background: #eff6ff;
+  color: #1677ff;
+  font-weight: 600;
+}
+
+.del-sidebar__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.del-sidebar__label {
+  flex: 1;
+}
+
+.del-sidebar__badge {
+  background: #eff6ff;
+  color: #1677ff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.del-sidebar__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #d1d5db;
+}
+
+.del-sidebar__item.is-active .del-sidebar__dot {
+  background: #1677ff;
+}
+
+.del-sidebar__footer {
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.del-sidebar__status-text {
+  font-size: 0.72rem;
+  color: #6b7280;
+  padding: 0 6px;
+}
+
+.del-sidebar__logout {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.del-sidebar__logout:hover {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+}
+
+/* Main Area */
+.del-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.del-breadcrumb {
+  background: #ffffff;
+  border-bottom: 1px solid #eaecf0;
+  padding: 12px 28px;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.del-breadcrumb__root {
+  color: #6b7280;
+}
+
+.del-breadcrumb__sep {
+  color: #9ca3af;
+}
+
+.del-breadcrumb__current {
+  font-weight: 600;
+  color: #111827;
+}
+
+.del-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 28px 18px;
+  flex-wrap: wrap;
+}
+
+.del-topbar__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.del-topbar__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.del-branch-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.del-branch-box__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+}
+
+.del-branch-box select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #111827;
+  min-width: 200px;
+  outline: none;
+}
+
+.del-content {
+  padding: 0 28px 32px;
+}
+
+.del-banner-offline {
+  margin: 0 28px 16px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+/* 4 KPIs */
+.del-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.del-kpi-card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.03);
+}
+
+.del-kpi-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.del-kpi-card__icon--blue { background: #eff6ff; color: #1677ff; }
+.del-kpi-card__icon--green { background: #f0fdf4; color: #16a34a; }
+.del-kpi-card__icon--gold { background: #fefce8; color: #ca8a04; }
+.del-kpi-card__icon--red { background: #fef2f2; color: #dc2626; }
+
+.del-kpi-card__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.del-kpi-card__label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.del-kpi-card__value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 2px 0;
+  line-height: 1.2;
+}
+
+.del-kpi-card__hint {
+  font-size: 0.74rem;
+  color: #9ca3af;
+}
+
+/* Tarjetas de Pedidos Activos */
+.del-orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.del-order-card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.03);
+}
+
+.del-order-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.del-order-card__id {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #1677ff;
+}
+
+.del-order-card__time {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.del-order-card__name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.del-order-card__phone {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
+  color: #4b5563;
+}
+
+.del-order-card__address-box {
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.del-order-card__address-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.del-order-card__address-line svg {
+  color: #1677ff;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.del-order-card__reference {
+  margin: 6px 0 0 24px;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.del-order-card__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.83rem;
+  color: #374151;
+}
+
+.del-order-card__items li {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Bloque de cobro contra entrega */
+.del-payment-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  gap: 10px;
+}
+
+.del-payment-box.is-collect {
+  background: #fefce8;
+  border: 1px solid #fef08a;
+}
+
+.del-payment-box.is-prepaid {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.del-payment-box__label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.del-payment-box__method {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.del-payment-box__amount {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.del-payment-box.is-collect .del-payment-box__amount {
+  color: #b45309;
+}
+
+.del-payment-box.is-prepaid .del-payment-box__amount {
+  color: #15803d;
+  font-size: 0.88rem;
+}
+
+.del-order-card__actions {
+  margin-top: auto;
+}
+
+.del-btn {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.del-btn--primary {
+  background: #1677ff;
+  color: #ffffff;
+}
+
+.del-btn--primary:hover {
+  background: #4096ff;
+}
+
+.del-btn--success {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.del-btn--success:hover {
+  background: #15803d;
+}
+
+/* Status Pills & Table */
+.del-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.del-status--success { background: #dcfce7; color: #15803d; }
+.del-status--warning { background: #fef3c7; color: #b45309; }
+.del-status--blue { background: #dbeafe; color: #1d4ed8; }
+
+.del-panel-card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.03);
+  overflow: hidden;
+}
+
+.del-panel-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 22px 16px;
+}
+
+.del-panel-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.del-panel-card__subtitle {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.del-pill-count {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1677ff;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.del-table-scroll {
+  overflow-x: auto;
+}
+
+.del-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.del-table th {
+  text-align: left;
+  padding: 12px 22px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.del-table td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.del-table__name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.del-table__sub {
+  font-size: 0.74rem;
+  color: #9ca3af;
+}
+
+.del-table__empty,
+.del-empty-card,
+.del-loading {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 36px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.del-toast {
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.del-toast--success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+@media (max-width: 900px) {
+  .del-layout {
+    flex-direction: column;
+  }
+  .del-sidebar {
+    width: 100%;
+  }
+}
