@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ChefOrderCard from '../../components/chef/ChefOrderCard.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import { useOrders } from '../../context/OrderContext.jsx';
 import '../../styles/chef.css';
 
@@ -28,6 +30,8 @@ const obtenerUrgencia = (orden, minutos) => {
 
 export default function ChefPage() {
   const { ordenesSucursal, sucursal, cambiarEstado } = useOrders();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [ahora, setAhora] = useState(() => Date.now());
 
   useEffect(() => {
@@ -103,6 +107,11 @@ export default function ChefPage() {
     hour12: false,
   });
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="chef-shell">
       <header className="chef-header">
@@ -116,9 +125,15 @@ export default function ChefPage() {
             Sucursal {sucursal} · órdenes activas de cocina con tiempos en vivo
           </p>
         </div>
-        <div className="chef-header__clock">
-          <i className="bi bi-clock" aria-hidden="true" />
-          <span>{horaActual}</span>
+        <div className="chef-header__actions">
+          <div className="chef-header__clock">
+            <i className="bi bi-clock" aria-hidden="true" />
+            <span>{horaActual}</span>
+          </div>
+          <button type="button" className="chef-header__logout" onClick={handleLogout}>
+            <i className="bi bi-box-arrow-right" aria-hidden="true" />
+            <span>Cerrar sesión</span>
+          </button>
         </div>
       </header>
 
@@ -157,7 +172,7 @@ export default function ChefPage() {
                 minutos={minutos}
                 tiempo={tiempo}
                 urgencia={urgencia}
-                onMarcarListo={() => cambiarEstado(orden.id, 'Listo')}
+                onCambiarEstado={cambiarEstado}
               />
             ))}
           </div>

@@ -42,9 +42,10 @@ function formatearHora(fecha) {
 
 function mapearVenta(venta) {
   const paymentMethod = METODOS_BACKEND_FRONTEND[venta.paymentMethod] ?? 'efectivo';
+  const prefijo = venta.documentType === 'CREDIT_TAX' ? 'CCF' : 'FAC';
 
   return {
-    id: `FAC-${venta.consecutiveNumber ?? venta.invoiceId}`,
+    id: `${prefijo}-${venta.consecutiveNumber ?? venta.invoiceId}`,
     cliente: venta.customerName || 'Cliente presencial',
     origen: 'Presencial',
     hora: formatearHora(venta.issueDate),
