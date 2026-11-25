@@ -301,3 +301,14 @@ export async function getSaleByIdService(invoiceId) {
     };
 }
 
+export async function cancelSaleService(invoiceId) {
+    const id = validateId(invoiceId, "ID de factura");
+
+    const cancelledSale = await updateInvoiceStatusToCancelled(id);
+    if (!cancelledSale) {
+        throw createError("No se encontró la factura o ya estaba anulada.", 404);
+    }
+
+    return cancelledSale;
+}
+
