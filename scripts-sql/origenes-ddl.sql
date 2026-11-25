@@ -12,7 +12,7 @@ CREATE DATABASE origenessv;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- =====================================================
--- 1. BRANCHES AND USERS
+-- 1. BRANCHES AND EMPLOYEES
 -- =====================================================
 
 CREATE TABLE branch (
@@ -23,8 +23,10 @@ CREATE TABLE branch (
     active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE TABLE app_user (
-    user_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+CREATE TABLE employee (
+    employee_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    branch_id INTEGER NOT NULL REFERENCES branch(branch_id),
+
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
 
@@ -34,19 +36,12 @@ CREATE TABLE app_user (
             'MANAGER',
             'EMPLOYEE',
             'HR',
-            'CUSTOMER',
             'INVENTORY_MANAGER'
         )
     ),
 
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE employee (
-    employee_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_id INTEGER UNIQUE NOT NULL REFERENCES app_user(user_id),
-    branch_id INTEGER NOT NULL REFERENCES branch(branch_id),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 
     full_name VARCHAR(100) NOT NULL,
     job_title VARCHAR(50) NOT NULL,
@@ -56,14 +51,14 @@ CREATE TABLE employee (
 
 CREATE TABLE customer (
     customer_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_id INTEGER UNIQUE NOT NULL REFERENCES app_user(user_id),
 
     full_name VARCHAR(100) NOT NULL,
     tax_id VARCHAR(20),
     registration_number VARCHAR(20),
     business_name VARCHAR(150),
     economic_activity VARCHAR(150),
-    tax_address VARCHAR(255)
+    tax_address VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 
@@ -85,7 +80,7 @@ CREATE TABLE payroll (
 CREATE TABLE payroll_detail (
     payroll_detail_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     payroll_id INTEGER NOT NULL REFERENCES payroll(payroll_id),
-    user_id INTEGER NOT NULL REFERENCES app_user(user_id),
+    employee_id INTEGER NOT NULL REFERENCES employee(employee_id),
 
     gross_salary NUMERIC(12,2) NOT NULL,
     isss_deduction NUMERIC(12,2) NOT NULL,
@@ -94,7 +89,7 @@ CREATE TABLE payroll_detail (
     other_deductions NUMERIC(12,2) NOT NULL DEFAULT 0,
     net_salary NUMERIC(12,2) NOT NULL,
 
-    UNIQUE (payroll_id, user_id)
+    UNIQUE (payroll_id, employee_id)
 );
 
 
@@ -163,7 +158,7 @@ CREATE TABLE inventory_movement (
     movement_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     branch_id INTEGER NOT NULL REFERENCES branch(branch_id),
     ingredient_id INTEGER NOT NULL REFERENCES ingredient(ingredient_id),
-    user_id INTEGER REFERENCES app_user(user_id),
+    employee_id INTEGER REFERENCES employee(employee_id),
 
     movement_type VARCHAR(20) NOT NULL CHECK (
         movement_type IN ('IN', 'OUT', 'CONSUMPTION', 'ADJUSTMENT')
@@ -193,7 +188,7 @@ CREATE TABLE purchase (
     purchase_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     supplier_id INTEGER NOT NULL REFERENCES supplier(supplier_id),
     branch_id INTEGER NOT NULL REFERENCES branch(branch_id),
-    user_id INTEGER NOT NULL REFERENCES app_user(user_id),
+    employee_id INTEGER NOT NULL REFERENCES employee(employee_id),
 
     invoice_number VARCHAR(50),
     purchase_date TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -263,7 +258,7 @@ CREATE TABLE invoice (
 
     customer_id INTEGER REFERENCES customer(customer_id),
     branch_id INTEGER NOT NULL REFERENCES branch(branch_id),
-    user_id INTEGER NOT NULL REFERENCES app_user(user_id),
+    employee_id INTEGER NOT NULL REFERENCES employee(employee_id),
 
     document_type VARCHAR(30) NOT NULL CHECK (
         document_type IN ('FINAL_CONSUMER', 'CREDIT_TAX')
@@ -312,7 +307,7 @@ CREATE TABLE cash_register (
 CREATE TABLE cash_shift (
     shift_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     cash_register_id INTEGER NOT NULL REFERENCES cash_register(cash_register_id),
-    user_id INTEGER NOT NULL REFERENCES app_user(user_id),
+    employee_id INTEGER NOT NULL REFERENCES employee(employee_id),
 
     opening_date TIMESTAMP NOT NULL DEFAULT NOW(),
     closing_date TIMESTAMP,

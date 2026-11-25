@@ -307,42 +307,26 @@ VALUES
 
 
 -- =====================================================
--- USERS AND LOGINS
--- Password for every demo user: Origenes123!
+-- EMPLOYEES AND LOGINS
+-- Password for every demo employee: Origenes123!
 -- =====================================================
 
-INSERT INTO app_user (email, password_hash, role)
+INSERT INTO employee (
+    email,
+    password_hash,
+    role,
+    branch_id,
+    full_name,
+    job_title,
+    hire_date,
+    base_salary
+)
 VALUES
-('admin@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'ADMINISTRATOR'),
-('gerente@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'MANAGER'),
-('empleado@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'EMPLOYEE'),
-('rrhh@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'HR'),
-('cliente@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'CUSTOMER'),
-('inventario@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'INVENTORY_MANAGER');
-
-
--- =====================================================
--- EMPLOYEES (ADMINISTRATOR, MANAGER, EMPLOYEE, HR, INVENTORY_MANAGER)
--- =====================================================
-
-INSERT INTO employee (user_id, branch_id, full_name, job_title, hire_date, base_salary)
-SELECT
-    u.user_id,
-    v.branch_id,
-    v.full_name,
-    v.job_title,
-    CAST(v.hire_date AS DATE),
-    v.base_salary
-FROM (
-    VALUES
-    ('admin@origenessv.com', 1, 'Ana Martínez', 'Administradora General', '2022-01-10', 1800.00),
-    ('gerente@origenessv.com', 1, 'Carlos Pérez', 'Gerente de Sucursal', '2022-03-15', 1500.00),
-    ('empleado@origenessv.com', 1, 'María López', 'Cajera', '2023-06-01', 500.00),
-    ('rrhh@origenessv.com', 1, 'José Ramírez', 'Encargado de Recursos Humanos', '2022-08-20', 1200.00),
-    ('inventario@origenessv.com', 2, 'Luis Gómez', 'Encargado de Inventario', '2023-02-10', 900.00)
-) AS v(email, branch_id, full_name, job_title, hire_date, base_salary)
-JOIN app_user u
-    ON u.email = v.email;
+    ('admin@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'ADMINISTRATOR', 1, 'Ana Martínez', 'Administradora General', CAST('2022-01-10' AS DATE), 1800.00),
+    ('gerente@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'MANAGER', 1, 'Carlos Pérez', 'Gerente de Sucursal', CAST('2022-03-15' AS DATE), 1500.00),
+    ('empleado@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'EMPLOYEE', 1, 'María López', 'Cajera', CAST('2023-06-01' AS DATE), 500.00),
+    ('rrhh@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'HR', 1, 'José Ramírez', 'Encargado de Recursos Humanos', CAST('2022-08-20' AS DATE), 1200.00),
+    ('inventario@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'INVENTORY_MANAGER', 2, 'Luis Gómez', 'Encargado de Inventario', CAST('2023-02-10' AS DATE), 900.00);
 
 
 -- =====================================================
@@ -350,7 +334,6 @@ JOIN app_user u
 -- =====================================================
 
 INSERT INTO customer (
-    user_id,
     full_name,
     tax_id,
     registration_number,
@@ -358,16 +341,15 @@ INSERT INTO customer (
     economic_activity,
     tax_address
 )
-SELECT
-    u.user_id,
+VALUES
+(
     'Cliente Demo',
     '0614-150590-101-5',
     'NRC-100001',
     'Cliente Demo, S.A. de C.V.',
     'Comercio al por menor',
     'San Salvador, El Salvador'
-FROM app_user u
-WHERE u.email = 'cliente@origenessv.com';
+);
 
 
 -- =====================================================
@@ -425,7 +407,7 @@ VALUES
 
 INSERT INTO payroll_detail (
     payroll_id,
-    user_id,
+    employee_id,
     gross_salary,
     isss_deduction,
     afp_deduction,
@@ -435,7 +417,7 @@ INSERT INTO payroll_detail (
 )
 SELECT
     p.payroll_id,
-    u.user_id,
+    e.employee_id,
     ROUND(e.base_salary / 2, 2),
     ROUND(e.base_salary / 2 * 0.03, 2),
     ROUND(e.base_salary / 2 * 0.0725, 2),
@@ -449,8 +431,6 @@ SELECT
     )
 FROM payroll p
 CROSS JOIN employee e
-JOIN app_user u
-    ON u.user_id = e.user_id
 WHERE p.status = 'PAID';
 
 
@@ -461,7 +441,7 @@ WHERE p.status = 'PAID';
 INSERT INTO purchase (
     supplier_id,
     branch_id,
-    user_id,
+    employee_id,
     invoice_number,
     purchase_date,
     subtotal,
@@ -470,9 +450,9 @@ INSERT INTO purchase (
     status
 )
 VALUES
-(1, 1, 6, 'FAC-001', '2026-11-15 09:00', 150.00, 19.50, 169.50, 'PAID'),
-(2, 1, 6, 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
-(3, 2, 6, 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
+(1, 1, (SELECT employee_id FROM employee WHERE email = 'inventario@origenessv.com'), 'FAC-001', '2026-11-15 09:00', 150.00, 19.50, 169.50, 'PAID'),
+(2, 1, (SELECT employee_id FROM employee WHERE email = 'inventario@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
+(3, 2, (SELECT employee_id FROM employee WHERE email = 'inventario@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
 
 INSERT INTO purchase_detail (purchase_id, ingredient_id, quantity, unit_cost, subtotal)
 SELECT
@@ -514,7 +494,7 @@ VALUES
 
 INSERT INTO cash_shift (
     cash_register_id,
-    user_id,
+    employee_id,
     opening_date,
     closing_date,
     opening_amount,
@@ -522,8 +502,8 @@ INSERT INTO cash_shift (
     status
 )
 VALUES
-(1, 3, '2026-11-17 08:00', '2026-11-17 17:00', 100.00, 426.47, 'CLOSED'),
-(1, 3, '2026-11-18 08:00', NULL, 100.00, NULL, 'OPEN');
+(1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-17 08:00', '2026-11-17 17:00', 100.00, 426.47, 'CLOSED'),
+(1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-18 08:00', NULL, 100.00, NULL, 'OPEN');
 
 
 -- =====================================================
@@ -533,7 +513,7 @@ VALUES
 INSERT INTO invoice (
     customer_id,
     branch_id,
-    user_id,
+    employee_id,
     document_type,
     consecutive_number,
     control_number,
@@ -546,8 +526,8 @@ INSERT INTO invoice (
     status
 )
 VALUES
-(1, 1, 3, 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'PAID'),
-(NULL, 1, 3, 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'PAID');
+(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'PAID'),
+(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'PAID');
 
 INSERT INTO invoice_detail (invoice_id, product_id, quantity, unit_price, subtotal)
 SELECT
@@ -591,7 +571,7 @@ WHERE branch_id = 1
 INSERT INTO inventory_movement (
     branch_id,
     ingredient_id,
-    user_id,
+    employee_id,
     movement_type,
     quantity,
     reason,
@@ -600,7 +580,7 @@ INSERT INTO inventory_movement (
 SELECT
     1,
     i.ingredient_id,
-    u.user_id,
+    e.employee_id,
     v.movement_type,
     v.quantity,
     v.reason,
@@ -617,5 +597,5 @@ FROM (
 ) AS v(ingredient_name, movement_type, quantity, reason, created_at)
 JOIN ingredient i
     ON i.name = v.ingredient_name
-CROSS JOIN app_user u
-WHERE u.email = 'inventario@origenessv.com';
+CROSS JOIN employee e
+WHERE e.email = 'inventario@origenessv.com';
