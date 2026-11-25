@@ -14,6 +14,29 @@ export const RUTA_POR_ROL = {
   [ROLES.EMPLOYEE]: '/cajero',
 };
 
-export function rutaPorRol(role, fallback = '/login') {
+function normalizarTexto(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+export function rutaPorRol(role, profile = {}, fallback = '/login') {
+  if (role === ROLES.EMPLOYEE) {
+    const jobTitle = normalizarTexto(profile?.jobTitle);
+    const email = normalizarTexto(profile?.email);
+
+    if (jobTitle.includes('chef') || jobTitle.includes('cocina') || email.startsWith('test.chef')) {
+      return '/chef';
+    }
+
+    if (
+      jobTitle.includes('delivery') ||
+      jobTitle.includes('repartidor') ||
+      email.startsWith('test.delivery')
+    ) {
+      return '/repartidor';
+    }
+
+    return '/cajero';
+  }
+
   return RUTA_POR_ROL[role] ?? fallback;
 }

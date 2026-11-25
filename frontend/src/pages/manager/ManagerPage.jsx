@@ -6,11 +6,14 @@ import ManagerCashRegister from '../../components/manager/ManagerCashRegister.js
 import CashierSummary from '../../components/cashier/CashierSummary.jsx';
 import CashierCashFlow from '../../components/cashier/CashierCashFlow.jsx';
 import { useOrders } from '../../context/OrderContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import '../../styles/manager.css';
 
 export default function ManagerPage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [seccion, setSeccion] = useState('resumen');
+  const [feedback, setFeedback] = useState(null);
 
   const {
     ordenesSucursal,
@@ -32,8 +35,28 @@ export default function ManagerPage() {
     [ordenesSucursal]
   );
 
+  const handleAbrir = async (monto) => {
+    setFeedback(null);
+    try {
+      await abrirCaja(sucursalId, monto);
+      setFeedback({ type: 'success', text: 'Caja abierta correctamente.' });
+    } catch (error) {
+      setFeedback({ type: 'error', text: error?.message ?? 'No se pudo abrir la caja.' });
+    }
+  };
+
+  const handleCerrar = async (monto) => {
+    setFeedback(null);
+    try {
+      await cerrarCaja(sucursalId, monto);
+      setFeedback({ type: 'success', text: 'Caja cerrada correctamente.' });
+    } catch (error) {
+      setFeedback({ type: 'error', text: error?.message ?? 'No se pudo cerrar la caja.' });
+    }
+  };
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -55,6 +78,21 @@ export default function ManagerPage() {
         />
 
         <main className="cashier-main">
+          {feedback && (
+            <div className={`cashier-caja-banner is-${feedback.type}`}>
+              <i
+                className={`bi ${
+                  feedback.type === 'success'
+                    ? 'bi-check-circle-fill'
+                    : 'bi-exclamation-triangle-fill'
+                }`}
+              />
+              <div>
+                <strong>{feedback.text}</strong>
+              </div>
+            </div>
+          )}
+
           {seccion === 'resumen' && (
             <CashierSummary
               ordenes={ordenesSucursal}
@@ -71,8 +109,8 @@ export default function ManagerPage() {
             <ManagerCashRegister
               sucursal={sucursal}
               caja={caja}
-              onAbrir={(monto) => abrirCaja(sucursalId, monto)}
-              onCerrar={(monto) => cerrarCaja(sucursalId, monto)}
+              onAbrir={handleAbrir}
+              onCerrar={handleCerrar}
             />
           )}
         </main>

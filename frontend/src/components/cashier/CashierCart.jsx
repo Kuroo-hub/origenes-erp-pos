@@ -1,8 +1,6 @@
 
-import {
-  formatearMonedaCajero,
-  METODOS_PAGO_CAJERO,
-} from '../../mocks/CashierMocks.js';
+import { formatearMonedaCajero } from '../../utils/formatters.js';
+import { METODOS_PAGO_CAJERO } from '../../constants/paymentMethods.js';
 
 const ICONOS_METODO = {
   efectivo: 'bi-cash-coin',

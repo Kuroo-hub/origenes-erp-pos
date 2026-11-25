@@ -1,25 +1,36 @@
-import { useState } from 'react';
-import {
-  ROLES_RRHH,
-  SUCURSALES_RRHH,
-  etiquetaRolRRHH,
-} from '../../mocks/HrMocks.js';
+import { useEffect, useState } from 'react';
+import { ROLES_RRHH, etiquetaRolRRHH } from '../../utils/rrhh.js';
 
 const FORMULARIO_INICIAL = {
   fullName: '',
   email: '',
   password: '',
-  branchId: String(SUCURSALES_RRHH[0].id),
+  branchId: '',
   baseSalary: '',
   role: ROLES_RRHH[0].id,
 };
 
 const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function HrHiring({ empleados = [], onContratar }) {
+export default function HrHiring({
+  empleados = [],
+  sucursales = [],
+  roles = ROLES_RRHH,
+  onContratar,
+  puedeContratar = false,
+}) {
   const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
   const [mensaje, setMensaje] = useState(null);
   const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    if (!formulario.branchId && sucursales.length > 0) {
+      setFormulario((previo) => ({
+        ...previo,
+        branchId: String(sucursales[0].branch_id ?? sucursales[0].id),
+      }));
+    }
+  }, [formulario.branchId, sucursales]);
 
   const actualizarCampo = (campo) => (evento) => {
     setFormulario((previo) => ({
@@ -46,7 +57,7 @@ export default function HrHiring({ empleados = [], onContratar }) {
     if (empleados.some((empleado) => (empleado.email ?? '').toLowerCase() === correo)) {
       return 'Ya existe un empleado registrado con ese correo.';
     }
-    if (!SUCURSALES_RRHH.some((sucursal) => String(sucursal.id) === formulario.branchId)) {
+    if (!sucursales.some((sucursal) => String(sucursal.branch_id ?? sucursal.id) === formulario.branchId)) {
       return 'Selecciona una sucursal válida.';
     }
     if (!Number.isFinite(salario) || salario <= 0) {
@@ -170,11 +181,11 @@ export default function HrHiring({ empleados = [], onContratar }) {
                 value={formulario.branchId}
                 onChange={actualizarCampo('branchId')}
               >
-                {SUCURSALES_RRHH.map((sucursal) => (
-                  <option key={sucursal.id} value={sucursal.id}>
-                    {sucursal.nombre}
-                  </option>
-                ))}
+  {sucursales.map((sucursal) => (
+    <option key={sucursal.branch_id ?? sucursal.id} value={sucursal.branch_id ?? sucursal.id}>
+      {sucursal.name ?? sucursal.nombre}
+    </option>
+  ))}
               </select>
             </label>
 
@@ -196,7 +207,7 @@ export default function HrHiring({ empleados = [], onContratar }) {
                 value={formulario.role}
                 onChange={actualizarCampo('role')}
               >
-                {ROLES_RRHH.map((rol) => (
+                {roles.map((rol) => (
                   <option key={rol.id} value={rol.id}>
                     {rol.etiqueta}
                   </option>
@@ -206,7 +217,11 @@ export default function HrHiring({ empleados = [], onContratar }) {
             </label>
           </div>
 
-          <button type="submit" className="hr-hiring__submit" disabled={enviando}>
+          <button
+            type="submit"
+            className="hr-hiring__submit"
+            disabled={enviando || !puedeContratar}
+          >
             <i className="bi bi-person-plus" aria-hidden="true" />
             {enviando ? 'Contratando...' : 'Contratar y crear cuenta'}
           </button>

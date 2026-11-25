@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DeliverySidebar from '../../components/delivery/DeliverySidebar';
 import DeliveryTopbar from '../../components/delivery/DeliveryTopbar';
@@ -11,8 +11,8 @@ import {
   IconPhone,
 } from '../../components/delivery/DeliveryIcons';
 import { getDeliveryOrders, updateDeliveryStatus } from '../../services/deliveryApi';
-import { useOrders, obtenerOrigenPedido } from '../../context/OrderContext.jsx';
-import { INITIAL_DELIVERIES_MOCK } from '../../mocks/DeliveryMocks';
+import { useOrders } from '../../context/OrderContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import '../../styles/delivery.css';
 
 const PAYMENT_LABELS = {
@@ -28,68 +28,27 @@ const DELIVERY_STATUS_META = {
   DELIVERED: { label: 'Entregado', badge: 'success' },
 };
 
-const METODOS_DELIVERY = {
-  efectivo: 'CASH',
-  tarjeta: 'CARD',
-  bitcoin: 'BITCOIN',
-  chivo: 'CHIVO',
-};
-
-const ordenADelivery = (orden) => {
-  const deliveryStatus =
-    orden.deliveryStatus ??
-    (orden.estado === 'Entregado' ? 'DELIVERED' : 'READY');
-
-  return {
-    order_id: orden.id,
-    branch_id: orden.sucursalId,
-    customer_name: orden.cliente,
-    customer_phone: orden.telefono,
-    origen: obtenerOrigenPedido(orden),
-    delivery_address: `${orden.direccion}, Casa #${orden.numeroCasa}`,
-    items: orden.productos.map((producto) => ({
-      name: producto.nombre,
-      quantity: producto.cantidad,
-      price: Number(producto.precio ?? 0),
-    })),
-    total_amount: Number(orden.total),
-    payment_method: METODOS_DELIVERY[orden.metodoPago] ?? 'CASH',
-    payment_status:
-      deliveryStatus === 'DELIVERED'
-        ? 'COLLECTED'
-        : orden.metodoPago === 'efectivo'
-          ? 'PENDING_COLLECTION'
-          : 'PAID_ONLINE',
-    delivery_status: deliveryStatus,
-    created_at: orden.hora,
-    fromCashier: true,
-  };
-};
-
 const DeliveryPage = () => {
   const navigate = useNavigate();
-  const {
-    ordenes,
-    cambiarEstadoEntrega,
-    sucursalId,
-    seleccionarSucursal,
-  } = useOrders();
+  const { logout } = useAuth();
+  const { sucursalId, seleccionarSucursal, sucursales } = useOrders();
   const [activeTab, setActiveTab] = useState('active');
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [usingOfflineData, setUsingOfflineData] = useState(false);
+  const [error, setError] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
   const loadDeliveries = useCallback(async (branchId) => {
     setLoading(true);
+    setError(null);
+
     try {
       const res = await getDeliveryOrders(branchId);
       setOrders(Array.isArray(res) ? res : res.data || []);
-      setUsingOfflineData(false);
-    } catch {
-      setOrders(INITIAL_DELIVERIES_MOCK.filter((o) => o.branch_id === branchId));
-      setUsingOfflineData(true);
+    } catch (err) {
+      setOrders([]);
+      setError(err?.message ?? 'No se pudieron cargar las entregas.');
     } finally {
       setLoading(false);
     }
@@ -99,26 +58,7 @@ const DeliveryPage = () => {
     loadDeliveries(sucursalId);
   }, [sucursalId, loadDeliveries]);
 
-  const pedidosCajero = useMemo(
-    () =>
-      ordenes
-        .filter(
-          (orden) =>
-            orden.tipoEntrega === 'domicilio' &&
-            orden.sucursalId === sucursalId
-        )
-        .map(ordenADelivery),
-    [ordenes, sucursalId]
-  );
-
-  const pedidos = useMemo(() => {
-    const idsCajero = new Set(pedidosCajero.map((pedido) => pedido.order_id));
-
-    return [
-      ...pedidosCajero,
-      ...orders.filter((pedido) => !idsCajero.has(pedido.order_id)),
-    ];
-  }, [pedidosCajero, orders]);
+  const pedidos = orders;
 
   const activeOrders = pedidos.filter((o) => o.delivery_status !== 'DELIVERED');
   const deliveredOrders = pedidos.filter((o) => o.delivery_status === 'DELIVERED');
@@ -131,45 +71,28 @@ const DeliveryPage = () => {
   const handleAdvanceStatus = async (order, nextStatus) => {
     setFeedback(null);
 
-    const mensaje =
-      nextStatus === 'IN_TRANSIT'
-        ? `Pedido ${order.order_id} marcado como recogido.`
-        : `Pedido ${order.order_id} entregado correctamente.`;
-
-    if (order.fromCashier) {
-      cambiarEstadoEntrega(
-        order.order_id,
-        nextStatus,
-        nextStatus === 'DELIVERED' ? 'Entregado' : 'Listo'
-      );
-      setFeedback({ type: 'success', text: mensaje });
-      return;
-    }
-
-    const nextPaymentStatus =
-      nextStatus === 'DELIVERED' ? 'COLLECTED' : order.payment_status;
-
     try {
       await updateDeliveryStatus(order.order_id, {
         delivery_status: nextStatus,
-        payment_status: nextPaymentStatus,
       });
       await loadDeliveries(sucursalId);
-    } catch {
-      setOrders((prev) =>
-        prev.map((item) =>
-          item.order_id === order.order_id
-            ? { ...item, delivery_status: nextStatus, payment_status: nextPaymentStatus }
-            : item
-        )
-      );
+      setFeedback({
+        type: 'success',
+        text:
+          nextStatus === 'IN_TRANSIT'
+            ? `Pedido ${order.order_id} marcado como recogido.`
+            : `Pedido ${order.order_id} entregado correctamente.`,
+      });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        text: err?.message ?? 'No se pudo actualizar el estado de la entrega.',
+      });
     }
-
-    setFeedback({ type: 'success', text: mensaje });
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -179,7 +102,7 @@ const DeliveryPage = () => {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         pendingCount={activeOrders.length}
-        isOffline={usingOfflineData}
+        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 
@@ -188,13 +111,10 @@ const DeliveryPage = () => {
           activeTab={activeTab}
           selectedBranch={sucursalId}
           onChangeBranch={seleccionarSucursal}
+          branches={sucursales}
         />
 
-        {usingOfflineData && (
-          <div className="del-banner-offline">
-            Modo demostración activo con pedidos de prueba de la sucursal.
-          </div>
-        )}
+        {error && <div className="del-banner-offline">{error}</div>}
 
         <main className="del-content">
           {/* 4 Tarjetas KPI estilo exacto de Cajero / RRHH */}

@@ -27,7 +27,7 @@ const obtenerUrgencia = (orden, minutos) => {
 };
 
 export default function ChefPage() {
-  const { ordenesSucursal, sucursal } = useOrders();
+  const { ordenesSucursal, sucursal, cambiarEstado } = useOrders();
   const [ahora, setAhora] = useState(() => Date.now());
 
   useEffect(() => {
@@ -157,6 +157,7 @@ export default function ChefPage() {
                 minutos={minutos}
                 tiempo={tiempo}
                 urgencia={urgencia}
+                onMarcarListo={() => cambiarEstado(orden.id, 'Listo')}
               />
             ))}
           </div>

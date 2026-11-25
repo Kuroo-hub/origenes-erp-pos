@@ -10,23 +10,29 @@ import {
   getBranchPurchases,
   getInventoryMovements,
 } from '../../services/inventoryApi';
-import { INITIAL_INVENTORY_MOCK, INITIAL_PURCHASES_MOCK, INITIAL_MOVEMENTS_MOCK } from '../../mocks/InventoryMocks';
 import { useOrders } from '../../context/OrderContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import '../../styles/inventory.css';
+
+const extraerLista = (respuesta) =>
+  Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
 
 const InventoryPage = () => {
   const navigate = useNavigate();
-  const { sucursalId, seleccionarSucursal } = useOrders();
+  const { logout } = useAuth();
+  const { sucursalId, seleccionarSucursal, sucursales } = useOrders();
   const [activeTab, setActiveTab] = useState('stock');
 
   const [inventory, setInventory] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [usingOfflineData, setUsingOfflineData] = useState(false);
+  const [error, setError] = useState(null);
 
   const loadBranchData = useCallback(async (branchId) => {
     setLoading(true);
+    setError(null);
+
     try {
       const [invRes, purRes, movRes] = await Promise.all([
         getBranchInventory(branchId),
@@ -34,16 +40,11 @@ const InventoryPage = () => {
         getInventoryMovements(branchId),
       ]);
 
-      setInventory(Array.isArray(invRes) ? invRes : invRes.data || []);
-      setPurchases(Array.isArray(purRes) ? purRes : purRes.data || []);
-      setMovements(Array.isArray(movRes) ? movRes : movRes.data || []);
-      setUsingOfflineData(false);
-    } catch {
-      // Fallback automático con los datos reales de data.sql si el backend aún no está levantado
-      setInventory(INITIAL_INVENTORY_MOCK.filter((item) => item.branch_id === branchId));
-      setPurchases(INITIAL_PURCHASES_MOCK.filter((item) => item.branch_id === branchId));
-      setMovements(INITIAL_MOVEMENTS_MOCK.filter((item) => item.branch_id === branchId));
-      setUsingOfflineData(true);
+      setInventory(extraerLista(invRes));
+      setPurchases(extraerLista(purRes));
+      setMovements(extraerLista(movRes));
+    } catch (err) {
+      setError(err?.message ?? 'No se pudo cargar la información de la sucursal.');
     } finally {
       setLoading(false);
     }
@@ -53,13 +54,12 @@ const InventoryPage = () => {
     loadBranchData(sucursalId);
   }, [sucursalId, loadBranchData]);
 
-  // Contador global de alertas de stock mínimo para mostrar en el badge del Sidebar
   const lowStockCount = inventory.filter(
     (item) => Number(item.quantity) <= Number(item.minimum_stock)
   ).length;
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -77,13 +77,10 @@ const InventoryPage = () => {
           activeTab={activeTab}
           selectedBranch={sucursalId}
           onChangeBranch={seleccionarSucursal}
+          branches={sucursales}
         />
 
-        {usingOfflineData && (
-          <div className="inv-banner-offline">
-            Modo demostración local activo (usando datos semilla de PostgreSQL). Cuando el API Gateway responda en el puerto 3000, se sincronizará automáticamente.
-          </div>
-        )}
+        {error && <div className="inv-banner-offline">{error}</div>}
 
         <main className="inv-content">
           {loading ? (

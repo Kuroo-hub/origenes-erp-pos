@@ -1,5 +1,5 @@
 import React from 'react';
-import { SUCURSALES_TOPBAR } from '../../mocks/SucursalesMocks.js';
+
 
 const TAB_META = {
   overview: {
@@ -19,7 +19,7 @@ const TAB_META = {
   },
 };
 
-const OwnerTopbar = ({ activeTab, selectedBranch, onChangeBranch }) => {
+const OwnerTopbar = ({ activeTab, selectedBranch, onChangeBranch, branches = [], allowAll = true }) => {
   const current = TAB_META[activeTab] || TAB_META.overview;
 
   return (
@@ -43,10 +43,10 @@ const OwnerTopbar = ({ activeTab, selectedBranch, onChangeBranch }) => {
             value={selectedBranch}
             onChange={(e) => onChangeBranch(e.target.value)}
           >
-            <option value="ALL">Todas las sucursales</option>
-            {SUCURSALES_TOPBAR.map((sucursal) => (
-              <option key={sucursal.branch_id} value={sucursal.branch_id}>
-                {sucursal.name}
+            {allowAll && <option value="ALL">Todas las sucursales</option>}
+            {branches.map((sucursal) => (
+              <option key={sucursal.branch_id ?? sucursal.id} value={sucursal.branch_id ?? sucursal.id}>
+                {sucursal.name ?? sucursal.nombre}
               </option>
             ))}
           </select>

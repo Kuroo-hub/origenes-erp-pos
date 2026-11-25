@@ -1,5 +1,5 @@
 import React from 'react';
-import { SUCURSALES_TOPBAR as BRANCHES } from '../../mocks/SucursalesMocks.js';
+
 
 const TAB_META = {
   stock: {
@@ -19,7 +19,7 @@ const TAB_META = {
   },
 };
 
-const InventoryTopbar = ({ activeTab, selectedBranch, onChangeBranch }) => {
+const InventoryTopbar = ({ activeTab, selectedBranch, onChangeBranch, branches = [] }) => {
   const current = TAB_META[activeTab] || TAB_META.stock;
 
   return (
@@ -44,9 +44,9 @@ const InventoryTopbar = ({ activeTab, selectedBranch, onChangeBranch }) => {
               value={selectedBranch}
               onChange={(e) => onChangeBranch(Number(e.target.value))}
             >
-              {BRANCHES.map((branch) => (
-                <option key={branch.branch_id} value={branch.branch_id}>
-                  {branch.name}
+              {branches.map((branch) => (
+                <option key={branch.branch_id ?? branch.id} value={branch.branch_id ?? branch.id}>
+                  {branch.name ?? branch.nombre}
                 </option>
               ))}
             </select>

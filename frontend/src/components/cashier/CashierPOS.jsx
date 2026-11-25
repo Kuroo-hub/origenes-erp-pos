@@ -3,17 +3,13 @@ import { useMemo, useState } from 'react';
 import { Alert } from 'reactstrap';
 import CashierCart from './CashierCart.jsx';
 
-import {
-  CATEGORIAS_CAJERO,
-  formatearMonedaCajero,
-} from '../../mocks/CashierMocks.js';
+import { formatearMonedaCajero } from '../../utils/formatters.js';
 
 export default function CashierPOS({
   sucursal,
   productos,
   cajaAbierta = true,
   onRegistrarPedido,
-  onDescontarStock,
 }) {
   const [busqueda, setBusqueda] = useState('');
   const [categoria, setCategoria] = useState('Todos');
@@ -32,6 +28,11 @@ export default function CashierPOS({
   const cambiarEntrega = (campo, valor) => {
     setEntrega((previo) => ({ ...previo, [campo]: valor }));
   };
+
+  const categorias = useMemo(
+    () => ['Todos', ...new Set(productos.map((producto) => producto.categoria))],
+    [productos]
+  );
 
   const productosFiltrados = useMemo(() => {
     return productos.filter((producto) => {
@@ -113,7 +114,7 @@ export default function CashierPOS({
     );
   };
 
-  const confirmarPedido = () => {
+  const confirmarPedido = async () => {
     if (!cajaAbierta) {
       setNotificacion('La caja está cerrada. Manager debe abrirla para vender.');
       return;
@@ -133,30 +134,9 @@ export default function CashierPOS({
       return;
     }
 
-    if (
-      typeof onRegistrarPedido !== 'function' ||
-      typeof onDescontarStock !== 'function'
-    ) {
+    if (typeof onRegistrarPedido !== 'function') {
       setNotificacion(
         'No se pudo registrar la venta. Intenta nuevamente.'
-      );
-      return;
-    }
-
-    const inventarioInsuficiente = carrito.some((item) => {
-      const productoActual = productos.find(
-        (producto) => producto.id === item.id
-      );
-
-      return (
-        !productoActual ||
-        item.cantidad > productoActual.stock
-      );
-    });
-
-    if (inventarioInsuficiente) {
-      setNotificacion(
-        'El inventario cambió. Revisa las cantidades antes de confirmar.'
       );
       return;
     }
@@ -166,48 +146,43 @@ export default function CashierPOS({
       0
     );
 
-    const productosVendidos = carrito.map((item) => ({
-      id: item.id,
-      nombre: item.nombre,
-      cantidad: item.cantidad,
-      precio: item.precio,
-    }));
+    try {
+      await onRegistrarPedido({
+        cliente,
+        metodoPago,
+        tipoEntrega: entrega.tipo,
+        direccion: entrega.direccion,
+        numeroCasa: entrega.numeroCasa,
+        telefono: entrega.telefono,
+        tiempoPreparacion,
+        total,
+        productos: carrito.map((item) => ({
+          id: item.id,
+          nombre: item.nombre,
+          cantidad: item.cantidad,
+          precio: item.precio,
+        })),
+      });
 
-    onRegistrarPedido({
-      cliente,
-      metodoPago,
-      tipoEntrega: entrega.tipo,
-      direccion: entrega.direccion,
-      numeroCasa: entrega.numeroCasa,
-      telefono: entrega.telefono,
-      tiempoPreparacion,
-      total,
-      productos: productosVendidos,
-    });
+      setNotificacion(
+        entrega.tipo === 'domicilio'
+          ? `Venta de ${formatearMonedaCajero(total)} registrada y enviada a entregas en ${sucursal}.`
+          : `Venta de ${formatearMonedaCajero(total)} registrada correctamente en ${sucursal}.`
+      );
 
-    onDescontarStock(
-      carrito.map((item) => ({
-        id: item.id,
-        cantidad: item.cantidad,
-      }))
-    );
-
-    setNotificacion(
-      entrega.tipo === 'domicilio'
-        ? `Venta de ${formatearMonedaCajero(total)} registrada y enviada a entregas en ${sucursal}.`
-        : `Venta de ${formatearMonedaCajero(total)} registrada correctamente en ${sucursal}.`
-    );
-
-    setCarrito([]);
-    setCliente('');
-    setEntrega({
-      tipo: 'local',
-      direccion: '',
-      numeroCasa: '',
-      telefono: '',
-    });
-    setTiempoPreparacion(15);
-    setMetodoPago('efectivo');
+      setCarrito([]);
+      setCliente('');
+      setEntrega({
+        tipo: 'local',
+        direccion: '',
+        numeroCasa: '',
+        telefono: '',
+      });
+      setTiempoPreparacion(15);
+      setMetodoPago('efectivo');
+    } catch (error) {
+      setNotificacion(error?.message ?? 'No se pudo registrar la venta.');
+    }
   };
 
   return (
@@ -223,7 +198,11 @@ export default function CashierPOS({
 
       {notificacion && (
         <Alert
-          color={notificacion.includes('cerrada') ? 'warning' : 'success'}
+          color={
+            /cerrada|no se pudo|error|obligatoria|inventario/i.test(notificacion)
+              ? 'warning'
+              : 'success'
+          }
           fade={false}
           toggle={() => setNotificacion('')}
         >
@@ -250,7 +229,7 @@ export default function CashierPOS({
             </div>
 
             <div className="cashier-pos__categories">
-              {CATEGORIAS_CAJERO.map((opcion) => (
+              {categorias.map((opcion) => (
                 <button
                   key={opcion}
                   type="button"
@@ -267,10 +246,11 @@ export default function CashierPOS({
 
           <div className="cashier-pos__products">
             {productosFiltrados.map((producto) => {
-              const sinStock = producto.stock <= 0;
+      const sinStock = producto.stock != null && producto.stock <= 0;
 
-              const limiteAlcanzado =
-                cantidadEnCarrito(producto.id) >= producto.stock;
+      const limiteAlcanzado =
+        producto.stock != null &&
+        cantidadEnCarrito(producto.id) >= producto.stock;
 
               return (
                 <article
@@ -297,7 +277,11 @@ export default function CashierPOS({
                         {formatearMonedaCajero(producto.precio)}
                       </strong>
 
-                      <span>Stock: {producto.stock}</span>
+                       <span>
+                         {producto.stock == null
+                           ? 'Disponible'
+                           : `Stock: ${producto.stock}`}
+                       </span>
 
                       <button
                         type="button"

@@ -1,5 +1,5 @@
 
-import { etiquetaRolRRHH } from '../../mocks/HrMocks.js';
+import { etiquetaRolRRHH } from '../../utils/rrhh.js';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('es-SV', {

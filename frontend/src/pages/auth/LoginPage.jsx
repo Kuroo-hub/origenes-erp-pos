@@ -1,17 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Form, Input, Spinner } from 'reactstrap';
 import Brand from '../../components/auth/Brand.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
+import { API_BASE_URL } from '../../services/apiClient.js';
 import { rutaPorRol } from '../../auth/roles.js';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, error: authError } = useAuth();
   const [credenciales, setCredenciales] = useState({ email: '', password: '' });
   const [verContrasena, setVerContrasena] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState('');
+  const [backendDisponible, setBackendDisponible] = useState(true);
+
+  useEffect(() => {
+    let activo = true;
+
+    fetch(`${API_BASE_URL}/health`)
+      .then((response) => {
+        if (activo) setBackendDisponible(response.ok);
+      })
+      .catch(() => {
+        if (activo) setBackendDisponible(false);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const actualizarCampo = (campo) => (evento) => {
     setCredenciales((previas) => ({ ...previas, [campo]: evento.target.value }));
@@ -20,6 +38,11 @@ export default function LoginPage() {
 
   const enviarFormulario = async (evento) => {
     evento.preventDefault();
+
+    if (!backendDisponible) {
+      setMensaje('No se puede acceder: el backend no está encendido.');
+      return;
+    }
 
     if (!credenciales.email.trim() || !credenciales.password.trim()) {
       setMensaje('Completa el correo electrónico y la contraseña para continuar.');
@@ -34,9 +57,10 @@ export default function LoginPage() {
         credenciales.email.trim().toLowerCase(),
         credenciales.password
       );
-      navigate(rutaPorRol(usuario?.role), { replace: true });
+      navigate(rutaPorRol(usuario?.role, usuario), { replace: true });
     } catch (error) {
-      setMensaje(error.message ?? 'No se pudo iniciar sesión.');
+      const textoError = error?.message ?? 'No se pudo iniciar sesión.';
+      setMensaje(textoError);
     } finally {
       setCargando(false);
     }
@@ -58,12 +82,46 @@ export default function LoginPage() {
               <p className="auth-card__subtitle">Ingresa a tu cuenta de Orígenes SV.</p>
             </header>
 
+            {!backendDisponible && (
+              <Alert className="auth-alert auth-alert--error" fade={false}>
+                <i className="bi bi-exclamation-circle me-2" aria-hidden="true" />
+                No se puede acceder: el backend no está encendido.
+              </Alert>
+            )}
+
             <Form onSubmit={enviarFormulario} noValidate>
               {mensaje && (
-                <Alert className="auth-alert auth-alert--error" fade={false}>
-                  <i className="bi bi-exclamation-circle me-2" aria-hidden="true" />
+                <div
+                  role="alert"
+                  style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem 1rem',
+                    color: '#b42318',
+                    backgroundColor: '#fef3f2',
+                    border: '1px solid #fecdca',
+                    borderRadius: '10px',
+                    fontSize: '0.875rem',
+                  }}
+                >
                   {mensaje}
-                </Alert>
+                </div>
+              )}
+
+              {authError && !mensaje && (
+                <div
+                  role="alert"
+                  style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem 1rem',
+                    color: '#b42318',
+                    backgroundColor: '#fef3f2',
+                    border: '1px solid #fecdca',
+                    borderRadius: '10px',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {authError}
+                </div>
               )}
 
               <div className="auth-fields">

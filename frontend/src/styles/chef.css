@@ -373,9 +373,24 @@
 }
 
 .chef-order__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   color: var(--ember-muted-fg);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
+}
+
+.chef-order__action {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--ember-primary);
+  cursor: pointer;
 }
 
 .chef-orders__empty {

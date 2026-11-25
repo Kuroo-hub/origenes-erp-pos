@@ -27,7 +27,7 @@ function HomeRedirect() {
     return <LoginPage />;
   }
 
-  return <Navigate to={rutaPorRol(user?.role)} replace />;
+  return <Navigate to={rutaPorRol(user?.role, user)} replace />;
 }
 
 export default function AppRoutes() {

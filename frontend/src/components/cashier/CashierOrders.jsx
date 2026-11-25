@@ -1,6 +1,6 @@
 
 import { useMemo, useState } from 'react';
-import { formatearMonedaCajero } from '../../mocks/CashierMocks.js';
+import { formatearMonedaCajero } from '../../utils/formatters.js';
 import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
 
 const ESTADOS = [
