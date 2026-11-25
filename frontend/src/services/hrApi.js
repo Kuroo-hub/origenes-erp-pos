@@ -31,11 +31,6 @@ export const listEmployees = async () => {
   return response.data;
 };
 
-export const getEmployeeById = async (id) => {
-  const response = await apiGet(`/hr/employees/${id}`);
-  return response.data;
-};
-
 export const getEmployeePerformance = async (id) => {
   const response = await apiGet(`/hr/employees/${id}/performance`);
   return response.data;

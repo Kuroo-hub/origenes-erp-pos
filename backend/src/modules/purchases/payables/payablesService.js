@@ -10,8 +10,6 @@ import {
     findPurchaseStatusById
 } from "./payablesDao.js";
 
-export { formatCents, toCents };
-
 export function validatePayableId(value) {
     return validatePositiveInteger(value, "ID de cuenta por pagar");
 }

@@ -6,6 +6,7 @@ findExistingIngredientIds, replaceRecipeIngredients, findRecipeAvailability, fin
 findRecipeRequirements, insertConsumptionMovement
 } from './inventoryDao.js';
 
+import { pool } from '../../config/database.js';
 import {AppError} from '../../utils/AppError.js';
 import {withTransaction} from '../../utils/transaction.js';
 

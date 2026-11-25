@@ -7,8 +7,8 @@ import CashierOrders from '../../components/cashier/CashierOrders.jsx';
 import InvoiceModal from '../../components/cashier/InvoiceModal.jsx';
 import { useOrders } from '../../context/OrderContext.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
-import { getProducts } from '../../services/catalogApi.js';
-import { getBranchStockAlerts } from '../../services/inventoryApi.js';
+import { getProductRecipe, getProducts } from '../../services/catalogApi.js';
+import { getBranchInventory, getBranchStockAlerts } from '../../services/inventoryApi.js';
 
 function mapearProducto(producto) {
   return {
@@ -17,13 +17,36 @@ function mapearProducto(producto) {
     descripcion: producto.description ?? '',
     precio: Number(producto.price ?? 0),
     categoria: producto.category,
+    tipoProducto: producto.product_type,
     disponible: producto.active,
     imagen:
       producto.product_type === 'PREPARED'
         ? 'bi-egg-fried'
         : 'bi-basket',
+    receta: [],
     stock: null
   };
+}
+
+function calcularStockPorReceta(receta, inventario) {
+  if (!Array.isArray(receta) || receta.length === 0) return null;
+
+  const cantidades = receta.map((ingrediente) => {
+    const requerido = Number(ingrediente.quantity);
+    const disponible = Number(
+      inventario.find(
+        (item) =>
+          Number(item.ingredient_id) === Number(ingrediente.ingredient_id)
+      )?.quantity ?? 0
+    );
+
+    if (!Number.isFinite(requerido) || requerido <= 0) return 0;
+    return Math.max(0, Math.floor((Number.isFinite(disponible) ? disponible : 0) / requerido));
+  });
+
+  return cantidades.length === 0
+    ? null
+    : Math.min(...cantidades);
 }
 
 export default function CashierPage() {
@@ -43,17 +66,50 @@ export default function CashierPage() {
 
   const [productos, setProductos] = useState([]);
   const [alertasStock, setAlertasStock] = useState([]);
+  const [inventarioSucursal, setInventarioSucursal] = useState([]);
   const [factura, setFactura] = useState(null);
 
   useEffect(() => {
     let activo = true;
 
     getProducts()
-      .then((respuesta) => {
+      .then(async (respuesta) => {
         if (!activo) return;
 
         const filas = Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
-        setProductos(filas.filter((producto) => producto.active).map(mapearProducto));
+        const base = filas
+          .filter((producto) => producto.active)
+          .map(mapearProducto);
+
+        const paresRecetas = await Promise.all(
+          base.map(async (producto) => {
+            if (producto.tipoProducto !== 'PREPARED') {
+              return [producto.id, []];
+            }
+
+            try {
+              const respuestaReceta = await getProductRecipe(producto.id);
+              return [
+                producto.id,
+                respuestaReceta?.data?.ingredients ??
+                  respuestaReceta?.ingredients ??
+                  [],
+              ];
+            } catch {
+              return [producto.id, []];
+            }
+          })
+        );
+
+        if (!activo) return;
+
+        const recetasPorProducto = Object.fromEntries(paresRecetas);
+        setProductos(
+          base.map((producto) => ({
+            ...producto,
+            receta: recetasPorProducto[producto.id] ?? [],
+          }))
+        );
       })
       .catch(() => {
         if (activo) setProductos([]);
@@ -69,17 +125,32 @@ export default function CashierPage() {
 
     if (!sucursalId) {
       setAlertasStock([]);
+      setInventarioSucursal([]);
       return undefined;
     }
 
-    getBranchStockAlerts(sucursalId)
-      .then((respuesta) => {
+    Promise.all([
+      getBranchStockAlerts(sucursalId),
+      getBranchInventory(sucursalId),
+    ])
+      .then(([respuestaAlertas, respuestaInventario]) => {
         if (!activo) return;
-        const filas = Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
-        setAlertasStock(filas);
+
+        const filasAlertas = Array.isArray(respuestaAlertas)
+          ? respuestaAlertas
+          : respuestaAlertas?.data ?? [];
+        const filasInventario = Array.isArray(respuestaInventario)
+          ? respuestaInventario
+          : respuestaInventario?.data ?? [];
+
+        setAlertasStock(filasAlertas);
+        setInventarioSucursal(filasInventario);
       })
       .catch(() => {
-        if (activo) setAlertasStock([]);
+        if (activo) {
+          setAlertasStock([]);
+          setInventarioSucursal([]);
+        }
       });
 
     return () => {
@@ -88,8 +159,20 @@ export default function CashierPage() {
   }, [sucursalId]);
 
   const productosSucursal = useMemo(
-    () => productos.map((producto) => ({ ...producto, disponible: true })),
-    [productos]
+    () =>
+      productos.map((producto) => {
+        const stock = calcularStockPorReceta(
+          producto.receta,
+          inventarioSucursal
+        );
+
+        return {
+          ...producto,
+          stock,
+          disponible: stock == null ? true : stock > 0,
+        };
+      }),
+    [productos, inventarioSucursal]
   );
 
   const registrarVenta = async (datosPedido) => {

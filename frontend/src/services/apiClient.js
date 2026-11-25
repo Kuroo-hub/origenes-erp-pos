@@ -68,7 +68,4 @@ export const apiPost = (path, body, options = {}) =>
 export const apiPatch = (path, body, options = {}) =>
   apiRequest(path, { ...options, method: 'PATCH', body });
 
-export const apiPut = (path, body, options = {}) =>
-  apiRequest(path, { ...options, method: 'PUT', body });
 
-export const apiDelete = (path, options = {}) => apiRequest(path, { ...options, method: 'DELETE' });

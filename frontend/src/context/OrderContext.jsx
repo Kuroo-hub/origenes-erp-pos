@@ -280,14 +280,6 @@ export function OrderProvider({ children }) {
     );
   };
 
-  const cambiarEstadoEntrega = (id, deliveryStatus, estado) => {
-    setOrdenes((actuales) =>
-      actuales.map((orden) =>
-        orden.id === id ? { ...orden, deliveryStatus, estado } : orden
-      )
-    );
-  };
-
   const valor = useMemo(
     () => ({
       ordenes,
@@ -313,7 +305,6 @@ export function OrderProvider({ children }) {
       cerrarCaja,
       registrarPedido,
       cambiarEstado,
-      cambiarEstadoEntrega
     }),
     [
       ordenes,

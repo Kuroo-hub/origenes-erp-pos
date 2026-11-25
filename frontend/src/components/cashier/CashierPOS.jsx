@@ -314,6 +314,26 @@ export default function CashierPOS({
                     <h3>{producto.nombre}</h3>
                     <p>{producto.descripcion}</p>
 
+                    {producto.receta?.length > 0 && (
+                      <details className="cashier-product__recipe">
+                        <summary>
+                          <i className="bi bi-list-ul" aria-hidden="true" />
+                          Receta ({producto.receta.length})
+                        </summary>
+                        <ul>
+                          {producto.receta.map((ingrediente) => (
+                            <li key={ingrediente.ingredient_id}>
+                              <span>{ingrediente.ingredient_name}</span>
+                              <strong>
+                                {Number(ingrediente.quantity)}{' '}
+                                {ingrediente.unit ?? ''}
+                              </strong>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+
                     <div className="cashier-product__footer">
                       <strong>
                         {formatearMonedaCajero(producto.precio)}

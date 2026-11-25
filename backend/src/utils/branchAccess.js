@@ -1,9 +1,5 @@
 import { createError } from "./errors.js";
 
-export function isBranchRestrictedRole(role) {
-    return role !== "ADMINISTRATOR";
-}
-
 export function resolveBranchId(req, requestedBranchId) {
     const userBranchId = Number(req?.user?.branchId);
 

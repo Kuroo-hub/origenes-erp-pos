@@ -566,6 +566,50 @@
   line-height: 1.5;
 }
 
+.cashier-product__recipe {
+  margin: -7px 0 12px;
+  color: var(--ember-muted-fg);
+  font-size: 10px;
+}
+
+.cashier-product__recipe summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ember-primary);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.cashier-product__recipe summary::-webkit-details-marker {
+  display: none;
+}
+
+.cashier-product__recipe ul {
+  max-height: 112px;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  overflow-y: auto;
+  background: var(--ember-primary-soft);
+  border-radius: var(--ember-radius-control);
+  list-style: none;
+}
+
+.cashier-product__recipe li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.cashier-product__recipe li strong {
+  color: var(--ember-fg);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
 .cashier-product__footer {
   display: flex;
   align-items: center;
