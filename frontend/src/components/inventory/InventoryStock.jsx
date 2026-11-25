@@ -24,8 +24,21 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
   const criticalItems = inventory.filter(
     (item) => Number(item.quantity) <= Number(item.minimum_stock)
   );
-  const outOfStockCount = inventory.filter((item) => Number(item.quantity) === 0).length;
+  const outOfStockItems = criticalItems.filter(
+    (item) => Number(item.quantity) === 0
+  );
+  const lowStockItems = criticalItems.filter(
+    (item) => Number(item.quantity) > 0
+  );
+  const outOfStockCount = outOfStockItems.length;
   const healthyCount = totalItems - criticalItems.length;
+  const detalleAlertas = criticalItems
+    .slice(0, 4)
+    .map((item) => `${item.name} (${item.quantity}${item.unit ? ` ${item.unit}` : ''})`)
+    .join(', ');
+  const alertasExtras = criticalItems.length > 4
+    ? ` y ${criticalItems.length - 4} más`
+    : '';
 
   const filteredInventory = inventory.filter((item) => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -147,6 +160,28 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
           </div>
         </article>
       </div>
+
+      {criticalItems.length > 0 && (
+        <div
+          className={`inv-stock-alert ${outOfStockCount > 0 ? 'inv-stock-alert--critical' : ''}`}
+          role="alert"
+        >
+          <IconAlertTriangle />
+          <div>
+            <strong>
+              {outOfStockCount > 0
+                ? `${outOfStockCount} insumo(s) agotado(s)`
+                : `${lowStockItems.length} insumo(s) en stock mínimo`}
+              {outOfStockCount > 0 && lowStockItems.length > 0
+                ? ` y ${lowStockItems.length} en stock mínimo`
+                : ''}
+            </strong>
+            <span>
+              Reabastece: {detalleAlertas}{alertasExtras}.
+            </span>
+          </div>
+        </div>
+      )}
 
       {feedback && (
         <div className={`inv-toast inv-toast--${feedback.type}`}>{feedback.text}</div>

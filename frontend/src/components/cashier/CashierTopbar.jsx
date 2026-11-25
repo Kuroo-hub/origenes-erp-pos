@@ -9,6 +9,8 @@ export default function CashierTopbar({
   sucursales = [],
   onCambiarSucursal,
 }) {
+  const valorSucursal = sucursalId ?? '';
+
   return (
     <header className="cashier-topbar">
       <div className="cashier-topbar__crumbs">
@@ -22,10 +24,18 @@ export default function CashierTopbar({
       <label className="cashier-topbar__sucursal">
         <i className="bi bi-geo-alt" aria-hidden="true" />
         <select
-          value={sucursalId}
-          onChange={(evento) => onCambiarSucursal(Number(evento.target.value))}
+          value={valorSucursal}
+          onChange={(evento) => {
+            if (evento.target.value === '') return;
+            onCambiarSucursal(Number(evento.target.value));
+          }}
           aria-label="Sucursal del cajero"
         >
+          {valorSucursal === '' && (
+            <option value="" disabled>
+              Seleccione sucursal
+            </option>
+          )}
           {sucursales.map((sucursal) => (
             <option key={sucursal.id} value={sucursal.id}>
               {sucursal.nombre}

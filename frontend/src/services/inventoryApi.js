@@ -3,6 +3,9 @@ import { apiGet, apiPost } from './apiClient.js';
 export const getBranchInventory = async (branchId) =>
   apiGet(`/inventory/branches/${branchId}/stock`);
 
+export const getBranchStockAlerts = async (branchId) =>
+  apiGet(`/inventory/branches/${branchId}/alerts`);
+
 export const createInventoryAdjustment = async (payload) => {
   const branchId = payload.branch_id ?? payload.branchId;
   const ingredientId = payload.ingredient_id ?? payload.ingredientId;

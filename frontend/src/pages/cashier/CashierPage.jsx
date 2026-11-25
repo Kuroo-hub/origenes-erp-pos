@@ -8,6 +8,7 @@ import InvoiceModal from '../../components/cashier/InvoiceModal.jsx';
 import { useOrders } from '../../context/OrderContext.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { getProducts } from '../../services/catalogApi.js';
+import { getBranchStockAlerts } from '../../services/inventoryApi.js';
 
 function mapearProducto(producto) {
   return {
@@ -41,6 +42,7 @@ export default function CashierPage() {
   } = useOrders();
 
   const [productos, setProductos] = useState([]);
+  const [alertasStock, setAlertasStock] = useState([]);
   const [factura, setFactura] = useState(null);
 
   useEffect(() => {
@@ -61,6 +63,29 @@ export default function CashierPage() {
       activo = false;
     };
   }, []);
+
+  useEffect(() => {
+    let activo = true;
+
+    if (!sucursalId) {
+      setAlertasStock([]);
+      return undefined;
+    }
+
+    getBranchStockAlerts(sucursalId)
+      .then((respuesta) => {
+        if (!activo) return;
+        const filas = Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
+        setAlertasStock(filas);
+      })
+      .catch(() => {
+        if (activo) setAlertasStock([]);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, [sucursalId]);
 
   const productosSucursal = useMemo(
     () => productos.map((producto) => ({ ...producto, disponible: true })),
@@ -127,6 +152,7 @@ export default function CashierPage() {
             <CashierPOS
               sucursal={sucursal}
               productos={productosSucursal}
+              alertasStock={alertasStock}
               cajaAbierta={cajaAbierta}
               onRegistrarPedido={registrarVenta}
             />

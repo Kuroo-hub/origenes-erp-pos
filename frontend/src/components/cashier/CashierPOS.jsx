@@ -8,6 +8,7 @@ import { formatearMonedaCajero } from '../../utils/formatters.js';
 export default function CashierPOS({
   sucursal,
   productos,
+  alertasStock = [],
   cajaAbierta = true,
   onRegistrarPedido,
 }) {
@@ -24,6 +25,22 @@ export default function CashierPOS({
   const [tiempoPreparacion, setTiempoPreparacion] = useState(15);
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [notificacion, setNotificacion] = useState('');
+
+  const alertasAgotadas = alertasStock.filter(
+    (item) => Number(item.quantity) <= 0
+  );
+  const alertasBajas = alertasStock.filter(
+    (item) => Number(item.quantity) > 0
+  );
+  const detalleAlertas = alertasStock
+    .slice(0, 3)
+    .map((item) =>
+      `${item.ingredient_name ?? item.name} (${item.quantity}${item.unit ? ` ${item.unit}` : ''})`
+    )
+    .join(', ');
+  const alertasExtras = alertasStock.length > 3
+    ? ` y ${alertasStock.length - 3} más`
+    : '';
 
   const cambiarEntrega = (campo, valor) => {
     setEntrega((previo) => ({ ...previo, [campo]: valor }));
@@ -54,9 +71,11 @@ export default function CashierPOS({
   const agregarProducto = (producto) => {
     const cantidadActual = cantidadEnCarrito(producto.id);
 
+    const stock = producto.stock;
+
     if (
       !producto.disponible ||
-      cantidadActual >= producto.stock
+      (stock != null && cantidadActual >= Number(stock))
     ) {
       return;
     }
@@ -91,10 +110,11 @@ export default function CashierPOS({
           );
 
           const nuevaCantidad = item.cantidad + delta;
+          const stock = productoActual?.stock;
 
           if (
             nuevaCantidad < 1 ||
-            nuevaCantidad > (productoActual?.stock ?? 0)
+            (stock != null && nuevaCantidad > Number(stock))
           ) {
             return item;
           }
@@ -209,6 +229,28 @@ export default function CashierPOS({
           <i className="bi bi-info-circle me-2" aria-hidden="true" />
           {notificacion}
         </Alert>
+      )}
+
+      {alertasStock.length > 0 && (
+        <div
+          className={`cashier-stock-alert ${alertasAgotadas.length > 0 ? 'cashier-stock-alert--critical' : ''}`}
+          role="alert"
+        >
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
+          <div>
+            <strong>
+              {alertasAgotadas.length > 0
+                ? `${alertasAgotadas.length} insumo(s) agotado(s)`
+                : `${alertasBajas.length} insumo(s) en stock mínimo`}
+              {alertasAgotadas.length > 0 && alertasBajas.length > 0
+                ? ` y ${alertasBajas.length} en stock mínimo`
+                : ''}
+            </strong>
+            <span>
+              Reabastece antes de vender: {detalleAlertas}{alertasExtras}.
+            </span>
+          </div>
+        </div>
       )}
 
       <div className="cashier-pos__layout">
