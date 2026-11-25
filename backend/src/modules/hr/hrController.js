@@ -1,4 +1,9 @@
-import { getEmployee, getEmployees, runPayroll } from "./hrService.js";
+import {
+    getEmployee,
+    getEmployeePerformance,
+    getEmployees,
+    runPayroll
+} from "./hrService.js";
 
 export async function listEmployees(req, res, next) {
     try {
@@ -20,6 +25,19 @@ export async function getEmployeeById(req, res, next) {
         return res.status(200).json({
             success: true,
             data: employee
+        });
+    } catch (error) {
+        return next(error);
+    }
+}
+
+export async function getPerformanceByEmployeeId(req, res, next) {
+    try {
+        const performance = await getEmployeePerformance(req.params.id);
+
+        return res.status(200).json({
+            success: true,
+            data: performance
         });
     } catch (error) {
         return next(error);
