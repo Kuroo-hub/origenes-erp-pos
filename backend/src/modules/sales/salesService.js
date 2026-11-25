@@ -4,7 +4,7 @@ import { pool } from "../../config/database.js";
 import { consumeSaleProduct } from "../inventory/inventoryService.js";
 import {
     findActiveBranchById,
-    findActiveUserById,
+    findActiveEmployeeById,
     findCustomerById,
     findOpenCashShiftById,
     findActiveProductsByIds,
@@ -80,7 +80,7 @@ function formatCents(cents) {
 export async function registerSaleService({
     customerId = null,
     branchId,
-    userId,
+    employeeId,
     shiftId,
     documentType,
     paymentMethod,
@@ -88,7 +88,7 @@ export async function registerSaleService({
     items
 }) {
     const validBranchId = validateId(branchId, "ID de sucursal");
-    const validUserId = validateId(userId, "ID de usuario");
+    const validEmployeeId = validateId(employeeId, "ID de empleado");
     const validShiftId = validateId(shiftId, "ID de turno de caja");
     const validCustomerId = customerId ? validateId(customerId, "ID de cliente") : null;
 
@@ -122,12 +122,12 @@ export async function registerSaleService({
     }
 
     return executeTransaction(async (client) => {
-        // Valida sucursal, usuario y cliente.
+        // Valida sucursal, empleado y cliente.
         const branch = await findActiveBranchById(client, validBranchId);
         if (!branch) throw createError("La sucursal no existe o está inactiva.", 404);
 
-        const user = await findActiveUserById(client, validUserId);
-        if (!user) throw createError("El usuario no existe o está inactivo.", 404);
+        const employee = await findActiveEmployeeById(client, validEmployeeId);
+        if (!employee) throw createError("El empleado no existe o está inactivo.", 404);
 
         if (validCustomerId) {
             const customer = await findCustomerById(client, validCustomerId);
@@ -212,7 +212,7 @@ export async function registerSaleService({
         const invoice = await createInvoice(client, {
             customerId: validCustomerId,
             branchId: validBranchId,
-            userId: validUserId,
+            employeeId: validEmployeeId,
             documentType,
             consecutiveNumber,
             controlNumber,
@@ -251,7 +251,7 @@ export async function registerSaleService({
                 branchId: validBranchId,
                 productId: detail.productId,
                 quantity: detail.quantity,
-                userId: validUserId
+                employeeId: validEmployeeId
             });
         }
 

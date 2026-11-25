@@ -5,7 +5,7 @@ import {
     findActiveEmployeesForPayroll,
     findAllEmployees,
     findEmployeeById,
-    findPayrollPerformanceByUserId,
+    findPayrollPerformanceByEmployeeId,
     findPayrollByPeriod
 } from "./hrDao.js";
 import { calculateBiweeklyPayroll } from "./payrollCalculator.js";
@@ -61,7 +61,7 @@ export async function getEmployee(employeeIdValue) {
 
 export async function getEmployeePerformance(employeeIdValue) {
     const employee = await getEmployee(employeeIdValue);
-    const payrollPerformance = await findPayrollPerformanceByUserId(employee.userId);
+    const payrollPerformance = await findPayrollPerformanceByEmployeeId(employee.employeeId);
 
     return {
         employee,
@@ -89,9 +89,9 @@ export async function runPayroll(payload) {
         throw new AppError("La fecha de finalización no puede ser anterior a la fecha de inicio.", 400);
     }
 
-    const deductionsByUser = new Map();
+    const deductionsByEmployee = new Map();
     const deductions = payload?.otherDeductions ?? [];
-    const bonusesByUser = new Map();
+    const bonusesByEmployee = new Map();
     const bonuses = payload?.bonuses ?? [];
 
     if (!Array.isArray(deductions)) {
@@ -99,18 +99,18 @@ export async function runPayroll(payload) {
     }
 
     for (const deduction of deductions) {
-        const userId = Number(deduction?.userId);
+        const employeeId = Number(deduction?.employeeId);
         const amount = Number(deduction?.amount);
 
-        if (!Number.isInteger(userId) || userId < 1 || !Number.isFinite(amount) || amount < 0) {
-            throw new AppError("Cada deducción debe incluir un usuario y monto válidos.", 400);
+        if (!Number.isInteger(employeeId) || employeeId < 1 || !Number.isFinite(amount) || amount < 0) {
+            throw new AppError("Cada deducción debe incluir un empleado y monto válidos.", 400);
         }
 
-        if (deductionsByUser.has(userId)) {
+        if (deductionsByEmployee.has(employeeId)) {
             throw new AppError("No se puede repetir la deducción de un empleado.", 400);
         }
 
-        deductionsByUser.set(userId, amount);
+        deductionsByEmployee.set(employeeId, amount);
     }
 
     if (!Array.isArray(bonuses)) {
@@ -118,18 +118,18 @@ export async function runPayroll(payload) {
     }
 
     for (const bonus of bonuses) {
-        const userId = Number(bonus?.userId);
+        const employeeId = Number(bonus?.employeeId);
         const amount = Number(bonus?.amount);
 
-        if (!Number.isInteger(userId) || userId < 1 || !Number.isFinite(amount) || amount < 0) {
-            throw new AppError("Cada bono debe incluir un usuario y monto válidos.", 400);
+        if (!Number.isInteger(employeeId) || employeeId < 1 || !Number.isFinite(amount) || amount < 0) {
+            throw new AppError("Cada bono debe incluir un empleado y monto válidos.", 400);
         }
 
-        if (bonusesByUser.has(userId)) {
+        if (bonusesByEmployee.has(employeeId)) {
             throw new AppError("No se puede repetir el bono de un empleado.", 400);
         }
 
-        bonusesByUser.set(userId, amount);
+        bonusesByEmployee.set(employeeId, amount);
     }
 
     const client = await pool.connect();
@@ -147,15 +147,15 @@ export async function runPayroll(payload) {
             throw new AppError("No hay empleados activos para procesar la planilla.", 422);
         }
 
-        const activeUserIds = new Set(employees.map((employee) => employee.userId));
-        for (const userId of deductionsByUser.keys()) {
-            if (!activeUserIds.has(userId)) {
+        const activeEmployeeIds = new Set(employees.map((employee) => employee.employeeId));
+        for (const employeeId of deductionsByEmployee.keys()) {
+            if (!activeEmployeeIds.has(employeeId)) {
                 throw new AppError("Una deducción pertenece a un empleado inexistente o inactivo.", 400);
             }
         }
 
-        for (const userId of bonusesByUser.keys()) {
-            if (!activeUserIds.has(userId)) {
+        for (const employeeId of bonusesByEmployee.keys()) {
+            if (!activeEmployeeIds.has(employeeId)) {
                 throw new AppError("Un bono pertenece a un empleado inexistente o inactivo.", 400);
             }
         }
@@ -166,15 +166,14 @@ export async function runPayroll(payload) {
         for (const employee of employees) {
             const amounts = calculateBiweeklyPayroll(
                 employee.baseSalary,
-                deductionsByUser.get(employee.userId) ?? 0,
-                bonusesByUser.get(employee.userId) ?? 0
+                deductionsByEmployee.get(employee.employeeId) ?? 0,
+                bonusesByEmployee.get(employee.employeeId) ?? 0
             );
-            const detail = await createPayrollDetail(client, payroll.payrollId, employee.userId, amounts);
+            const detail = await createPayrollDetail(client, payroll.payrollId, employee.employeeId, amounts);
 
             details.push({
                 ...detail,
                 employeeId: employee.employeeId,
-                userId: employee.userId,
                 fullName: employee.fullName,
                 ...amounts
             });

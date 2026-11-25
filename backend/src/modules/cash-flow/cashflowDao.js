@@ -19,32 +19,31 @@ export async function findCashRegisterById(client, cashRegisterId) {
     return result.rows[0] ?? null;
 }
 
-// Busca un usuario activo.
-export async function findActiveCashier(client, userId) {
+// Busca un empleado activo.
+export async function findActiveCashier(client, employeeId) {
     const result = await client.query(
         `SELECT
-            u.user_id,
-            u.email,
-            u.active,
-            COALESCE(e.full_name, u.email) AS nombre_completo
-         FROM app_user u
-         LEFT JOIN employee e ON e.user_id = u.user_id
-         WHERE u.user_id = $1
-         AND u.active = TRUE`,
-        [userId]
+            e.employee_id,
+            e.email,
+            e.active,
+            e.full_name AS nombre_completo
+         FROM employee e
+         WHERE e.employee_id = $1
+         AND e.active = TRUE`,
+        [employeeId]
     );
 
     return result.rows[0] ?? null;
 }
 
 // Comprueba que el empleado pertenezca a la sucursal.
-export async function findUserBranch(client, userId, branchId) {
+export async function findEmployeeBranch(client, employeeId, branchId) {
     const result = await client.query(
-        `SELECT user_id, branch_id
+        `SELECT employee_id, branch_id
          FROM employee
-         WHERE user_id = $1
+         WHERE employee_id = $1
          AND branch_id = $2`,
-        [userId, branchId]
+        [employeeId, branchId]
     );
 
     return result.rows[0] ?? null;
@@ -56,7 +55,7 @@ export async function findActiveSessionByRegister(client, cashRegisterId) {
         `SELECT
             shift_id AS id,
             cash_register_id,
-            user_id,
+            employee_id,
             status,
             CASE
                 WHEN status = 'OPEN' THEN 'ABIERTA'
@@ -74,12 +73,12 @@ export async function findActiveSessionByRegister(client, cashRegisterId) {
 // Crea una sesión de caja.
 export async function createCashSession(
     client,
-    { cashRegisterId, userId, initialAmount }
+    { cashRegisterId, employeeId, initialAmount }
 ) {
     const result = await client.query(
         `INSERT INTO cash_shift (
             cash_register_id,
-            user_id,
+            employee_id,
             opening_amount,
             status
          )
@@ -93,7 +92,7 @@ export async function createCashSession(
                 WHEN status = 'OPEN' THEN 'ABIERTA'
                 ELSE 'CERRADA'
             END AS estado`,
-        [cashRegisterId, userId, initialAmount]
+        [cashRegisterId, employeeId, initialAmount]
     );
 
     return result.rows[0];
@@ -105,22 +104,20 @@ export async function findAllActiveCashSessions() {
         `SELECT
             cs.shift_id AS id,
             cs.cash_register_id AS "cashRegisterId",
-            cs.user_id AS "userId",
+            cs.employee_id AS "employeeId",
             cs.opening_date AS "fechaApertura",
             cs.opening_amount AS "montoInicial",
             'ABIERTA' AS estado,
             cr.name AS "nombreCaja",
             b.name AS "nombreSucursal",
-            COALESCE(e.full_name, u.email) AS "nombreCajero"
+            e.full_name AS "nombreCajero"
          FROM cash_shift cs
          INNER JOIN cash_register cr
             ON cr.cash_register_id = cs.cash_register_id
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-         INNER JOIN app_user u
-            ON u.user_id = cs.user_id
-         LEFT JOIN employee e
-            ON e.user_id = u.user_id
+         INNER JOIN employee e
+             ON e.employee_id = cs.employee_id
          WHERE cs.status = 'OPEN'
          ORDER BY cs.opening_date DESC`
     );
@@ -145,16 +142,14 @@ export async function findCashSessionById(sessionId) {
             cr.name AS "nombreCaja",
             cr.branch_id AS "branchId",
             b.name AS "nombreSucursal",
-            COALESCE(e.full_name, u.email) AS "nombreCajero"
+            e.full_name AS "nombreCajero"
          FROM cash_shift cs
          INNER JOIN cash_register cr
             ON cr.cash_register_id = cs.cash_register_id
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-         INNER JOIN app_user u
-            ON u.user_id = cs.user_id
-         LEFT JOIN employee e
-            ON e.user_id = u.user_id
+         INNER JOIN employee e
+             ON e.employee_id = cs.employee_id
          WHERE cs.shift_id = $1`,
         [sessionId]
     );
@@ -198,16 +193,14 @@ export async function findCashSessionDetails(client, sessionId) {
             cr.name AS "nombreCaja",
             cr.branch_id AS "branchId",
             b.name AS "nombreSucursal",
-            COALESCE(e.full_name, u.email) AS "nombreCajero"
+            e.full_name AS "nombreCajero"
          FROM cash_shift cs
          INNER JOIN cash_register cr
             ON cr.cash_register_id = cs.cash_register_id
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-         INNER JOIN app_user u
-            ON u.user_id = cs.user_id
-         LEFT JOIN employee e
-            ON e.user_id = u.user_id
+         INNER JOIN employee e
+             ON e.employee_id = cs.employee_id
          WHERE cs.shift_id = $1`,
         [sessionId]
     );
@@ -360,16 +353,14 @@ export async function findCashSessionHistory(limit, offset) {
             END AS estado,
             cr.name AS "nombreCaja",
             b.name AS "nombreSucursal",
-            COALESCE(e.full_name, u.email) AS "nombreCajero"
+            e.full_name AS "nombreCajero"
          FROM cash_shift cs
          INNER JOIN cash_register cr
             ON cr.cash_register_id = cs.cash_register_id
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-         INNER JOIN app_user u
-            ON u.user_id = cs.user_id
-         LEFT JOIN employee e
-            ON e.user_id = u.user_id
+         INNER JOIN employee e
+             ON e.employee_id = cs.employee_id
          ORDER BY cs.opening_date DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]

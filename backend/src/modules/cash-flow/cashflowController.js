@@ -14,7 +14,7 @@ export async function openCashSessionController(req, res, next) {
   try {
     const session = await openCashSessionService({
       cashRegisterId: req.body.cashRegisterId,
-      userId: req.user.id,
+      employeeId: req.user.employeeId,
       initialAmount: req.body.initialAmount
     });
 
@@ -78,7 +78,7 @@ export async function addCashMovementController(req, res, next) {
   try {
     const movement = await addCashMovementService({
       sessionId: req.params.id,
-      userId: req.user.id,
+      employeeId: req.user.employeeId,
       type: req.body.type,
       amount: req.body.amount,
       concept: req.body.concept
@@ -99,7 +99,7 @@ export async function closeCashSession(req, res, next) {
   try {
     const result = await closeCashSessionService({
       sessionId: req.params.id,
-      userId: req.user.id,
+      employeeId: req.user.employeeId,
       realAmount: req.body.realAmount
     });
 

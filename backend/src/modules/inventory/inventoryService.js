@@ -10,6 +10,16 @@ findRecipeRequirements, consumeIngredientStock, insertConsumptionMovement
 
 import {AppError} from '../../utils/AppError.js';
 
+function validateEmployeeId(value) {
+    const employeeId = Number(value);
+
+    if (!Number.isSafeInteger(employeeId) || employeeId <= 0) {
+        throw new AppError("El ID del empleado no es válido.", 400);
+    }
+
+    return employeeId;
+}
+
 export async function registerIngredient(data)
 {
     const {name, ingredientType, unit} = data;
@@ -78,8 +88,9 @@ export async function getStockByBranch(branchId)
     return stock;
 }
 
-export async function registerStockEntry(branchId, data) {
+export async function registerStockEntry(branchId, data, employeeId) {
     const id = Number(branchId);
+    const validEmployeeId = validateEmployeeId(employeeId);
     const ingredientId = Number(data?.ingredientId);
     const quantity = Number(data?.quantity);
     const reason = data?.reason;
@@ -160,7 +171,8 @@ export async function registerStockEntry(branchId, data) {
             id,
             ingredientId,
             quantity,
-            reason?.trim() || null
+            reason?.trim() || null,
+            validEmployeeId
         );
 
         await client.query("COMMIT");
@@ -179,8 +191,9 @@ export async function registerStockEntry(branchId, data) {
     }
 }
 
-export async function registerStockExit(branchId, data) {
+export async function registerStockExit(branchId, data, employeeId) {
     const id = Number(branchId);
+    const validEmployeeId = validateEmployeeId(employeeId);
     const ingredientId = Number(data?.ingredientId);
     const quantity = Number(data?.quantity);
     const reason = data?.reason;
@@ -283,7 +296,8 @@ export async function registerStockExit(branchId, data) {
             id,
             ingredientId,
             quantity,
-            reason.trim()
+            reason.trim(),
+            validEmployeeId
         );
 
         await client.query("COMMIT");
@@ -609,7 +623,7 @@ export async function checkProductAvailability(branchId,productId, requestedQuan
 }
 
 export async function consumePreparedProduct(client,
-    { branchId, productId, quantity, userId = null }) {
+    { branchId, productId, quantity, employeeId = null }) {
     const parsedBranchId = Number(branchId);
     const parsedProductId = Number(productId);
     const parsedQuantity = Number(quantity);
@@ -649,11 +663,11 @@ export async function consumePreparedProduct(client,
     }
 
     if (
-        userId !== null &&
-        (!Number.isSafeInteger(userId) || userId <= 0)
+        employeeId !== null &&
+        (!Number.isSafeInteger(employeeId) || employeeId <= 0)
     ) {
         throw new AppError(
-            "El ID del usuario no es válido.",
+            "El ID del empleado no es válido.",
             400
         );
     }
@@ -732,7 +746,7 @@ export async function consumePreparedProduct(client,
             parsedBranchId,
             ingredient.ingredient_id,
             ingredient.required_quantity,
-            userId
+            employeeId
         );
 
         movements.push({
@@ -756,7 +770,7 @@ export async function consumePreparedProduct(client,
 
 export async function consumeResaleProduct(
     client,
-    { branchId, productId, quantity, userId = null }
+    { branchId, productId, quantity, employeeId = null }
 ) {
     const parsedBranchId = Number(branchId);
     const parsedProductId = Number(productId);
@@ -797,11 +811,11 @@ export async function consumeResaleProduct(
     }
 
     if (
-        userId !== null &&
-        (!Number.isSafeInteger(userId) || userId <= 0)
+        employeeId !== null &&
+        (!Number.isSafeInteger(employeeId) || employeeId <= 0)
     ) {
         throw new AppError(
-            "El ID del usuario no es válido.",
+            "El ID del empleado no es válido.",
             400
         );
     }
@@ -872,7 +886,7 @@ export async function consumeResaleProduct(
         parsedBranchId,
         ingredientId,
         parsedQuantity,
-        userId
+        employeeId
     );
 
     return {
@@ -893,7 +907,7 @@ export async function consumeResaleProduct(
 
 export async function consumeSaleProduct(
     client,
-    { branchId, productId, quantity, userId = null }
+    { branchId, productId, quantity, employeeId = null }
 ) {
     const parsedBranchId = Number(branchId);
     const parsedProductId = Number(productId);
@@ -934,11 +948,11 @@ export async function consumeSaleProduct(
     }
 
     if (
-        userId !== null &&
-        (!Number.isSafeInteger(userId) || userId <= 0)
+        employeeId !== null &&
+        (!Number.isSafeInteger(employeeId) || employeeId <= 0)
     ) {
         throw new AppError(
-            "El ID del usuario no es válido.",
+            "El ID del empleado no es válido.",
             400
         );
     }
@@ -967,7 +981,7 @@ export async function consumeSaleProduct(
         branchId: parsedBranchId,
         productId: parsedProductId,
         quantity: parsedQuantity,
-        userId
+        employeeId
     };
 
     switch (product.product_type) {

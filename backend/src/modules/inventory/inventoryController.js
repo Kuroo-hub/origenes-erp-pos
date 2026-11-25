@@ -59,7 +59,8 @@ export async function createStockEntryController(req, res, next) {
 
         const result = await registerStockEntry(
             branchId,
-            req.body
+            req.body,
+            req.user.employeeId
         );
 
         return res.status(201).json({
@@ -79,7 +80,8 @@ export async function createStockExitController(req, res, next) {
 
         const result = await registerStockExit(
             branchId,
-            req.body
+            req.body,
+            req.user.employeeId
         );
 
         return res.status(201).json({

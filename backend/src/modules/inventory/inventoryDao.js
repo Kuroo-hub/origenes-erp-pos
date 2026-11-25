@@ -107,16 +107,17 @@ export async function increaseStock(client, branchId, ingredientId, quantity) {
     return result.rows[0];
 }
 
-export async function insertInventoryMovement(client, branchId, ingredientId, quantity, reason) {
+export async function insertInventoryMovement(client, branchId, ingredientId, quantity, reason, employeeId) {
     const query = `
         INSERT INTO inventory_movement (
             branch_id,
             ingredient_id,
+            employee_id,
             movement_type,
             quantity,
             reason
         )
-        VALUES ($1, $2, 'IN', $3, $4)
+        VALUES ($1, $2, $5, 'IN', $3, $4)
         RETURNING *
     `;
 
@@ -124,7 +125,8 @@ export async function insertInventoryMovement(client, branchId, ingredientId, qu
         branchId,
         ingredientId,
         quantity,
-        reason
+        reason,
+        employeeId
     ]);
 
     return result.rows[0];
@@ -184,17 +186,19 @@ export async function insertStockOutMovement(
     branchId,
     ingredientId,
     quantity,
-    reason
+    reason,
+    employeeId
 ) {
     const query = `
         INSERT INTO inventory_movement (
             branch_id,
             ingredient_id,
+            employee_id,
             movement_type,
             quantity,
             reason
         )
-        VALUES ($1, $2, 'OUT', $3, $4)
+        VALUES ($1, $2, $5, 'OUT', $3, $4)
         RETURNING *
     `;
 
@@ -202,7 +206,8 @@ export async function insertStockOutMovement(
         branchId,
         ingredientId,
         quantity,
-        reason
+        reason,
+        employeeId
     ]);
 
     return result.rows[0];
@@ -217,7 +222,7 @@ export async function findMovementsByBranch(branchId) {
             im.ingredient_id,
             i.name AS ingredient_name,
             i.unit,
-            im.user_id,
+            im.employee_id,
             im.movement_type,
             im.quantity,
             im.reason,
@@ -465,13 +470,13 @@ export async function insertConsumptionMovement(
     branchId,
     ingredientId,
     quantity,
-    userId
+    employeeId
 ) {
     const query = `
         INSERT INTO inventory_movement (
             branch_id,
             ingredient_id,
-            user_id,
+            employee_id,
             movement_type,
             quantity,
             reason
@@ -490,7 +495,7 @@ export async function insertConsumptionMovement(
     const result = await client.query(query, [
         branchId,
         ingredientId,
-        userId,
+        employeeId,
         quantity
     ]);
 

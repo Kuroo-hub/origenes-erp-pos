@@ -5,7 +5,7 @@ import { pool } from "../../config/database.js";
 import {
     findCashRegisterById,
     findActiveCashier,
-    findUserBranch,
+    findEmployeeBranch,
     findActiveSessionByRegister,
     createCashSession,
     findAllActiveCashSessions,
@@ -118,11 +118,11 @@ function formatCents(cents) {
 // 1. Abre una sesión de caja.
 export async function openCashSessionService({
     cashRegisterId,
-    userId,
+    employeeId,
     initialAmount
 }) {
     const registerId = validateId(cashRegisterId, "ID de caja");
-    const cashierId = validateId(userId, "ID de usuario");
+    const cashierId = validateId(employeeId, "ID de empleado");
     const amount = validateAmount(initialAmount, true);
 
     return executeTransaction(async (client) => {
@@ -141,23 +141,23 @@ export async function openCashSessionService({
             throw createError("La caja no está activa.", 409);
         }
 
-        // Comprueba que el usuario esté activo.
+        // Comprueba que el empleado esté activo.
         const cashier = await findActiveCashier(client, cashierId);
 
         if (!cashier) {
-            throw createError("El usuario no existe o está inactivo.", 404);
+            throw createError("El empleado no existe o está inactivo.", 404);
         }
 
         // Comprueba que el cajero pertenezca a la sucursal.
-        const userBranch = await findUserBranch(
+        const employeeBranch = await findEmployeeBranch(
             client,
             cashierId,
             cashRegister.branch_id
         );
 
-        if (!userBranch) {
+        if (!employeeBranch) {
             throw createError(
-                "El usuario no pertenece a esta sucursal.",
+                "El empleado no pertenece a esta sucursal.",
                 403
             );
         }
@@ -178,7 +178,7 @@ export async function openCashSessionService({
         // Crea la sesión.
         return createCashSession(client, {
             cashRegisterId: registerId,
-            userId: cashierId,
+            employeeId: cashierId,
             initialAmount: amount
         });
     });
@@ -242,13 +242,13 @@ export async function getCashSessionSummaryService(sessionId) {
 // 5. Registra un ingreso o egreso manual.
 export async function addCashMovementService({
     sessionId,
-    userId,
+    employeeId,
     type,
     amount,
     concept
 }) {
     const id = validateId(sessionId, "ID de sesión");
-    const cashierId = validateId(userId, "ID de usuario");
+    const cashierId = validateId(employeeId, "ID de empleado");
     const validAmount = validateAmount(amount);
 
     if (!["INGRESO", "EGRESO"].includes(type)) {
@@ -282,9 +282,9 @@ export async function addCashMovementService({
         }
 
         // Solo el cajero asignado puede registrar movimientos.
-        if (Number(session.user_id) !== cashierId) {
+        if (Number(session.employee_id) !== cashierId) {
             throw createError(
-                "El usuario no es el cajero asignado a esta sesión.",
+                "El empleado no es el cajero asignado a esta sesión.",
                 403
             );
         }
@@ -292,12 +292,11 @@ export async function addCashMovementService({
         const cashier = await findActiveCashier(client, cashierId);
 
         if (!cashier) {
-            throw createError("El usuario no está activo.", 403);
+            throw createError("El empleado no está activo.", 403);
         }
 
         return createCashMovement(client, {
             sessionId: id,
-            userId: cashierId,
             type,
             amount: validAmount,
             concept: concept.trim()
@@ -308,11 +307,11 @@ export async function addCashMovementService({
 // 6. Cierra una sesión de caja.
 export async function closeCashSessionService({
     sessionId,
-    userId,
+    employeeId,
     realAmount
 }) {
     const id = validateId(sessionId, "ID de sesión");
-    const cashierId = validateId(userId, "ID de usuario");
+    const cashierId = validateId(employeeId, "ID de empleado");
     const validRealAmount = validateAmount(realAmount, true);
 
     return executeTransaction(async (client) => {
@@ -328,7 +327,7 @@ export async function closeCashSessionService({
             throw createError("La sesión ya está cerrada.", 409);
         }
 
-        if (Number(session.user_id) !== cashierId) {
+        if (Number(session.employee_id) !== cashierId) {
             throw createError(
                 "Solo el cajero asignado puede cerrar esta sesión.",
                 403

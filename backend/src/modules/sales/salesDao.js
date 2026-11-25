@@ -12,13 +12,13 @@ export async function findActiveBranchById(client, branchId) {
     return result.rows[0] ?? null;
 }
 
-// Verifica que el usuario exista y esté activo.
-export async function findActiveUserById(client, userId) {
+// Verifica que el empleado exista y esté activo.
+export async function findActiveEmployeeById(client, employeeId) {
     const result = await client.query(
-        `SELECT user_id, email, role, active
-         FROM app_user
-         WHERE user_id = $1 AND active = TRUE`,
-        [userId]
+        `SELECT employee_id, email, role, active
+         FROM employee
+         WHERE employee_id = $1 AND active = TRUE`,
+        [employeeId]
     );
 
     return result.rows[0] ?? null;
@@ -84,7 +84,7 @@ export async function createInvoice(
     {
         customerId,
         branchId,
-        userId,
+        employeeId,
         documentType,
         consecutiveNumber,
         controlNumber,
@@ -100,7 +100,7 @@ export async function createInvoice(
         `INSERT INTO invoice (
             customer_id,
             branch_id,
-            user_id,
+            employee_id,
             document_type,
             consecutive_number,
             control_number,
@@ -116,7 +116,7 @@ export async function createInvoice(
         [
             customerId,
             branchId,
-            userId,
+            employeeId,
             documentType,
             consecutiveNumber,
             controlNumber,
@@ -197,12 +197,12 @@ export async function findInvoicesHistory(limit, offset, branchId = null) {
             i.status,
             b.name AS "branchName",
             c.full_name AS "customerName",
-            u.email AS "cashierEmail"
+            e.email AS "cashierEmail"
          FROM invoice i
          INNER JOIN branch b
             ON b.branch_id = i.branch_id
-         INNER JOIN app_user u
-            ON u.user_id = i.user_id
+         INNER JOIN employee e
+             ON e.employee_id = i.employee_id
          LEFT JOIN customer c
             ON c.customer_id = i.customer_id
          ${whereClause}
@@ -224,12 +224,12 @@ export async function findInvoiceHeaderById(invoiceId) {
             c.full_name AS "customerName",
             c.tax_id AS "customerTaxId",
             c.registration_number AS "customerNrc",
-            u.email AS "cashierEmail"
+            e.email AS "cashierEmail"
          FROM invoice i
          INNER JOIN branch b
             ON b.branch_id = i.branch_id
-         INNER JOIN app_user u
-            ON u.user_id = i.user_id
+         INNER JOIN employee e
+             ON e.employee_id = i.employee_id
          LEFT JOIN customer c
             ON c.customer_id = i.customer_id
          WHERE i.invoice_id = $1`,

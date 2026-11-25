@@ -11,7 +11,7 @@ export async function registerSaleController(req, res, next) {
         const sale = await registerSaleService({
             customerId: req.body.customerId,
             branchId: req.body.branchId,
-            userId: req.body.userId,
+            employeeId: req.user.employeeId,
             shiftId: req.body.shiftId,
             documentType: req.body.documentType,
             paymentMethod: req.body.paymentMethod,
