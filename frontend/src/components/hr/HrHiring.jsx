@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   ROLES_RRHH,
@@ -9,6 +8,7 @@ import {
 const FORMULARIO_INICIAL = {
   fullName: '',
   email: '',
+  password: '',
   branchId: String(SUCURSALES_RRHH[0].id),
   baseSalary: '',
   role: ROLES_RRHH[0].id,
@@ -19,6 +19,7 @@ const PATRON_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function HrHiring({ empleados = [], onContratar }) {
   const [formulario, setFormulario] = useState(FORMULARIO_INICIAL);
   const [mensaje, setMensaje] = useState(null);
+  const [enviando, setEnviando] = useState(false);
 
   const actualizarCampo = (campo) => (evento) => {
     setFormulario((previo) => ({
@@ -42,11 +43,7 @@ export default function HrHiring({ empleados = [], onContratar }) {
     if (!/[a-z0-9]/i.test(correo.split('@')[0])) {
       return 'El correo debe contener letras o números antes del @.';
     }
-    if (
-      empleados.some(
-        (empleado) => (empleado.email ?? '').toLowerCase() === correo
-      )
-    ) {
+    if (empleados.some((empleado) => (empleado.email ?? '').toLowerCase() === correo)) {
       return 'Ya existe un empleado registrado con ese correo.';
     }
     if (!SUCURSALES_RRHH.some((sucursal) => String(sucursal.id) === formulario.branchId)) {
@@ -55,10 +52,14 @@ export default function HrHiring({ empleados = [], onContratar }) {
     if (!Number.isFinite(salario) || salario <= 0) {
       return 'El salario mensual debe ser un número mayor a cero.';
     }
+    const passwordBytes = new TextEncoder().encode(formulario.password).length;
+    if (formulario.password.length < 8 || passwordBytes > 72) {
+      return 'La contraseña debe tener entre 8 y 72 bytes.';
+    }
     return null;
   };
 
-  const enviarFormulario = (evento) => {
+  const enviarFormulario = async (evento) => {
     evento.preventDefault();
 
     const error = validarFormulario();
@@ -67,20 +68,31 @@ export default function HrHiring({ empleados = [], onContratar }) {
       return;
     }
 
-    const credenciales = onContratar({
-      fullName: formulario.fullName.trim(),
-      email: formulario.email.trim().toLowerCase(),
-      jobTitle: etiquetaRolRRHH(formulario.role),
-      branchId: Number(formulario.branchId),
-      baseSalary: Number(formulario.baseSalary),
-      role: formulario.role,
-    });
+    setEnviando(true);
+    setMensaje(null);
 
-    setMensaje({
-      tipo: 'success',
-      texto: `${credenciales.usuario} contratado. Usuario: ${credenciales.username} · Contraseña temporal: ${credenciales.temporaryPassword}`,
-    });
-    setFormulario(FORMULARIO_INICIAL);
+    try {
+      const credenciales = await onContratar({
+        fullName: formulario.fullName.trim(),
+        email: formulario.email.trim().toLowerCase(),
+        password: formulario.password,
+        jobTitle: etiquetaRolRRHH(formulario.role),
+        hireDate: new Date().toISOString().slice(0, 10),
+        branchId: Number(formulario.branchId),
+        baseSalary: Number(formulario.baseSalary),
+        role: formulario.role,
+      });
+
+      setMensaje({
+        tipo: 'success',
+        texto: `${credenciales.usuario} contratado. Podrá iniciar sesión con ${credenciales.username}.`,
+      });
+      setFormulario(FORMULARIO_INICIAL);
+    } catch (caughtError) {
+      setMensaje({ tipo: 'error', texto: caughtError.message ?? 'No se pudo completar la contratación.' });
+    } finally {
+      setEnviando(false);
+    }
   };
 
   return (
@@ -141,6 +153,18 @@ export default function HrHiring({ empleados = [], onContratar }) {
             </label>
 
             <label className="hr-hiring__field">
+              <span>Contraseña inicial</span>
+              <input
+                type="password"
+                value={formulario.password}
+                onChange={actualizarCampo('password')}
+                placeholder="Mínimo 8 caracteres"
+                minLength={8}
+                maxLength={72}
+              />
+            </label>
+
+            <label className="hr-hiring__field">
               <span>Sucursal</span>
               <select
                 value={formulario.branchId}
@@ -182,9 +206,9 @@ export default function HrHiring({ empleados = [], onContratar }) {
             </label>
           </div>
 
-          <button type="submit" className="hr-hiring__submit">
+          <button type="submit" className="hr-hiring__submit" disabled={enviando}>
             <i className="bi bi-person-plus" aria-hidden="true" />
-            Contratar y crear cuenta
+            {enviando ? 'Contratando...' : 'Contratar y crear cuenta'}
           </button>
         </form>
 
@@ -194,18 +218,18 @@ export default function HrHiring({ empleados = [], onContratar }) {
           </span>
           <h2>Cuenta de acceso</h2>
           <p>
-            Al contratar se genera un usuario y una contraseña temporal. El
-            empleado aparece de inmediato en la lista de Empleados y en
-            Planillas.
+            La cuenta se crea en el servidor con el correo y la contraseña
+            indicados. El empleado aparece de inmediato en la lista de
+            Empleados y en Planillas.
           </p>
           <ul>
             <li>
               <i className="bi bi-check2" aria-hidden="true" />
-              Usuario basado en el correo
+              Acceso con correo electrónico
             </li>
             <li>
               <i className="bi bi-check2" aria-hidden="true" />
-              Contraseña temporal de demostración
+              Contraseña definida por el administrador
             </li>
             <li>
               <i className="bi bi-check2" aria-hidden="true" />

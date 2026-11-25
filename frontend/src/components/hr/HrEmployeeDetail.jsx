@@ -32,7 +32,6 @@ export default function HrEmployeeDetail({ empleado, onCerrar }) {
       label: 'Contraseña temporal',
       value: empleado.temporaryPassword ?? 'No disponible',
     },
-    { label: 'ID de usuario', value: `#${empleado.userId}` },
     { label: 'Sucursal', value: empleado.branchName },
     { label: 'ID de sucursal', value: `#${empleado.branchId}` },
   ];

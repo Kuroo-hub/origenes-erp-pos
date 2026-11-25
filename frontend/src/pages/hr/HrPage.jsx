@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HrSidebar from '../../components/hr/HrSidebar.jsx';
@@ -7,67 +6,38 @@ import HrSummary from '../../components/hr/HrSummary.jsx';
 import HrEmployees from '../../components/hr/HrEmployees.jsx';
 import HrPayroll from '../../components/hr/HrPayroll.jsx';
 import HrHiring from '../../components/hr/HrHiring.jsx';
-import {
-  EMPLEADOS_INICIALES,
-  SUCURSALES_RRHH,
-} from '../../mocks/HrMocks.js';
+import { EMPLEADOS_INICIALES, SUCURSALES_RRHH } from '../../mocks/HrMocks.js';
+import { useAuth } from '../../hooks/useAuth.js';
 import '../../styles/hr.css';
-
-const generarUsuario = (email, nombre) => {
-  const desdeCorreo = email
-    .split('@')[0]
-    .replace(/[^a-z0-9]/gi, '')
-    .toLowerCase();
-
-  return (
-    desdeCorreo ||
-    nombre
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '.')
-      .replace(/^\.|\.$/g, '')
-  );
-};
-
-const generarContrasena = () =>
-  `origenes-${Math.random().toString(36).slice(2, 8)}`;
 
 export default function HrPage() {
   const navigate = useNavigate();
+  const { logout, register } = useAuth();
   const [seccion, setSeccion] = useState('resumen');
   const [empleados, setEmpleados] = useState(EMPLEADOS_INICIALES);
 
-  const contratarEmpleado = (datos) => {
-    const employeeId = Math.max(0, ...empleados.map((item) => item.employeeId)) + 1;
-    const sucursal = SUCURSALES_RRHH.find(
-      (item) => item.id === datos.branchId
-    );
-    const username = generarUsuario(datos.email, datos.fullName);
-    const temporaryPassword = generarContrasena();
+  const contratarEmpleado = async (datos) => {
+    const empleadoCreado = await register(datos);
+    const sucursal = SUCURSALES_RRHH.find((item) => item.id === datos.branchId);
 
     setEmpleados((actuales) => [
       {
         ...datos,
-        employeeId,
-        userId: 200 + employeeId,
+        ...empleadoCreado,
         branchName: sucursal?.nombre ?? 'Centro Histórico',
-        hireDate: new Date().toISOString().slice(0, 10),
-        active: true,
-        username,
-        temporaryPassword,
       },
       ...actuales,
     ]);
 
     return {
-      usuario: datos.fullName,
-      username,
-      temporaryPassword,
+      usuario: empleadoCreado.fullName ?? datos.fullName,
+      username: empleadoCreado.email ?? datos.email,
     };
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return (

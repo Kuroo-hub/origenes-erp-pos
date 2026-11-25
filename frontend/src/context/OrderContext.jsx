@@ -1,6 +1,7 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ORDENES_COCINA_INICIALES } from '../mocks/ChefMocks.js';
 import { SUCURSALES } from '../mocks/SucursalesMocks.js';
+import { useAuth } from '../hooks/useAuth.js';
 
 export { SUCURSALES };
 
@@ -24,9 +25,16 @@ const crearEstadoCajas = () =>
   );
 
 export function OrderProvider({ children }) {
+  const { user } = useAuth();
   const [ordenes, setOrdenes] = useState(ORDENES_COCINA_INICIALES);
-  const [sucursalId, setSucursalId] = useState(SUCURSALES[0].id);
+  const [sucursalId, setSucursalId] = useState(user?.branchId ?? SUCURSALES[0].id);
   const [cajas, setCajas] = useState(crearEstadoCajas);
+
+  useEffect(() => {
+    if (user?.branchId) {
+      setSucursalId(user.branchId);
+    }
+  }, [user?.branchId]);
 
   const sucursal =
     SUCURSALES.find((item) => item.id === sucursalId)?.nombre ?? SUCURSALES[0].nombre;

@@ -1,81 +1,41 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/inventory';
+import { apiGet, apiPost } from './apiClient.js';
 
-/**
- * Helper genérico para peticiones HTTP REST con manejo de errores y Promesas.
- */
-const request = async (endpoint, options = {}) => {
-  try {
-    const token = localStorage.getItem('token');
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
-      ...options,
-    };
+export const getBranchInventory = async (branchId) =>
+  apiGet(`/inventory/branches/${branchId}/stock`);
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.message || `Error HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return data;
-  } catch (error) {
-    console.error(`[InventoryAPI Error] ${endpoint}:`, error.message);
-    throw error;
-  }
-};
-
-/**
- * Obtiene el inventario actual y alertas de stock mínimo de una sucursal.
- */
-export const getBranchInventory = async (branchId) => {
-  return await request(`/branch/${branchId}`, { method: 'GET' });
-};
-
-/**
- * Registra un ajuste manual de stock (merma, conteo físico, etc.).
- */
 export const createInventoryAdjustment = async (payload) => {
-  return await request('/adjustments', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+  const branchId = payload.branch_id ?? payload.branchId;
+  const ingredientId = payload.ingredient_id ?? payload.ingredientId;
+  const movementType = payload.movement_type ?? payload.movementType;
+  const body = {
+    ingredientId,
+    quantity: payload.quantity,
+    reason: payload.reason,
+  };
+
+  if (!branchId || !ingredientId) {
+    throw new Error('El ajuste requiere sucursal e ingrediente.');
+  }
+
+  if (movementType === 'IN') {
+    return apiPost(`/inventory/branches/${branchId}/movements`, body);
+  }
+
+  if (movementType === 'OUT') {
+    return apiPost(`/inventory/branches/${branchId}/movements/out`, body);
+  }
+
+  throw new Error('Tipo de movimiento no soportado.');
 };
 
-/**
- * Obtiene el listado de compras y cuentas por pagar de la sucursal.
- */
-export const getBranchPurchases = async (branchId) => {
-  return await request(`/purchases?branchId=${branchId}`, { method: 'GET' });
-};
+export const getBranchPurchases = async (branchId) =>
+  apiGet(`/purchases?branchId=${branchId}`);
 
-/**
- * Registra una nueva factura de compra a proveedor (suma stock y crea cuenta por pagar).
- */
-export const createSupplierPurchase = async (purchaseData) => {
-  return await request('/purchases', {
-    method: 'POST',
-    body: JSON.stringify(purchaseData),
-  });
-};
+export const createSupplierPurchase = async (purchaseData) =>
+  apiPost('/purchases', purchaseData);
 
-/**
- * Registra un abono o pago total a una cuenta por pagar de proveedor.
- */
-export const registerSupplierPayment = async (payableId, paymentData) => {
-  return await request(`/payables/${payableId}/payments`, {
-    method: 'POST',
-    body: JSON.stringify(paymentData),
-  });
-};
+export const registerSupplierPayment = async (payableId, paymentData) =>
+  apiPost(`/payables/${payableId}/payments`, paymentData);
 
-/**
- * Obtiene la bitácora de movimientos de inventario (IN, OUT, CONSUMPTION, ADJUSTMENT).
- */
-export const getInventoryMovements = async (branchId) => {
-  return await request(`/movements?branchId=${branchId}`, { method: 'GET' });
-};
+export const getInventoryMovements = async (branchId) =>
+  apiGet(`/inventory/branches/${branchId}/movements`);

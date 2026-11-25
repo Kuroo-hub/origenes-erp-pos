@@ -105,10 +105,10 @@ export default function HrPayroll({ empleados = [] }) {
   const [periodosProcesados, setPeriodosProcesados] = useState([]);
   const [error, setError] = useState('');
 
-  const actualizarMonto = (setter, userId, value) => {
+  const actualizarMonto = (setter, employeeId, value) => {
     setter((actuales) => ({
       ...actuales,
-      [userId]: value,
+      [employeeId]: value,
     }));
 
     setResultado(null);
@@ -150,8 +150,8 @@ export default function HrPayroll({ empleados = [] }) {
     const detalles = [];
 
     for (const empleado of empleadosActivos) {
-      const bonusValue = bonuses[empleado.userId] ?? '';
-      const deductionValue = deductions[empleado.userId] ?? '';
+      const bonusValue = bonuses[empleado.employeeId] ?? '';
+      const deductionValue = deductions[empleado.employeeId] ?? '';
 
       const bonus = bonusValue === '' ? 0 : Number(bonusValue);
       const otherDeductions =
@@ -182,7 +182,6 @@ export default function HrPayroll({ empleados = [] }) {
 
       detalles.push({
         employeeId: empleado.employeeId,
-        userId: empleado.userId,
         fullName: empleado.fullName,
         jobTitle: etiquetaRolRRHH(empleado.role ?? empleado.jobTitle),
         ...calculo,
@@ -327,12 +326,12 @@ export default function HrPayroll({ empleados = [] }) {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={bonuses[empleado.userId] ?? ''}
+                        value={bonuses[empleado.employeeId] ?? ''}
                         placeholder="0.00"
                         onChange={(event) =>
                           actualizarMonto(
                             setBonuses,
-                            empleado.userId,
+                            empleado.employeeId,
                             event.target.value
                           )
                         }
@@ -345,12 +344,12 @@ export default function HrPayroll({ empleados = [] }) {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={deductions[empleado.userId] ?? ''}
+                        value={deductions[empleado.employeeId] ?? ''}
                         placeholder="0.00"
                         onChange={(event) =>
                           actualizarMonto(
                             setDeductions,
-                            empleado.userId,
+                            empleado.employeeId,
                             event.target.value
                           )
                         }
