@@ -23,7 +23,7 @@ const loginLimiter = rateLimit({
 const router = Router();
 
 router.post("/login", loginLimiter, loginController);
-router.post("/register", authenticate, authorize("ADMINISTRATOR"), registerEmployeeController);
+router.post("/register", authenticate, authorize("ADMINISTRATOR", "HR"), registerEmployeeController);
 router.get("/me", authenticate, getCurrentEmployeeController);
 
 export default router;

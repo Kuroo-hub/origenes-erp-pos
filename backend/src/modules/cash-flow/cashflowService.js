@@ -1,6 +1,8 @@
 
-import { AppError } from "../../utils/AppError.js";
-import { pool } from "../../config/database.js";
+import { createError } from "../../utils/errors.js";
+import { formatCents, toCents } from "../../utils/money.js";
+import { withTransaction } from "../../utils/transaction.js";
+import { validateId } from "../../utils/validation.js";
 
 import {
     findCashRegisterById,
@@ -8,10 +10,10 @@ import {
     findEmployeeBranch,
     findActiveSessionByRegister,
     createCashSession,
+    findCashRegistersByBranch,
     findAllActiveCashSessions,
     findCashSessionById,
     findCashSessionForUpdate,
-    findCashSessionDetails,
     findSessionPayments,
     findSessionMovementsSummary,
     findExpectedCash,
@@ -20,55 +22,6 @@ import {
     findCashSessionHistory
 } from "./cashflowDao.js";
 
-// Crea errores controlados.
-function createError(message, statusCode = 400) {
-    return new AppError(message, statusCode);
-}
-
-// Ejecuta operaciones dentro de una transacción.
-async function executeTransaction(callback) {
-    const client = await pool.connect();
-    let transactionStarted = false;
-
-    try {
-        await client.query("BEGIN");
-        transactionStarted = true;
-
-        const result = await callback(client);
-
-        await client.query("COMMIT");
-        transactionStarted = false;
-
-        return result;
-
-    } catch (error) {
-        if (transactionStarted) {
-            try {
-                await client.query("ROLLBACK");
-            } catch (rollbackError) {
-                console.error("Error al ejecutar ROLLBACK:", rollbackError);
-            }
-        }
-
-        throw error;
-
-    } finally {
-        client.release();
-    }
-}
-
-// Valida identificadores enteros positivos.
-function validateId(id, fieldName = "ID") {
-    const value = Number(id);
-
-    if (!Number.isSafeInteger(value) || value <= 0) {
-        throw createError(`${fieldName} no es válido.`);
-    }
-
-    return value;
-}
-
-// Valida montos compatibles con NUMERIC(12,2).
 function validateAmount(amount, allowZero = false) {
     const value = String(amount ?? "");
 
@@ -89,43 +42,18 @@ function validateAmount(amount, allowZero = false) {
     return value;
 }
 
-// Convierte un monto decimal a centavos enteros.
-function toCents(amount) {
-    const value = String(amount);
-    const negative = value.startsWith("-");
-    const normalized = negative ? value.slice(1) : value;
-
-    const [whole, decimal = ""] = normalized.split(".");
-
-    const cents =
-        BigInt(whole) * 100n +
-        BigInt(decimal.padEnd(2, "0"));
-
-    return negative ? -cents : cents;
-}
-
-// Convierte centavos enteros a formato decimal.
-function formatCents(cents) {
-    const negative = cents < 0n;
-    const absolute = negative ? -cents : cents;
-
-    const whole = absolute / 100n;
-    const decimal = String(absolute % 100n).padStart(2, "0");
-
-    return `${negative ? "-" : ""}${whole}.${decimal}`;
-}
-
 // 1. Abre una sesión de caja.
 export async function openCashSessionService({
     cashRegisterId,
     employeeId,
-    initialAmount
+    initialAmount,
+    user
 }) {
     const registerId = validateId(cashRegisterId, "ID de caja");
     const cashierId = validateId(employeeId, "ID de empleado");
     const amount = validateAmount(initialAmount, true);
 
-    return executeTransaction(async (client) => {
+    return withTransaction(async (client) => {
 
         // Bloquea la caja para evitar aperturas simultáneas.
         const cashRegister = await findCashRegisterById(
@@ -135,6 +63,10 @@ export async function openCashSessionService({
 
         if (!cashRegister) {
             throw createError("La caja no existe.", 404);
+        }
+
+        if (user?.role !== "ADMINISTRATOR" && Number(cashRegister.branch_id) !== Number(user?.branchId)) {
+            throw createError("No tiene permisos para acceder a otra sucursal.", 403);
         }
 
         if (cashRegister.estado !== "ACTIVO") {
@@ -184,6 +116,12 @@ export async function openCashSessionService({
     });
 }
 
+export async function getCashRegistersByBranchService(branchId) {
+    const id = validateId(branchId, "ID de sucursal");
+
+    return findCashRegistersByBranch(id);
+}
+
 // 2. Consulta todas las sesiones abiertas.
 export async function getActiveCashSessionsService() {
     return findAllActiveCashSessions();
@@ -206,9 +144,9 @@ export async function getCashSessionByIdService(sessionId) {
 export async function getCashSessionSummaryService(sessionId) {
     const id = validateId(sessionId, "ID de sesión");
 
-    return executeTransaction(async (client) => {
+    return withTransaction(async (client) => {
 
-        const session = await findCashSessionDetails(client, id);
+        const session = await findCashSessionById(id, client);
 
         if (!session) {
             throw createError("No se encontró la sesión de caja.", 404);
@@ -265,7 +203,7 @@ export async function addCashMovementService({
         throw createError("El concepto no puede superar 150 caracteres.");
     }
 
-    return executeTransaction(async (client) => {
+    return withTransaction(async (client) => {
 
         // Bloquea la sesión mientras se registra el movimiento.
         const session = await findCashSessionForUpdate(client, id);
@@ -314,7 +252,7 @@ export async function closeCashSessionService({
     const cashierId = validateId(employeeId, "ID de empleado");
     const validRealAmount = validateAmount(realAmount, true);
 
-    return executeTransaction(async (client) => {
+    return withTransaction(async (client) => {
 
         // Bloquea la sesión para evitar operaciones simultáneas.
         const session = await findCashSessionForUpdate(client, id);

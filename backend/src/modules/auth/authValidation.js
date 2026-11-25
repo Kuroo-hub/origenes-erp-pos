@@ -1,4 +1,5 @@
-import { AppError } from "../../utils/AppError.js";
+import { createError } from "../../utils/errors.js";
+import { validateId } from "../../utils/validation.js";
 
 export const ALLOWED_ROLES = Object.freeze([
     "ADMINISTRATOR",
@@ -7,10 +8,6 @@ export const ALLOWED_ROLES = Object.freeze([
     "HR",
     "INVENTORY_MANAGER"
 ]);
-
-function createError(message, statusCode = 400) {
-    return new AppError(message, statusCode);
-}
 
 function isPlainObject(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -22,15 +19,6 @@ function validateRequiredObject(value) {
     }
 
     return value;
-}
-
-function validatePositiveInteger(value, fieldName) {
-    const parsed = Number(value);
-    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-        throw createError(`${fieldName} no es válido.`);
-    }
-
-    return parsed;
 }
 
 function validateText(value, fieldName, maxLength, minLength = 1) {
@@ -112,14 +100,14 @@ export function validateCredentials(payload) {
 }
 
 export function validateEmployeeId(value) {
-    return validatePositiveInteger(value, "ID de empleado");
+    return validateId(value, "ID de empleado");
 }
 
 export function validateEmployeeRegistration(payload) {
     const body = validateRequiredObject(payload);
 
     return {
-        branchId: validatePositiveInteger(body.branchId, "ID de sucursal"),
+        branchId: validateId(body.branchId, "ID de sucursal"),
         email: validateEmail(body.email),
         password: validatePassword(body.password),
         role: validateRole(body.role),

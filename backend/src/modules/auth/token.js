@@ -10,7 +10,8 @@ export function signAuthToken(employee) {
             email: employee.email,
             role: employee.role,
             branchId: employee.branchId,
-            fullName: employee.fullName
+            fullName: employee.fullName,
+            jobTitle: employee.jobTitle ?? null
         },
         environment.jwtSecret,
         {

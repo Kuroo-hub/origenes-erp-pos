@@ -1,14 +1,13 @@
-import {pool} from '../../config/database.js';
-
-import {findAllIngredients, createIngredient, findStockByBranch, 
+import {findAllBranches, findAllIngredients, findAllProducts, createIngredient, findStockByBranch,
 findBranchById, findIngredientById, increaseStock, insertInventoryMovement, decreaseStock,
 findInventoryByBranchAndIngredient, insertStockOutMovement, findMovementsByBranch,
 findLowStockByBranch, findProductById, findRecipeByProduct, findProductForRecipeUpdate,
 findExistingIngredientIds, replaceRecipeIngredients, findRecipeAvailability, findProductForConsumption,
-findRecipeRequirements, consumeIngredientStock, insertConsumptionMovement
+findRecipeRequirements, insertConsumptionMovement
 } from './inventoryDao.js';
 
 import {AppError} from '../../utils/AppError.js';
+import {withTransaction} from '../../utils/transaction.js';
 
 function validateEmployeeId(value) {
     const employeeId = Number(value);
@@ -67,11 +66,25 @@ export async function registerIngredient(data)
     }
 }
 
+export async function getAllBranches()
+{
+    return findAllBranches();
+}
+
 export async function getAllIngredients()
 {
     const ingredients = await findAllIngredients();
-
     return ingredients;
+}
+
+export async function getAllProducts()
+{
+    const products = await findAllProducts();
+
+    return products.map((product) => ({
+        ...product,
+        category: product.product_type === 'PREPARED' ? 'PREPARADOS' : 'REVENTA'
+    }));
 }
 
 export async function getStockByBranch(branchId)
@@ -133,11 +146,7 @@ export async function registerStockEntry(branchId, data, employeeId) {
         );
     }
 
-    const client = await pool.connect();
-
-    try {
-        await client.query("BEGIN");
-
+    return withTransaction(async (client) => {
         const branch = await findBranchById(client, id);
 
         if (!branch) {
@@ -175,20 +184,11 @@ export async function registerStockEntry(branchId, data, employeeId) {
             validEmployeeId
         );
 
-        await client.query("COMMIT");
-
         return {
             stock,
             movement
         };
-
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-
-    } finally {
-        client.release();
-    }
+    });
 }
 
 export async function registerStockExit(branchId, data, employeeId) {
@@ -238,11 +238,7 @@ export async function registerStockExit(branchId, data, employeeId) {
         );
     }
 
-    const client = await pool.connect();
-
-    try {
-        await client.query("BEGIN");
-
+    return withTransaction(async (client) => {
         const branch = await findBranchById(client, id);
 
         if (!branch) {
@@ -300,20 +296,11 @@ export async function registerStockExit(branchId, data, employeeId) {
             validEmployeeId
         );
 
-        await client.query("COMMIT");
-
         return {
             stock,
             movement
         };
-
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-
-    } finally {
-        client.release();
-    }
+    });
 }
 
 export async function getMovementsByBranch(branchId) {
@@ -442,11 +429,7 @@ export async function saveProductRecipe(productId, data) {
         });
     }
 
-    const client = await pool.connect();
-
-    try {
-        await client.query("BEGIN");
-
+    return withTransaction(async (client) => {
         const product = await findProductForRecipeUpdate(
             client,
             id
@@ -505,25 +488,11 @@ export async function saveProductRecipe(productId, data) {
 
         const result = await client.query(query, [id]);
 
-        await client.query("COMMIT");
-
         return {
             product,
             ingredients: result.rows
         };
-
-    } catch (error) {
-        try {
-            await client.query("ROLLBACK");
-        } catch (rollbackError) {
-            console.error("Recipe rollback failed:", rollbackError);
-        }
-
-        throw error;
-
-    } finally {
-        client.release();
-    }
+    });
 }
 
 export async function checkProductAvailability(branchId,productId, requestedQuantity) {
@@ -622,57 +591,45 @@ export async function checkProductAvailability(branchId,productId, requestedQuan
     };
 }
 
-export async function consumePreparedProduct(client,
-    { branchId, productId, quantity, employeeId = null }) {
+function parseConsumptionInput({ branchId, productId, quantity, employeeId = null }) {
     const parsedBranchId = Number(branchId);
     const parsedProductId = Number(productId);
     const parsedQuantity = Number(quantity);
 
-    if (
-        !Number.isSafeInteger(parsedBranchId) ||
-        parsedBranchId <= 0
-    ) {
-        throw new AppError(
-            "El ID de la sucursal no es válido.",
-            400
-        );
+    if (!Number.isSafeInteger(parsedBranchId) || parsedBranchId <= 0) {
+        throw new AppError("El ID de la sucursal no es válido.", 400);
     }
 
-    if (
-        !Number.isSafeInteger(parsedProductId) ||
-        parsedProductId <= 0
-    ) {
-        throw new AppError(
-            "El ID del producto no es válido.",
-            400
-        );
+    if (!Number.isSafeInteger(parsedProductId) || parsedProductId <= 0) {
+        throw new AppError("El ID del producto no es válido.", 400);
     }
 
     if (
         quantity === undefined ||
         quantity === null ||
         quantity === "" ||
-        !Number.isInteger(parsedQuantity) ||
+        !Number.isSafeInteger(parsedQuantity) ||
         parsedQuantity <= 0 ||
         parsedQuantity > 2147483647
     ) {
-        throw new AppError(
-            "La cantidad debe ser un entero positivo válido.",
-            400
-        );
+        throw new AppError("La cantidad debe ser un entero positivo válido.", 400);
     }
 
     if (
         employeeId !== null &&
         (!Number.isSafeInteger(employeeId) || employeeId <= 0)
     ) {
-        throw new AppError(
-            "El ID del empleado no es válido.",
-            400
-        );
+        throw new AppError("El ID del empleado no es válido.", 400);
     }
 
-    // El cliente debe pertenecer a una transacción activa.
+    return { parsedBranchId, parsedProductId, parsedQuantity };
+}
+
+export async function consumePreparedProduct(client,
+    { branchId, productId, quantity, employeeId = null }) {
+    const { parsedBranchId, parsedProductId, parsedQuantity } =
+        parseConsumptionInput({ branchId, productId, quantity, employeeId });
+
     const branch = await findBranchById(
         client,
         parsedBranchId
@@ -727,7 +684,7 @@ export async function consumePreparedProduct(client,
     const movements = [];
 
     for (const ingredient of ingredients) {
-        const stock = await consumeIngredientStock(
+        const stock = await decreaseStock(
             client,
             parsedBranchId,
             ingredient.ingredient_id,
@@ -772,53 +729,8 @@ export async function consumeResaleProduct(
     client,
     { branchId, productId, quantity, employeeId = null }
 ) {
-    const parsedBranchId = Number(branchId);
-    const parsedProductId = Number(productId);
-    const parsedQuantity = Number(quantity);
-
-    if (
-        !Number.isSafeInteger(parsedBranchId) ||
-        parsedBranchId <= 0
-    ) {
-        throw new AppError(
-            "El ID de la sucursal no es válido.",
-            400
-        );
-    }
-
-    if (
-        !Number.isSafeInteger(parsedProductId) ||
-        parsedProductId <= 0
-    ) {
-        throw new AppError(
-            "El ID del producto no es válido.",
-            400
-        );
-    }
-
-    if (
-        quantity === undefined ||
-        quantity === null ||
-        quantity === "" ||
-        !Number.isSafeInteger(parsedQuantity) ||
-        parsedQuantity <= 0 ||
-        parsedQuantity > 2147483647
-    ) {
-        throw new AppError(
-            "La cantidad debe ser un entero positivo válido.",
-            400
-        );
-    }
-
-    if (
-        employeeId !== null &&
-        (!Number.isSafeInteger(employeeId) || employeeId <= 0)
-    ) {
-        throw new AppError(
-            "El ID del empleado no es válido.",
-            400
-        );
-    }
+    const { parsedBranchId, parsedProductId, parsedQuantity } =
+        parseConsumptionInput({ branchId, productId, quantity, employeeId });
 
     const branch = await findBranchById(
         client,
@@ -867,7 +779,7 @@ export async function consumeResaleProduct(
         );
     }
 
-    const stock = await consumeIngredientStock(
+    const stock = await decreaseStock(
         client,
         parsedBranchId,
         ingredientId,
@@ -909,55 +821,9 @@ export async function consumeSaleProduct(
     client,
     { branchId, productId, quantity, employeeId = null }
 ) {
-    const parsedBranchId = Number(branchId);
-    const parsedProductId = Number(productId);
-    const parsedQuantity = Number(quantity);
+    const { parsedBranchId, parsedProductId, parsedQuantity } =
+        parseConsumptionInput({ branchId, productId, quantity, employeeId });
 
-    if (
-        !Number.isSafeInteger(parsedBranchId) ||
-        parsedBranchId <= 0
-    ) {
-        throw new AppError(
-            "El ID de la sucursal no es válido.",
-            400
-        );
-    }
-
-    if (
-        !Number.isSafeInteger(parsedProductId) ||
-        parsedProductId <= 0
-    ) {
-        throw new AppError(
-            "El ID del producto no es válido.",
-            400
-        );
-    }
-
-    if (
-        quantity === undefined ||
-        quantity === null ||
-        quantity === "" ||
-        !Number.isSafeInteger(parsedQuantity) ||
-        parsedQuantity <= 0 ||
-        parsedQuantity > 2147483647
-    ) {
-        throw new AppError(
-            "La cantidad debe ser un entero positivo válido.",
-            400
-        );
-    }
-
-    if (
-        employeeId !== null &&
-        (!Number.isSafeInteger(employeeId) || employeeId <= 0)
-    ) {
-        throw new AppError(
-            "El ID del empleado no es válido.",
-            400
-        );
-    }
-
-    // La conexión debe pertenecer a una transacción activa.
     const product = await findProductForConsumption(
         client,
         parsedProductId

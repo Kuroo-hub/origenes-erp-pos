@@ -59,7 +59,8 @@ export async function authenticate(req, res, next) {
             email: employee.email,
             role: employee.role,
             branchId: Number(employee.branchId),
-            fullName: employee.fullName
+            fullName: employee.fullName,
+            jobTitle: employee.jobTitle ?? null
         };
 
         return next();

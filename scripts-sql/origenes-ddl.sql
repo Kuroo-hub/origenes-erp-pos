@@ -279,6 +279,20 @@ CREATE TABLE invoice (
         status IN ('PENDING', 'PAID', 'CANCELLED')
     ),
 
+    is_delivery BOOLEAN NOT NULL DEFAULT FALSE,
+    delivery_status VARCHAR(20),
+    delivery_address VARCHAR(255),
+    delivery_phone VARCHAR(20),
+
+    CONSTRAINT invoice_delivery_status_check CHECK (
+        delivery_status IS NULL
+        OR delivery_status IN ('READY', 'IN_TRANSIT', 'DELIVERED')
+    ),
+    CONSTRAINT invoice_delivery_consistency_check CHECK (
+        (is_delivery = FALSE AND delivery_status IS NULL)
+        OR (is_delivery = TRUE AND delivery_status IS NOT NULL)
+    ),
+
     UNIQUE (branch_id, document_type, consecutive_number)
 );
 

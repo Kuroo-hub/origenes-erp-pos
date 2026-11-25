@@ -3,7 +3,7 @@ import {Router} from "express";
 import {authenticate} from '../../middlewares/authenticate.js';
 import {authorize} from '../../middlewares/authorize.js';
 
-import {getIngredientsController, createIngredientController, getBranchStockController,
+import {getBranchesController, getIngredientsController, getProductsController, createIngredientController, getBranchStockController,
     createStockEntryController, createStockExitController, getMovementsController,
     getLowStockController, getProductRecipeController, saveProductRecipeController,
     getProductAvailabilityController
@@ -15,7 +15,9 @@ const inventoryStaff = authorize("ADMINISTRATOR", "MANAGER", "EMPLOYEE", "HR", "
 const inventoryManager = authorize("ADMINISTRATOR", "INVENTORY_MANAGER");
 
 // Rutas inventario
+inventoryRoutes.get("/branches", authenticate, inventoryStaff, getBranchesController);
 inventoryRoutes.get("/ingredients", authenticate, inventoryStaff, getIngredientsController);
+inventoryRoutes.get("/products", authenticate, inventoryStaff, getProductsController);
 inventoryRoutes.post("/ingredients", authenticate, inventoryManager, createIngredientController);
 inventoryRoutes.get("/branches/:branchId/stock", authenticate, inventoryStaff, getBranchStockController);
 inventoryRoutes.post("/branches/:branchId/movements", authenticate, inventoryManager, createStockEntryController);

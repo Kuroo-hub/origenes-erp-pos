@@ -1,6 +1,14 @@
 import { pool } from "../../config/database.js";
 
-export async function findAllEmployees() {
+export async function findAllEmployees(branchId = null) {
+    const params = [];
+    let whereClause = "";
+
+    if (branchId !== null && branchId !== undefined && String(branchId).trim() !== "" && String(branchId).trim().toUpperCase() !== "ALL") {
+        params.push(Number(branchId));
+        whereClause = "WHERE e.branch_id = $1";
+    }
+
     const result = await pool.query(`
         SELECT
             e.employee_id AS "employeeId",
@@ -15,8 +23,9 @@ export async function findAllEmployees() {
             b.name AS "branchName"
         FROM employee e
         INNER JOIN branch b ON b.branch_id = e.branch_id
+        ${whereClause}
         ORDER BY e.full_name ASC
-    `);
+    `, params);
 
     return result.rows;
 }
