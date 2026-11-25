@@ -1,18 +1,55 @@
 
 import { useMemo, useState } from 'react';
 import HrEmployeeDetail from './HrEmployeeDetail.jsx';
-import {
-  SUCURSALES_RRHH,
-  etiquetaRolRRHH,
-} from '../../mocks/HrMocks.js';
+import { etiquetaRolRRHH } from '../../utils/rrhh.js';
+import { getEmployeePerformance } from '../../services/hrApi.js';
 
 export default function HrEmployees({ empleados = [] }) {
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState('todos');
   const [sucursal, setSucursal] = useState('todas');
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
+  const [performance, setPerformance] = useState(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
-  const sucursales = SUCURSALES_RRHH.map((item) => [item.id, item.nombre]);
+  const sucursales = useMemo(() => {
+    const opciones = new Map();
+
+    empleados.forEach((empleado) => {
+      if (empleado.branchId === null || empleado.branchId === undefined) {
+        return;
+      }
+
+      const id = String(empleado.branchId);
+      if (!opciones.has(id)) {
+        opciones.set(id, empleado.branchName ?? `Sucursal ${empleado.branchId}`);
+      }
+    });
+
+    return Array.from(opciones, ([id, nombre]) => [id, nombre]);
+  }, [empleados]);
+
+  const abrirDetalle = async (empleado) => {
+    setEmpleadoSeleccionado(empleado);
+    setPerformance(null);
+    setCargandoDetalle(true);
+
+    try {
+      const respuesta = await getEmployeePerformance(empleado.employeeId);
+      setPerformance(respuesta ?? null);
+    } catch (caughtError) {
+      setPerformance({
+        employee: empleado,
+        payrollSummary: null,
+        evaluationAvailable: false,
+        message:
+          caughtError.message ??
+          'No se pudo cargar el historial de planilla del empleado.',
+      });
+    } finally {
+      setCargandoDetalle(false);
+    }
+  };
 
   const empleadosFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
@@ -171,13 +208,13 @@ export default function HrEmployees({ empleados = [] }) {
 
                     <td>
                       <button
-  type="button"
-  className="cashier-orders__detail-button"
-  onClick={() => setEmpleadoSeleccionado(empleado)}
-  aria-label={`Ver detalle de ${empleado.fullName}`}
->
-  Ver detalle
-</button>
+                        type="button"
+                        className="cashier-orders__detail-button"
+                        onClick={() => abrirDetalle(empleado)}
+                        aria-label={`Ver detalle de ${empleado.fullName}`}
+                      >
+                        Ver detalle
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -198,7 +235,13 @@ export default function HrEmployees({ empleados = [] }) {
       {empleadoSeleccionado && (
         <HrEmployeeDetail
           empleado={empleadoSeleccionado}
-          onCerrar={() => setEmpleadoSeleccionado(null)}
+          onCerrar={() => {
+            setEmpleadoSeleccionado(null);
+            setPerformance(null);
+            setCargandoDetalle(false);
+          }}
+          performance={performance}
+          cargandoDetalle={cargandoDetalle}
         />
       )}
     </section>

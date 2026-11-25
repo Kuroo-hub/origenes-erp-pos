@@ -6,6 +6,7 @@ import { authorize } from "../../middlewares/authorize.js";
 
 import {
   openCashSessionController,
+  getCashRegistersByBranchController,
   activeCashSession,
   getCashSessionById,
   getCashSessionSummary,
@@ -18,6 +19,8 @@ const cashFlowRouter = Router();
 
 const cashier = authorize("ADMINISTRATOR", "MANAGER", "EMPLOYEE");
 const staff = authorize("ADMINISTRATOR", "MANAGER", "EMPLOYEE", "HR", "INVENTORY_MANAGER");
+
+cashFlowRouter.get("/registers", authenticate, cashier, getCashRegistersByBranchController);
 
 // 1. Abrir caja.
 cashFlowRouter.post(

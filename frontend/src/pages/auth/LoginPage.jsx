@@ -1,83 +1,69 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  Alert,
-  Button,
-  Form,
-  Input,
-  Spinner,
-} from 'reactstrap';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Alert, Button, Form, Input, Spinner } from 'reactstrap';
 import Brand from '../../components/auth/Brand.jsx';
-
-const ESPERA_DEMO = 700;
-
-const MODULOS = [
-  { ruta: '/cajero', etiqueta: 'Cajero', icono: 'bi-cash-coin', detalle: 'Punto de venta' },
-  {
-    ruta: '/chef',
-    etiqueta: 'Panel de cocina',
-    icono: 'bi-fire',
-    detalle: 'Pedidos para preparar',
-  },
-  {
-    ruta: '/rrhh',
-    etiqueta: 'Recursos humanos',
-    icono: 'bi-people',
-    detalle: 'Empleados y planillas',
-  },
-  {
-    ruta: '/inventario',
-    etiqueta: 'Inventario',
-    icono: 'bi-box-seam',
-    detalle: 'Stock y compras',
-  },
-  { ruta: '/repartidor', etiqueta: 'Repartidor', icono: 'bi-truck', detalle: 'Entregas' },
-  {
-    ruta: '/manager',
-    etiqueta: 'Manager',
-    icono: 'bi-cash-coin',
-    detalle: 'Resumen, caja y flujo',
-  },
-  {
-    ruta: '/gerencia',
-    etiqueta: 'Owner',
-    icono: 'bi-bar-chart-line',
-    detalle: 'Reportes y finanzas',
-  },
-];
+import { useAuth } from '../../hooks/useAuth.js';
+import { API_BASE_URL } from '../../services/apiClient.js';
+import { rutaPorRol } from '../../auth/roles.js';
 
 export default function LoginPage() {
-  const [credenciales, setCredenciales] = useState({ usuario: '', contrasena: '' });
+  const navigate = useNavigate();
+  const { login, error: authError } = useAuth();
+  const [credenciales, setCredenciales] = useState({ email: '', password: '' });
   const [verContrasena, setVerContrasena] = useState(false);
-  const [estado, setEstado] = useState('inicial');
+  const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState('');
+  const [backendDisponible, setBackendDisponible] = useState(true);
 
-  const cargando = estado === 'cargando';
+  useEffect(() => {
+    let activo = true;
+
+    fetch(`${API_BASE_URL}/health`)
+      .then((response) => {
+        if (activo) setBackendDisponible(response.ok);
+      })
+      .catch(() => {
+        if (activo) setBackendDisponible(false);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const actualizarCampo = (campo) => (evento) => {
     setCredenciales((previas) => ({ ...previas, [campo]: evento.target.value }));
-    if (estado === 'error') {
-      setEstado('inicial');
-      setMensaje('');
-    }
+    setMensaje('');
   };
 
-  const enviarFormulario = (evento) => {
+  const enviarFormulario = async (evento) => {
     evento.preventDefault();
 
-    if (!credenciales.usuario.trim() || !credenciales.contrasena.trim()) {
-      setEstado('error');
-      setMensaje('Completa usuario y contraseña para continuar.');
+    if (!backendDisponible) {
+      setMensaje('No se puede acceder: el backend no está encendido.');
       return;
     }
 
-    setEstado('cargando');
+    if (!credenciales.email.trim() || !credenciales.password.trim()) {
+      setMensaje('Completa el correo electrónico y la contraseña para continuar.');
+      return;
+    }
+
+    setCargando(true);
     setMensaje('');
 
-    window.setTimeout(() => {
-      setEstado('exito');
-      setMensaje(`Bienvenido, ${credenciales.usuario.trim()}. El acceso es una simulación local.`);
-    }, ESPERA_DEMO);
+    try {
+      const usuario = await login(
+        credenciales.email.trim().toLowerCase(),
+        credenciales.password
+      );
+      navigate(rutaPorRol(usuario?.role, usuario), { replace: true });
+    } catch (error) {
+      const textoError = error?.message ?? 'No se pudo iniciar sesión.';
+      setMensaje(textoError);
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -96,34 +82,63 @@ export default function LoginPage() {
               <p className="auth-card__subtitle">Ingresa a tu cuenta de Orígenes SV.</p>
             </header>
 
+            {!backendDisponible && (
+              <Alert className="auth-alert auth-alert--error" fade={false}>
+                <i className="bi bi-exclamation-circle me-2" aria-hidden="true" />
+                No se puede acceder: el backend no está encendido.
+              </Alert>
+            )}
+
             <Form onSubmit={enviarFormulario} noValidate>
               {mensaje && (
-                <Alert
-                  className={`auth-alert auth-alert--${estado === 'error' ? 'error' : 'success'}`}
-                  fade={false}
+                <div
+                  role="alert"
+                  style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem 1rem',
+                    color: '#b42318',
+                    backgroundColor: '#fef3f2',
+                    border: '1px solid #fecdca',
+                    borderRadius: '10px',
+                    fontSize: '0.875rem',
+                  }}
                 >
-                  <i
-                    className={`bi ${estado === 'error' ? 'bi-exclamation-circle' : 'bi-check-circle'} me-2`}
-                    aria-hidden="true"
-                  />
                   {mensaje}
-                </Alert>
+                </div>
+              )}
+
+              {authError && !mensaje && (
+                <div
+                  role="alert"
+                  style={{
+                    marginBottom: '1rem',
+                    padding: '0.75rem 1rem',
+                    color: '#b42318',
+                    backgroundColor: '#fef3f2',
+                    border: '1px solid #fecdca',
+                    borderRadius: '10px',
+                    fontSize: '0.875rem',
+                  }}
+                >
+                  {authError}
+                </div>
               )}
 
               <div className="auth-fields">
                 <div className="auth-field">
                   <label className="visually-hidden" htmlFor="login-usuario">
-                    Usuario
+                    Correo electrónico
                   </label>
                   <i className="bi bi-person auth-field__icon" aria-hidden="true" />
                   <Input
                     id="login-usuario"
                     className="auth-input"
-                    name="usuario"
-                    placeholder="USUARIO"
+                    name="email"
+                    placeholder="CORREO ELECTRÓNICO"
                     autoComplete="username"
-                    value={credenciales.usuario}
-                    onChange={actualizarCampo('usuario')}
+                    type="email"
+                    value={credenciales.email}
+                    onChange={actualizarCampo('email')}
                     disabled={cargando}
                   />
                 </div>
@@ -136,12 +151,12 @@ export default function LoginPage() {
                   <Input
                     id="login-contrasena"
                     className="auth-input"
-                    name="contrasena"
+                    name="password"
                     type={verContrasena ? 'text' : 'password'}
                     placeholder="CONTRASEÑA"
                     autoComplete="current-password"
-                    value={credenciales.contrasena}
-                    onChange={actualizarCampo('contrasena')}
+                    value={credenciales.password}
+                    onChange={actualizarCampo('password')}
                     disabled={cargando}
                   />
                   <button
@@ -179,26 +194,6 @@ export default function LoginPage() {
             </p>
           </section>
         </div>
-
-        <nav className="auth-modules" aria-label="Módulos de Orígenes SV">
-          <div className="auth-modules__header">
-            <h2 className="auth-modules__title">Módulos del sistema</h2>
-            <p className="auth-modules__subtitle">Explora cada área con un clic.</p>
-          </div>
-
-          <div className="auth-modules__grid">
-            {MODULOS.map(({ ruta, etiqueta, icono, detalle }) => (
-              <Link key={ruta} to={ruta} className="auth-module-card">
-                <i className={`bi ${icono} auth-module-card__icon`} aria-hidden="true" />
-                <span className="auth-module-card__text">
-                  <strong>{etiqueta}</strong>
-                  <small>{detalle}</small>
-                </span>
-                <i className="bi bi-arrow-up-right auth-module-card__arrow" aria-hidden="true" />
-              </Link>
-            ))}
-          </div>
-        </nav>
       </div>
     </main>
   );

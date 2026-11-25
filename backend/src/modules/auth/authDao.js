@@ -2,15 +2,16 @@ import { pool } from "../../config/database.js";
 
 export async function authenticateEmployee(email, password) {
     const result = await pool.query(
-        `SELECT employee_id AS "employeeId",
-                email,
-                role,
-                branch_id AS "branchId",
-                full_name AS "fullName"
-         FROM employee
-         WHERE email = $1
-           AND active = TRUE
-           AND password_hash = crypt($2, password_hash)`,
+         `SELECT employee_id AS "employeeId",
+                 email,
+                 role,
+                 branch_id AS "branchId",
+                 full_name AS "fullName",
+                 job_title AS "jobTitle"
+          FROM employee
+          WHERE email = $1
+            AND active = TRUE
+            AND password_hash = crypt($2, password_hash)`,
         [email, password]
     );
 
@@ -19,14 +20,15 @@ export async function authenticateEmployee(email, password) {
 
 export async function findActiveEmployeeById(employeeId) {
     const result = await pool.query(
-        `SELECT employee_id AS "employeeId",
-                email,
-                role,
-                branch_id AS "branchId",
-                full_name AS "fullName"
-         FROM employee
-         WHERE employee_id = $1
-           AND active = TRUE`,
+         `SELECT employee_id AS "employeeId",
+                 email,
+                 role,
+                 branch_id AS "branchId",
+                 full_name AS "fullName",
+                 job_title AS "jobTitle"
+          FROM employee
+          WHERE employee_id = $1
+            AND active = TRUE`,
         [employeeId]
     );
 
@@ -47,7 +49,8 @@ export async function findActiveBranchById(branchId) {
 
 export async function findEmployeeByEmail(email) {
     const result = await pool.query(
-        `SELECT employee_id AS "employeeId"
+        `SELECT employee_id AS "employeeId",
+                active
          FROM employee
          WHERE email = $1`,
         [email]

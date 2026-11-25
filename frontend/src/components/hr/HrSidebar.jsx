@@ -31,7 +31,16 @@ const COLORES_SECCION = {
   contratacion: 'hr-nav-item__dot--contratacion',
 };
 
-export default function HrSidebar({ seccion, onSeleccionar, onLogout }) {
+export default function HrSidebar({
+  seccion,
+  onSeleccionar,
+  onLogout,
+  puedeContratar = false,
+}) {
+  const seccionesVisibles = SECCIONES_RRHH.filter(
+    (opcion) => opcion.id !== 'contratacion' || puedeContratar
+  );
+
   return (
     <aside className="hr-sidebar">
       <div className="hr-sidebar__brand">
@@ -55,7 +64,7 @@ export default function HrSidebar({ seccion, onSeleccionar, onLogout }) {
       >
         <p className="hr-sidebar__section">Módulo</p>
 
-        {SECCIONES_RRHH.map((opcion) => (
+        {seccionesVisibles.map((opcion) => (
           <button
             key={opcion.id}
             type="button"
@@ -73,7 +82,6 @@ export default function HrSidebar({ seccion, onSeleccionar, onLogout }) {
       </nav>
 
       <div className="hr-sidebar__footer">
-        <span className="hr-sidebar__status-text">Modo demostración</span>
         <button type="button" className="hr-sidebar__logout" onClick={onLogout}>
           <i className="bi bi-box-arrow-right" aria-hidden="true" />
           <span>Cerrar sesión</span>

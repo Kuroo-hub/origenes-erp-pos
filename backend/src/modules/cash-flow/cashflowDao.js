@@ -98,6 +98,26 @@ export async function createCashSession(
     return result.rows[0];
 }
 
+export async function findCashRegistersByBranch(branchId) {
+    const result = await pool.query(
+        `SELECT
+            cr.cash_register_id AS "cashRegisterId",
+            cr.branch_id AS "branchId",
+            cr.name,
+            cr.active,
+            b.name AS "branchName",
+            CASE WHEN cr.active THEN 'ACTIVO' ELSE 'INACTIVO' END AS estado
+         FROM cash_register cr
+         INNER JOIN branch b
+            ON b.branch_id = cr.branch_id
+         WHERE cr.branch_id = $1
+         ORDER BY cr.cash_register_id`,
+        [branchId]
+    );
+
+    return result.rows;
+}
+
 // Obtiene todas las sesiones abiertas.
 export async function findAllActiveCashSessions() {
     const result = await pool.query(
@@ -108,6 +128,7 @@ export async function findAllActiveCashSessions() {
             cs.opening_date AS "fechaApertura",
             cs.opening_amount AS "montoInicial",
             'ABIERTA' AS estado,
+            b.branch_id AS "branchId",
             cr.name AS "nombreCaja",
             b.name AS "nombreSucursal",
             e.full_name AS "nombreCajero"
@@ -125,34 +146,33 @@ export async function findAllActiveCashSessions() {
     return result.rows;
 }
 
+const CASH_SESSION_DETAILS_QUERY = `SELECT
+    cs.*,
+    cs.shift_id AS id,
+    cs.opening_date AS fecha_apertura,
+    cs.closing_date AS fecha_cierre,
+    cs.opening_amount AS monto_inicial,
+    cs.closing_amount AS monto_final_real,
+    CASE
+        WHEN cs.status = 'OPEN' THEN 'ABIERTA'
+        ELSE 'CERRADA'
+    END AS estado,
+    cr.name AS "nombreCaja",
+    cr.branch_id AS "branchId",
+    b.name AS "nombreSucursal",
+    e.full_name AS "nombreCajero"
+ FROM cash_shift cs
+ INNER JOIN cash_register cr
+    ON cr.cash_register_id = cs.cash_register_id
+ INNER JOIN branch b
+    ON b.branch_id = cr.branch_id
+ INNER JOIN employee e
+     ON e.employee_id = cs.employee_id
+ WHERE cs.shift_id = $1`;
+
 // Obtiene una sesión por su ID.
-export async function findCashSessionById(sessionId) {
-    const result = await pool.query(
-        `SELECT
-            cs.*,
-            cs.shift_id AS id,
-            cs.opening_date AS fecha_apertura,
-            cs.closing_date AS fecha_cierre,
-            cs.opening_amount AS monto_inicial,
-            cs.closing_amount AS monto_final_real,
-            CASE
-                WHEN cs.status = 'OPEN' THEN 'ABIERTA'
-                ELSE 'CERRADA'
-            END AS estado,
-            cr.name AS "nombreCaja",
-            cr.branch_id AS "branchId",
-            b.name AS "nombreSucursal",
-            e.full_name AS "nombreCajero"
-         FROM cash_shift cs
-         INNER JOIN cash_register cr
-            ON cr.cash_register_id = cs.cash_register_id
-         INNER JOIN branch b
-            ON b.branch_id = cr.branch_id
-         INNER JOIN employee e
-             ON e.employee_id = cs.employee_id
-         WHERE cs.shift_id = $1`,
-        [sessionId]
-    );
+export async function findCashSessionById(sessionId, client = pool) {
+    const result = await client.query(CASH_SESSION_DETAILS_QUERY, [sessionId]);
 
     return result.rows[0] ?? null;
 }
@@ -170,38 +190,6 @@ export async function findCashSessionForUpdate(client, sessionId) {
          FROM cash_shift
          WHERE shift_id = $1
          FOR UPDATE`,
-        [sessionId]
-    );
-
-    return result.rows[0] ?? null;
-}
-
-// Obtiene los datos descriptivos de una sesión.
-export async function findCashSessionDetails(client, sessionId) {
-    const result = await client.query(
-        `SELECT
-            cs.*,
-            cs.shift_id AS id,
-            cs.opening_date AS fecha_apertura,
-            cs.closing_date AS fecha_cierre,
-            cs.opening_amount AS monto_inicial,
-            cs.closing_amount AS monto_final_real,
-            CASE
-                WHEN cs.status = 'OPEN' THEN 'ABIERTA'
-                ELSE 'CERRADA'
-            END AS estado,
-            cr.name AS "nombreCaja",
-            cr.branch_id AS "branchId",
-            b.name AS "nombreSucursal",
-            e.full_name AS "nombreCajero"
-         FROM cash_shift cs
-         INNER JOIN cash_register cr
-            ON cr.cash_register_id = cs.cash_register_id
-         INNER JOIN branch b
-            ON b.branch_id = cr.branch_id
-         INNER JOIN employee e
-             ON e.employee_id = cs.employee_id
-         WHERE cs.shift_id = $1`,
         [sessionId]
     );
 

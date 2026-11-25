@@ -1,6 +1,6 @@
 import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
 
-export default function ChefOrderCard({ orden, minutos, tiempo, urgencia }) {
+export default function ChefOrderCard({ orden, minutos, tiempo, urgencia, onCambiarEstado }) {
   const claseEstado = {
     Pendiente: 'pendiente',
     'En preparación': 'preparando',
@@ -63,7 +63,27 @@ export default function ChefOrderCard({ orden, minutos, tiempo, urgencia }) {
       </ul>
 
       <footer className="chef-order__footer">
-        Objetivo {orden.tiempoObjetivoMin} min · {minutos} min transcurridos
+        <span>Objetivo {orden.tiempoObjetivoMin} min · {minutos} min transcurridos</span>
+        {orden.estado === 'Pendiente' && (
+          <button
+            type="button"
+            className="chef-order__action"
+            onClick={() => onCambiarEstado(orden.id, 'En preparación')}
+          >
+            <i className="bi bi-play-circle" aria-hidden="true" />
+            Iniciar preparación
+          </button>
+        )}
+        {orden.estado === 'En preparación' && (
+          <button
+            type="button"
+            className="chef-order__action chef-order__action--ready"
+            onClick={() => onCambiarEstado(orden.id, 'Listo')}
+          >
+            <i className="bi bi-check2-circle" aria-hidden="true" />
+            Marcar listo
+          </button>
+        )}
       </footer>
     </article>
   );

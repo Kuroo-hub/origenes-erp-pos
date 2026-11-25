@@ -1,8 +1,12 @@
 
 import { useMemo, useState } from 'react';
-import { etiquetaRolRRHH } from '../../mocks/HrMocks.js';
+import { etiquetaRolRRHH } from '../../utils/rrhh.js';
+import {
+  buildPayrollPayload,
+  mapPayrollResponseToResult,
+  runPayroll,
+} from '../../services/hrApi.js';
 
-// Mismos valores y reglas del payrollCalculator.js del backend.
 const ISSS_RATE = 0.03;
 const ISSS_CAP = 30;
 const AFP_RATE = 0.0725;
@@ -25,7 +29,6 @@ function calculateIncomeTax(taxableBase) {
   return (taxableBase - 1019.05) * 0.30 + 150.28;
 }
 
-// Réplica local de calculateBiweeklyPayroll del backend.
 function calculateBiweeklyPayroll(
   baseSalary,
   otherDeductions = 0,
@@ -104,21 +107,24 @@ export default function HrPayroll({ empleados = [] }) {
   const [resultado, setResultado] = useState(null);
   const [periodosProcesados, setPeriodosProcesados] = useState([]);
   const [error, setError] = useState('');
+  const [procesando, setProcesando] = useState(false);
+  const [mensaje, setMensaje] = useState('');
 
-  const actualizarMonto = (setter, userId, value) => {
+  const actualizarMonto = (setter, employeeId, value) => {
     setter((actuales) => ({
       ...actuales,
-      [userId]: value,
+      [employeeId]: value,
     }));
 
     setResultado(null);
     setError('');
   };
 
-  const procesarPlanilla = (event) => {
+  const procesarPlanilla = async (event) => {
     event.preventDefault();
     setError('');
     setResultado(null);
+    setMensaje('');
 
     if (!startDate || !endDate) {
       setError('Debes seleccionar la fecha inicial y final del período.');
@@ -147,11 +153,9 @@ export default function HrPayroll({ empleados = [] }) {
       return;
     }
 
-    const detalles = [];
-
     for (const empleado of empleadosActivos) {
-      const bonusValue = bonuses[empleado.userId] ?? '';
-      const deductionValue = deductions[empleado.userId] ?? '';
+      const bonusValue = bonuses[empleado.employeeId] ?? '';
+      const deductionValue = deductions[empleado.employeeId] ?? '';
 
       const bonus = bonusValue === '' ? 0 : Number(bonusValue);
       const otherDeductions =
@@ -179,50 +183,36 @@ export default function HrPayroll({ empleados = [] }) {
         );
         return;
       }
-
-      detalles.push({
-        employeeId: empleado.employeeId,
-        userId: empleado.userId,
-        fullName: empleado.fullName,
-        jobTitle: etiquetaRolRRHH(empleado.role ?? empleado.jobTitle),
-        ...calculo,
-      });
     }
 
-    const totales = detalles.reduce(
-      (acumulado, detalle) => ({
-        grossSalary: acumulado.grossSalary + detalle.grossSalary,
-        isssDeduction: acumulado.isssDeduction + detalle.isssDeduction,
-        afpDeduction: acumulado.afpDeduction + detalle.afpDeduction,
-        incomeTax: acumulado.incomeTax + detalle.incomeTax,
-        otherDeductions:
-          acumulado.otherDeductions + detalle.otherDeductions,
-        netSalary: acumulado.netSalary + detalle.netSalary,
-      }),
-      {
-        grossSalary: 0,
-        isssDeduction: 0,
-        afpDeduction: 0,
-        incomeTax: 0,
-        otherDeductions: 0,
-        netSalary: 0,
-      }
-    );
-
-    Object.keys(totales).forEach((key) => {
-      totales[key] = roundMoney(totales[key]);
-    });
-
-    setResultado({
+    const payload = buildPayrollPayload({
       startDate,
       endDate,
       paymentDate,
-      employeeCount: detalles.length,
-      details: detalles,
-      totals: totales,
+      bonuses,
+      deductions,
+      empleadosActivos,
     });
 
-    setPeriodosProcesados((actuales) => [...actuales, periodo]);
+    setProcesando(true);
+
+    try {
+      const response = await runPayroll(payload);
+
+      setResultado(
+        mapPayrollResponseToResult(response, empleados, etiquetaRolRRHH)
+      );
+      setMensaje(response.message ?? 'La planilla fue procesada correctamente.');
+      setPeriodosProcesados((actuales) => [...actuales, periodo]);
+    } catch (caughtError) {
+      if (caughtError.status === 409) {
+        setPeriodosProcesados((actuales) => [...actuales, periodo]);
+      }
+
+      setError(caughtError.message ?? 'No se pudo procesar la planilla.');
+    } finally {
+      setProcesando(false);
+    }
   };
 
   const limpiarFormulario = () => {
@@ -233,6 +223,8 @@ export default function HrPayroll({ empleados = [] }) {
     setDeductions({});
     setResultado(null);
     setError('');
+    setMensaje('');
+    setProcesando(false);
   };
 
   return (
@@ -327,12 +319,12 @@ export default function HrPayroll({ empleados = [] }) {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={bonuses[empleado.userId] ?? ''}
+                        value={bonuses[empleado.employeeId] ?? ''}
                         placeholder="0.00"
                         onChange={(event) =>
                           actualizarMonto(
                             setBonuses,
-                            empleado.userId,
+                            empleado.employeeId,
                             event.target.value
                           )
                         }
@@ -345,12 +337,12 @@ export default function HrPayroll({ empleados = [] }) {
                         type="number"
                         min="0"
                         step="0.01"
-                        value={deductions[empleado.userId] ?? ''}
+                        value={deductions[empleado.employeeId] ?? ''}
                         placeholder="0.00"
                         onChange={(event) =>
                           actualizarMonto(
                             setDeductions,
-                            empleado.userId,
+                            empleado.employeeId,
                             event.target.value
                           )
                         }
@@ -378,6 +370,7 @@ export default function HrPayroll({ empleados = [] }) {
               type="button"
               className="hr-payroll__secondary"
               onClick={limpiarFormulario}
+              disabled={procesando}
             >
               Limpiar
             </button>
@@ -385,10 +378,10 @@ export default function HrPayroll({ empleados = [] }) {
             <button
               type="submit"
               className="hr-payroll__primary"
-              disabled={empleadosActivos.length === 0}
+              disabled={empleadosActivos.length === 0 || procesando}
             >
               <i className="bi bi-calculator" />
-              Procesar planilla
+              {procesando ? 'Procesando...' : 'Procesar planilla'}
             </button>
           </div>
         </form>
@@ -400,10 +393,10 @@ export default function HrPayroll({ empleados = [] }) {
             <div>
               <i className="bi bi-check-circle-fill" />
               <div>
-                <h2>Simulación de planilla completada</h2>
+                <h2>Planilla procesada</h2>
                 <p>
-                  Resultado local para {resultado.employeeCount} empleados.
-                  No se ha guardado en la base de datos.
+                  {mensaje ??
+                    `Planilla procesada para ${resultado.employeeCount} empleados.`}
                 </p>
               </div>
             </div>

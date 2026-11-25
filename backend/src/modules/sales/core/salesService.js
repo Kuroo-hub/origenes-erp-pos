@@ -1,7 +1,9 @@
 import crypto from "node:crypto";
-import { AppError } from "../../utils/AppError.js";
-import { pool } from "../../config/database.js";
-import { consumeSaleProduct } from "../inventory/inventoryService.js";
+import { createError } from "../../../utils/errors.js";
+import { formatCents, toCents } from "../../../utils/money.js";
+import { withTransaction } from "../../../utils/transaction.js";
+import { validateId } from "../../../utils/validation.js";
+import { consumeSaleProduct } from "../../inventory/inventoryService.js";
 import {
     findActiveBranchById,
     findActiveEmployeeById,
@@ -9,6 +11,7 @@ import {
     findOpenCashShiftById,
     findActiveProductsByIds,
     getNextDocumentSequence,
+    createCustomer,
     createInvoice,
     createInvoiceDetail,
     createSalePayment,
@@ -19,85 +22,79 @@ import {
     updateInvoiceStatusToCancelled
 } from "./salesDao.js";
 
-function createError(message, statusCode = 400) {
-    return new AppError(message, statusCode);
-}
-
-// Ejecuta operaciones dentro de una transacción.
-async function executeTransaction(callback) {
-    const client = await pool.connect();
-    let transactionStarted = false;
-
-    try {
-        await client.query("BEGIN");
-        transactionStarted = true;
-
-        const result = await callback(client);
-
-        await client.query("COMMIT");
-        transactionStarted = false;
-
-        return result;
-
-    } catch (error) {
-        if (transactionStarted) {
-            try {
-                await client.query("ROLLBACK");
-            } catch (rollbackError) {
-                console.error("Error al ejecutar ROLLBACK:", rollbackError);
-            }
-        }
-        throw error;
-
-    } finally {
-        client.release();
-    }
-}
-
-function validateId(id, fieldName = "ID") {
-    const value = Number(id);
-    if (!Number.isSafeInteger(value) || value <= 0) {
-        throw createError(`${fieldName} no es válido.`);
-    }
-    return value;
-}
-
-// Convierte un precio decimal a centavos enteros.
-function toCents(amount) {
-    const [whole, decimal = ""] = String(amount).split(".");
-    const cents = decimal.padEnd(2, "0").slice(0, 2);
-    return BigInt(whole) * 100n + BigInt(cents);
-}
-
-// Convierte centavos enteros de vuelta a texto decimal.
-function formatCents(cents) {
-    const whole = cents / 100n;
-    const decimal = String(cents % 100n).padStart(2, "0");
-    return `${whole}.${decimal}`;
-}
-
 // Registra una venta completa, calcula IVA, genera correlativo y emite comprobante.
 export async function registerSaleService({
     customerId = null,
+    customerData = null,
     branchId,
     employeeId,
     shiftId,
     documentType,
     paymentMethod,
     paymentReference = null,
+    isDelivery = false,
+    deliveryStatus = null,
+    deliveryAddress = null,
+    deliveryPhone = null,
     items
 }) {
     const validBranchId = validateId(branchId, "ID de sucursal");
     const validEmployeeId = validateId(employeeId, "ID de empleado");
     const validShiftId = validateId(shiftId, "ID de turno de caja");
-    const validCustomerId = customerId ? validateId(customerId, "ID de cliente") : null;
+    let validCustomerId = customerId ? validateId(customerId, "ID de cliente") : null;
 
     if (!["FINAL_CONSUMER", "CREDIT_TAX"].includes(documentType)) {
         throw createError("El tipo de documento debe ser FINAL_CONSUMER o CREDIT_TAX.");
     }
 
+    const normalizedCustomerData =
+        customerData && typeof customerData === "object"
+            ? {
+                fullName: String(customerData.fullName ?? customerData.full_name ?? "").trim(),
+                taxId: String(customerData.taxId ?? customerData.tax_id ?? "").trim() || null,
+                registrationNumber:
+                    String(
+                        customerData.registrationNumber ??
+                        customerData.registration_number ??
+                        ""
+                    ).trim() || null,
+                businessName:
+                    String(customerData.businessName ?? customerData.business_name ?? "").trim() ||
+                    null,
+                economicActivity:
+                    String(
+                        customerData.economicActivity ?? customerData.economic_activity ?? ""
+                    ).trim() || null,
+                taxAddress:
+                    String(customerData.taxAddress ?? customerData.tax_address ?? "").trim() ||
+                    null
+            }
+            : null;
+
     if (documentType === "CREDIT_TAX" && !validCustomerId) {
-        throw createError("Para Crédito Fiscal (CREDIT_TAX) es obligatorio indicar el cliente.");
+        if (!normalizedCustomerData?.fullName || !normalizedCustomerData.taxId) {
+            throw createError(
+                "Para Crédito Fiscal (CREDIT_TAX) es obligatorio el nombre y NIT del cliente."
+            );
+        }
+    }
+
+    const normalizedIsDelivery = isDelivery === true || isDelivery === "true";
+    const normalizedDeliveryStatus = normalizedIsDelivery
+        ? deliveryStatus ?? "READY"
+        : null;
+    const normalizedDeliveryAddress = String(deliveryAddress ?? "").trim() || null;
+    const normalizedDeliveryPhone = String(deliveryPhone ?? "").trim() || null;
+
+    if (normalizedIsDelivery && !normalizedDeliveryAddress) {
+        throw createError("La dirección de entrega es obligatoria para entregas a domicilio.");
+    }
+
+    if (
+        normalizedIsDelivery &&
+        !["READY", "IN_TRANSIT", "DELIVERED"].includes(normalizedDeliveryStatus)
+    ) {
+        throw createError("El estado de entrega no es válido.");
     }
 
     if (!["CASH", "CARD", "BITCOIN", "CHIVO"].includes(paymentMethod)) {
@@ -121,7 +118,7 @@ export async function registerSaleService({
         groupedItems.set(prodId, (groupedItems.get(prodId) ?? 0) + qty);
     }
 
-    return executeTransaction(async (client) => {
+    return withTransaction(async (client) => {
         // Valida sucursal, empleado y cliente.
         const branch = await findActiveBranchById(client, validBranchId);
         if (!branch) throw createError("La sucursal no existe o está inactiva.", 404);
@@ -132,6 +129,16 @@ export async function registerSaleService({
         if (validCustomerId) {
             const customer = await findCustomerById(client, validCustomerId);
             if (!customer) throw createError("El cliente especificado no existe.", 404);
+        } else if (normalizedCustomerData?.fullName) {
+            const createdCustomer = await createCustomer(client, {
+                ...normalizedCustomerData,
+                taxId: documentType === "CREDIT_TAX" ? normalizedCustomerData.taxId : null,
+                registrationNumber:
+                    documentType === "CREDIT_TAX"
+                        ? normalizedCustomerData.registrationNumber
+                        : null
+            });
+            validCustomerId = createdCustomer.customer_id;
         }
 
         // Valida que la caja esté abierta (conexión directa con el módulo de Caja).
@@ -221,7 +228,11 @@ export async function registerSaleService({
             subtotal: subtotalStr,
             vat: vatStr,
             total: totalStr,
-            status: "PAID"
+            status: "PAID",
+            isDelivery: normalizedIsDelivery,
+            deliveryStatus: normalizedDeliveryStatus,
+            deliveryAddress: normalizedDeliveryAddress,
+            deliveryPhone: normalizedDeliveryPhone
         });
 
         // Guarda los detalles de productos y el pago.

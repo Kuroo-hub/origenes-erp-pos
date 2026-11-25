@@ -1,10 +1,35 @@
 import {pool} from '../../config/database.js';
 
+export async function findAllBranches()
+{
+    const query = `
+        SELECT branch_id, name, address, active
+        FROM branch
+        WHERE active = TRUE
+        ORDER BY branch_id ASC
+    `;
+
+    const result = await pool.query(query);
+
+    return result.rows;
+}
+
 export async function findAllIngredients()
 {
     const query = 
         `SELECT ingredient_id, name, ingredient_type, unit 
         FROM ingredient 
+        ORDER BY name ASC`;
+    const result = await pool.query(query);
+
+    return result.rows;
+}
+
+export async function findAllProducts()
+{
+    const query =
+        `SELECT product_id, name, description, product_type, price, active
+        FROM product
         ORDER BY name ASC`;
 
     const result = await pool.query(query);
@@ -436,34 +461,6 @@ export async function findRecipeRequirements(
     return result.rows;
 }
 
-export async function consumeIngredientStock(
-    client,
-    branchId,
-    ingredientId,
-    quantity
-) {
-    const query = `
-        UPDATE branch_inventory
-        SET quantity = quantity - $3
-        WHERE branch_id = $1
-          AND ingredient_id = $2
-          AND quantity >= $3
-        RETURNING
-            inventory_id,
-            branch_id,
-            ingredient_id,
-            quantity,
-            minimum_stock
-    `;
-
-    const result = await client.query(query, [
-        branchId,
-        ingredientId,
-        quantity
-    ]);
-
-    return result.rows[0];
-}
 
 export async function insertConsumptionMovement(
     client,

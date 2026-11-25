@@ -9,29 +9,31 @@ import {
   IconBuilding,
 } from '../../components/owner/OwnerIcons';
 import { getOwnerDashboard } from '../../services/ownerApi';
-import { OWNER_DASHBOARD_MOCK } from '../../mocks/OwnerMocks';
 import { useOrders } from '../../context/OrderContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import '../../styles/owner.css';
 
 const OwnerPage = () => {
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
+  const esAdministrador = user?.role === 'ADMINISTRATOR';
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedBranch, setSelectedBranch] = useState('ALL');
-  const { cajas } = useOrders();
+  const [selectedBranch, setSelectedBranch] = useState(esAdministrador ? 'ALL' : String(user?.branchId ?? ''));
+  const { sesionesActivas, sucursales } = useOrders();
 
-  const [dashboard, setDashboard] = useState(OWNER_DASHBOARD_MOCK);
+  const [dashboard, setDashboard] = useState({ branches: [], top_products: [], payables: [] });
   const [loading, setLoading] = useState(true);
-  const [usingOfflineData, setUsingOfflineData] = useState(false);
+  const [error, setError] = useState(null);
 
   const loadDashboard = useCallback(async (branchFilter) => {
     setLoading(true);
+    setError(null);
+
     try {
       const res = await getOwnerDashboard(branchFilter);
       setDashboard(res.data || res);
-      setUsingOfflineData(false);
-    } catch {
-      setDashboard(OWNER_DASHBOARD_MOCK);
-      setUsingOfflineData(true);
+    } catch (err) {
+      setError(err?.message ?? 'No se pudieron cargar los indicadores.');
     } finally {
       setLoading(false);
     }
@@ -40,6 +42,9 @@ const OwnerPage = () => {
   useEffect(() => {
     loadDashboard(selectedBranch);
   }, [selectedBranch, loadDashboard]);
+
+  const cajaAbiertaPorSucursal = (branchId) =>
+    sesionesActivas.some((sesion) => Number(sesion.branchId) === Number(branchId));
 
   // Filtrado por sucursal si el gerente selecciona una específica
   const visibleBranches =
@@ -63,7 +68,7 @@ const OwnerPage = () => {
   const totalAlerts = visibleBranches.reduce((sum, b) => sum + Number(b.low_stock_alerts), 0);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -72,22 +77,20 @@ const OwnerPage = () => {
       <OwnerSidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        isOffline={usingOfflineData}
+        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 
       <div className="own-main">
-        <OwnerTopbar
-          activeTab={activeTab}
-          selectedBranch={selectedBranch}
-          onChangeBranch={setSelectedBranch}
-        />
+         <OwnerTopbar
+           activeTab={activeTab}
+           selectedBranch={selectedBranch}
+           onChangeBranch={setSelectedBranch}
+           branches={sucursales}
+           allowAll={esAdministrador}
+         />
 
-        {usingOfflineData && (
-          <div className="own-banner-offline">
-            Modo demostración activo con métricas consolidadas de las sucursales.
-          </div>
-        )}
+        {error && <div className="own-banner-offline">{error}</div>}
 
         <main className="own-content">
           {/* 4 Tarjetas KPI Ejecutivas */}
@@ -181,7 +184,7 @@ const OwnerPage = () => {
                         <tbody>
                           {visibleBranches.map((b) => {
                             const margin = Number(b.monthly_revenue) - Number(b.monthly_expenses);
-                            const cajaAbierta = cajas[b.branch_id]?.abierta ?? false;
+                            const cajaAbierta = cajaAbiertaPorSucursal(b.branch_id);
                             return (
                               <tr key={b.branch_id}>
                                 <td>
@@ -325,7 +328,7 @@ const OwnerPage = () => {
               {activeTab === 'branches' && (
                 <div className="own-branches-grid">
                   {visibleBranches.map((b) => {
-                    const cajaAbierta = cajas[b.branch_id]?.abierta ?? false;
+                    const cajaAbierta = cajaAbiertaPorSucursal(b.branch_id);
 
                     return (
                       <article key={b.branch_id} className="own-branch-card">

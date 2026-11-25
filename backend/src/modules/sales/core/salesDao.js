@@ -1,4 +1,4 @@
-import { pool } from "../../config/database.js";
+import { pool } from "../../../config/database.js";
 
 // Verifica que la sucursal exista y esté activa.
 export async function findActiveBranchById(client, branchId) {
@@ -78,6 +78,41 @@ export async function getNextDocumentSequence(client, branchId, documentType) {
     return result.rows[0] ?? null;
 }
 
+export async function createCustomer(
+    client,
+    {
+        fullName,
+        taxId = null,
+        registrationNumber = null,
+        businessName = null,
+        economicActivity = null,
+        taxAddress = null
+    }
+) {
+    const result = await client.query(
+        `INSERT INTO customer (
+            full_name,
+            tax_id,
+            registration_number,
+            business_name,
+            economic_activity,
+            tax_address
+         )
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING customer_id, full_name, tax_id, registration_number`,
+        [
+            fullName,
+            taxId,
+            registrationNumber,
+            businessName,
+            economicActivity,
+            taxAddress
+        ]
+    );
+
+    return result.rows[0];
+}
+
 // Inserta el encabezado de la factura (comprobante fiscal).
 export async function createInvoice(
     client,
@@ -93,7 +128,11 @@ export async function createInvoice(
         subtotal,
         vat,
         total,
-        status
+        status,
+        isDelivery = false,
+        deliveryStatus = null,
+        deliveryAddress = null,
+        deliveryPhone = null
     }
 ) {
     const result = await client.query(
@@ -109,9 +148,13 @@ export async function createInvoice(
             subtotal,
             vat,
             total,
-            status
+            status,
+            is_delivery,
+            delivery_status,
+            delivery_address,
+            delivery_phone
          )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          RETURNING *`,
         [
             customerId,
@@ -125,7 +168,11 @@ export async function createInvoice(
             subtotal,
             vat,
             total,
-            status
+            status,
+            isDelivery,
+            deliveryStatus,
+            deliveryAddress,
+            deliveryPhone
         ]
     );
 
@@ -187,6 +234,7 @@ export async function findInvoicesHistory(limit, offset, branchId = null) {
     const result = await pool.query(
         `SELECT
             i.invoice_id AS "invoiceId",
+            i.branch_id AS "branchId",
             i.document_type AS "documentType",
             i.consecutive_number AS "consecutiveNumber",
             i.control_number AS "controlNumber",
@@ -195,16 +243,37 @@ export async function findInvoicesHistory(limit, offset, branchId = null) {
             i.vat,
             i.total,
             i.status,
+            i.is_delivery AS "isDelivery",
+            i.delivery_status AS "deliveryStatus",
+            i.delivery_address AS "deliveryAddress",
+            i.delivery_phone AS "deliveryPhone",
             b.name AS "branchName",
             c.full_name AS "customerName",
-            e.email AS "cashierEmail"
+            e.email AS "cashierEmail",
+            sp.payment_method AS "paymentMethod",
+            COALESCE((
+                SELECT json_agg(
+                    json_build_object(
+                        'productId', d.product_id,
+                        'name', p.name,
+                        'quantity', d.quantity,
+                        'price', d.unit_price
+                    ) ORDER BY d.invoice_detail_id
+                )
+                FROM invoice_detail d
+                INNER JOIN product p
+                    ON p.product_id = d.product_id
+                WHERE d.invoice_id = i.invoice_id
+            ), '[]'::json) AS "items"
          FROM invoice i
          INNER JOIN branch b
             ON b.branch_id = i.branch_id
          INNER JOIN employee e
-             ON e.employee_id = i.employee_id
+            ON e.employee_id = i.employee_id
          LEFT JOIN customer c
             ON c.customer_id = i.customer_id
+         LEFT JOIN sale_payment sp
+            ON sp.invoice_id = i.invoice_id
          ${whereClause}
          ORDER BY i.issue_date DESC
          LIMIT $1 OFFSET $2`,

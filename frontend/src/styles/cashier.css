@@ -1619,3 +1619,10 @@
 .cashier-caja-banner span {
   font-size: 0.78rem;
 }
+@media print {
+  body * { visibility: hidden; }
+  .cashier-orders__modal, .cashier-orders__modal * { visibility: visible; }
+  .cashier-orders__modal { position: absolute; left: 0; top: 0; width: 100%; }
+  .cashier-orders__modal-footer button { display: none; }
+}
+

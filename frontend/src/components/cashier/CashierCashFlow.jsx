@@ -1,6 +1,6 @@
 
 import { useMemo } from 'react';
-import { formatearMonedaCajero } from '../../mocks/CashierMocks.js';
+import { formatearMonedaCajero } from '../../utils/formatters.js';
 
 const METODOS_PAGO = {
   efectivo: 'Efectivo',

@@ -9,7 +9,7 @@ import {
     findPayrollByPeriod
 } from "./hrDao.js";
 import { calculateBiweeklyPayroll } from "./payrollCalculator.js";
-import { pool } from "../../config/database.js";
+import { withTransaction } from "../../utils/transaction.js";
 
 function parseEmployeeId(value) {
     const employeeId = Number(value);
@@ -43,8 +43,8 @@ function normalizeEmployee(employee) {
     };
 }
 
-export async function getEmployees() {
-    const employees = await findAllEmployees();
+export async function getEmployees(branchId = null) {
+    const employees = await findAllEmployees(branchId);
     return employees.map(normalizeEmployee);
 }
 
@@ -132,11 +132,7 @@ export async function runPayroll(payload) {
         bonusesByEmployee.set(employeeId, amount);
     }
 
-    const client = await pool.connect();
-
-    try {
-        await client.query("BEGIN");
-
+    return withTransaction(async (client) => {
         const existingPayroll = await findPayrollByPeriod(client, startDate, endDate);
         if (existingPayroll) {
             throw new AppError("Ya existe una planilla para el período indicado.", 409);
@@ -179,17 +175,10 @@ export async function runPayroll(payload) {
             });
         }
 
-        await client.query("COMMIT");
-
         return {
             ...payroll,
             employeeCount: details.length,
             details
         };
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-    } finally {
-        client.release();
-    }
+    });
 }

@@ -1,6 +1,8 @@
 
+import { resolveBranchId } from "../../utils/branchAccess.js";
 import {
   openCashSessionService,
+  getCashRegistersByBranchService,
   getActiveCashSessionsService,
   getCashSessionByIdService,
   getCashSessionSummaryService,
@@ -10,123 +12,106 @@ import {
 } from "./cashflowService.js";
 
 // 1. Abrir sesión de caja.
-export async function openCashSessionController(req, res, next) {
-  try {
-    const session = await openCashSessionService({
-      cashRegisterId: req.body.cashRegisterId,
-      employeeId: req.user.employeeId,
-      initialAmount: req.body.initialAmount
-    });
+export async function openCashSessionController(req, res) {
+  const session = await openCashSessionService({
+    cashRegisterId: req.body.cashRegisterId,
+    employeeId: req.user.employeeId,
+    initialAmount: req.body.initialAmount,
+    user: req.user
+  });
 
-    return res.status(201).json({
-      success: true,
-      message: "Caja abierta correctamente.",
-      data: session
-    });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(201).json({
+    success: true,
+    message: "Caja abierta correctamente.",
+    data: session
+  });
+}
+
+export async function getCashRegistersByBranchController(req, res) {
+  const branchId = resolveBranchId(req, req.query.branchId);
+  const registers = await getCashRegistersByBranchService(branchId);
+
+  return res.status(200).json({
+    success: true,
+    data: registers
+  });
 }
 
 // 2. Consultar sesiones abiertas.
-export async function activeCashSession(req, res, next) {
-  try {
-    const sessions = await getActiveCashSessionsService();
+export async function activeCashSession(req, res) {
+  const sessions = await getActiveCashSessionsService();
 
-    return res.status(200).json({
-      success: true,
-      message: "Sesiones abiertas consultadas correctamente.",
-      data: sessions
-    });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Sesiones abiertas consultadas correctamente.",
+    data: sessions
+  });
 }
 
 // 3. Consultar sesión por ID.
-export async function getCashSessionById(req, res, next) {
-  try {
-    const session = await getCashSessionByIdService(req.params.id);
+export async function getCashSessionById(req, res) {
+  const session = await getCashSessionByIdService(req.params.id);
 
-    return res.status(200).json({
-      success: true,
-      message: "Sesión consultada correctamente.",
-      data: session
-    });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Sesión consultada correctamente.",
+    data: session
+  });
 }
 
 // 4. Consultar resumen financiero.
-export async function getCashSessionSummary(req, res, next) {
-  try {
-    const summary = await getCashSessionSummaryService(req.params.id);
+export async function getCashSessionSummary(req, res) {
+  const summary = await getCashSessionSummaryService(req.params.id);
 
-    return res.status(200).json({
-      success: true,
-      message: "Resumen de caja consultado correctamente.",
-      data: summary
-    });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Resumen de caja consultado correctamente.",
+    data: summary
+  });
 }
 
 // 5. Registrar movimiento manual.
-export async function addCashMovementController(req, res, next) {
-  try {
-    const movement = await addCashMovementService({
-      sessionId: req.params.id,
-      employeeId: req.user.employeeId,
-      type: req.body.type,
-      amount: req.body.amount,
-      concept: req.body.concept
-    });
+export async function addCashMovementController(req, res) {
+  const movement = await addCashMovementService({
+    sessionId: req.params.id,
+    employeeId: req.user.employeeId,
+    type: req.body.type,
+    amount: req.body.amount,
+    concept: req.body.concept
+  });
 
-    return res.status(201).json({
-      success: true,
-      message: "Movimiento registrado correctamente.",
-      data: movement
-    });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(201).json({
+    success: true,
+    message: "Movimiento registrado correctamente.",
+    data: movement
+  });
 }
 
 // 6. Cerrar sesión.
-export async function closeCashSession(req, res, next) {
-  try {
-    const result = await closeCashSessionService({
-      sessionId: req.params.id,
-      employeeId: req.user.employeeId,
-      realAmount: req.body.realAmount
-    });
+export async function closeCashSession(req, res) {
+  const result = await closeCashSessionService({
+    sessionId: req.params.id,
+    employeeId: req.user.employeeId,
+    realAmount: req.body.realAmount
+  });
 
-    return res.status(200).json({
-      success: true,
-      message: "Caja cerrada correctamente.",
-      data: result
-    });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Caja cerrada correctamente.",
+    data: result
+  });
 }
 
 // 7. Consultar historial.
-export async function getCashSessionHistory(req, res, next) {
-  try {
-    const sessions = await getCashSessionHistoryService({
-      limit: req.query.limit,
-      offset: req.query.offset
-    });
+export async function getCashSessionHistory(req, res) {
+  const sessions = await getCashSessionHistoryService({
+    limit: req.query.limit,
+    offset: req.query.offset
+  });
 
-    return res.status(200).json({
-      success: true,
-      message: "Historial consultado correctamente.",
-      data: sessions
-    });
-  } catch (error) {
-    next(error);
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Historial consultado correctamente.",
+    data: sessions
+  });
 }

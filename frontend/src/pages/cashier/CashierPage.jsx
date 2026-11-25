@@ -1,15 +1,33 @@
-
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CashierSidebar from '../../components/cashier/CashierSidebar.jsx';
 import CashierTopbar from '../../components/cashier/CashierTopbar.jsx';
 import CashierPOS from '../../components/cashier/CashierPOS.jsx';
 import CashierOrders from '../../components/cashier/CashierOrders.jsx';
-import { PRODUCTOS_CAJERO } from '../../mocks/CashierMocks.js';
-import { useOrders, SUCURSALES } from '../../context/OrderContext.jsx';
+import InvoiceModal from '../../components/cashier/InvoiceModal.jsx';
+import { useOrders } from '../../context/OrderContext.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
+import { getProducts } from '../../services/catalogApi.js';
+
+function mapearProducto(producto) {
+  return {
+    id: producto.product_id,
+    nombre: producto.name,
+    descripcion: producto.description ?? '',
+    precio: Number(producto.price ?? 0),
+    categoria: producto.category,
+    disponible: producto.active,
+    imagen:
+      producto.product_type === 'PREPARED'
+        ? 'bi-egg-fried'
+        : 'bi-basket',
+    stock: null
+  };
+}
 
 export default function CashierPage() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [seccion, setSeccion] = useState('pos');
   const {
     ordenesSucursal,
@@ -22,92 +40,57 @@ export default function CashierPage() {
     cambiarEstado,
   } = useOrders();
 
-  const [productos, setProductos] = useState(() =>
-    PRODUCTOS_CAJERO.map((producto) => ({
-      ...producto,
-      stockPorSucursal: Object.fromEntries(
-        SUCURSALES.map((item) => [item.nombre, producto.stock ?? 0])
-      ),
-    }))
-  );
+  const [productos, setProductos] = useState([]);
+  const [factura, setFactura] = useState(null);
+
+  useEffect(() => {
+    let activo = true;
+
+    getProducts()
+      .then((respuesta) => {
+        if (!activo) return;
+
+        const filas = Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
+        setProductos(filas.filter((producto) => producto.active).map(mapearProducto));
+      })
+      .catch(() => {
+        if (activo) setProductos([]);
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   const productosSucursal = useMemo(
-    () =>
-      productos.map((producto) => {
-        const stock = producto.stockPorSucursal[sucursal] ?? 0;
-
-        return {
-          ...producto,
-          stock,
-          disponible: stock > 0,
-        };
-      }),
-    [productos, sucursal]
+    () => productos.map((producto) => ({ ...producto, disponible: true })),
+    [productos]
   );
 
-  const registrarVenta = (datosPedido) => {
-    const ahora = new Date();
-
-    registrarPedido({
+  const registrarVenta = async (datosPedido) => {
+    const respuesta = await registrarPedido({
       id: `ORD-${Date.now()}`,
       cliente: datosPedido.cliente.trim() || 'Cliente presencial',
-      origen:
-        datosPedido.tipoEntrega === 'domicilio' ? 'Por llamada' : 'Presencial',
-      hora: ahora.toLocaleTimeString('es-SV', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      }),
-      created_at: ahora.toISOString(),
-      estado: 'Pendiente',
-      sucursalId,
-      sucursal,
       tipoEntrega: datosPedido.tipoEntrega ?? 'local',
-      deliveryStatus:
-        datosPedido.tipoEntrega === 'domicilio' ? 'READY' : null,
       direccion: datosPedido.direccion ?? '',
       numeroCasa: datosPedido.numeroCasa ?? '',
       telefono: datosPedido.telefono ?? '',
-      tiempoObjetivoMin: datosPedido.tiempoPreparacion ?? 15,
-      prioridad: 'normal',
+      sucursalId,
+      sucursal,
       productos: datosPedido.productos.map((producto) => ({
+        id: producto.id,
         nombre: producto.nombre,
         cantidad: producto.cantidad,
         precio: producto.precio ?? 0,
       })),
-      total: datosPedido.total,
       metodoPago: datosPedido.metodoPago,
-      ventaTurno: true,
     });
-  };
 
-  const descontarStock = (productosVendidos) => {
-    setProductos((actuales) =>
-      actuales.map((producto) => {
-        const vendido = productosVendidos.find(
-          (item) => item.id === producto.id
-        );
-
-        if (!vendido) return producto;
-
-        const stockActual = producto.stockPorSucursal[sucursal] ?? 0;
-
-        return {
-          ...producto,
-          stockPorSucursal: {
-            ...producto.stockPorSucursal,
-            [sucursal]: Math.max(
-              0,
-              stockActual - vendido.cantidad
-            ),
-          },
-        };
-      })
-    );
+    setFactura(respuesta?.data ?? respuesta ?? null);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -145,7 +128,6 @@ export default function CashierPage() {
               sucursal={sucursal}
               productos={productosSucursal}
               cajaAbierta={cajaAbierta}
-              onDescontarStock={descontarStock}
               onRegistrarPedido={registrarVenta}
             />
           )}
@@ -157,6 +139,10 @@ export default function CashierPage() {
             />
           )}
         </main>
+
+        {factura && (
+          <InvoiceModal factura={factura} onClose={() => setFactura(null)} />
+        )}
       </div>
     </div>
   );

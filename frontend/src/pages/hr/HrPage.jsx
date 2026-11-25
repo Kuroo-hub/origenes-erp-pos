@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HrSidebar from '../../components/hr/HrSidebar.jsx';
 import HrTopbar from '../../components/hr/HrTopbar.jsx';
@@ -7,67 +6,99 @@ import HrSummary from '../../components/hr/HrSummary.jsx';
 import HrEmployees from '../../components/hr/HrEmployees.jsx';
 import HrPayroll from '../../components/hr/HrPayroll.jsx';
 import HrHiring from '../../components/hr/HrHiring.jsx';
-import {
-  EMPLEADOS_INICIALES,
-  SUCURSALES_RRHH,
-} from '../../mocks/HrMocks.js';
+import { useAuth } from '../../hooks/useAuth.js';
+import { listEmployees } from '../../services/hrApi.js';
+import { getBranches } from '../../services/catalogApi.js';
+import { ROLES_RRHH } from '../../utils/rrhh.js';
 import '../../styles/hr.css';
-
-const generarUsuario = (email, nombre) => {
-  const desdeCorreo = email
-    .split('@')[0]
-    .replace(/[^a-z0-9]/gi, '')
-    .toLowerCase();
-
-  return (
-    desdeCorreo ||
-    nombre
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '.')
-      .replace(/^\.|\.$/g, '')
-  );
-};
-
-const generarContrasena = () =>
-  `origenes-${Math.random().toString(36).slice(2, 8)}`;
 
 export default function HrPage() {
   const navigate = useNavigate();
+  const { logout, register, user } = useAuth();
   const [seccion, setSeccion] = useState('resumen');
-  const [empleados, setEmpleados] = useState(EMPLEADOS_INICIALES);
+  const [empleados, setEmpleados] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const contratarEmpleado = (datos) => {
-    const employeeId = Math.max(0, ...empleados.map((item) => item.employeeId)) + 1;
-    const sucursal = SUCURSALES_RRHH.find(
-      (item) => item.id === datos.branchId
-    );
-    const username = generarUsuario(datos.email, datos.fullName);
-    const temporaryPassword = generarContrasena();
+  const puedeContratar = user?.role === 'ADMINISTRATOR' || user?.role === 'HR';
+  const rolesPermitidos =
+    user?.role === 'ADMINISTRATOR'
+      ? ROLES_RRHH
+      : ROLES_RRHH.filter((rol) =>
+          ['EMPLOYEE', 'MANAGER', 'HR', 'INVENTORY_MANAGER'].includes(rol.id)
+        );
 
-    setEmpleados((actuales) => [
-      {
-        ...datos,
-        employeeId,
-        userId: 200 + employeeId,
-        branchName: sucursal?.nombre ?? 'Centro Histórico',
-        hireDate: new Date().toISOString().slice(0, 10),
-        active: true,
-        username,
-        temporaryPassword,
-      },
-      ...actuales,
-    ]);
+  useEffect(() => {
+    let activo = true;
+
+    setLoading(true);
+    setError('');
+
+    let empleadosCargados = false;
+    let sucursalesCargadas = false;
+
+    const finalizarCarga = () => {
+      if (activo && empleadosCargados && sucursalesCargadas) {
+        setLoading(false);
+      }
+    };
+
+    listEmployees()
+      .then((response) => {
+        if (!activo) return;
+        setEmpleados(response ?? []);
+      })
+      .catch((caughtError) => {
+        if (activo) {
+          setError(
+            caughtError.message ?? 'No se pudo cargar la lista de empleados.'
+          );
+        }
+      })
+      .finally(() => {
+        empleadosCargados = true;
+        finalizarCarga();
+      });
+
+    getBranches()
+      .then((response) => {
+        if (!activo) return;
+        const filas = Array.isArray(response) ? response : response?.data ?? [];
+        setSucursales(filas);
+      })
+      .catch((caughtError) => {
+        if (activo) {
+          setError((actual) =>
+            actual || caughtError.message || 'No se pudieron cargar las sucursales.'
+          );
+        }
+      })
+      .finally(() => {
+        sucursalesCargadas = true;
+        finalizarCarga();
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
+
+  const contratarEmpleado = async (datos) => {
+    const empleadoCreado = await register(datos);
+    const response = await listEmployees();
+
+    setEmpleados(response ?? []);
 
     return {
-      usuario: datos.fullName,
-      username,
-      temporaryPassword,
+      usuario: empleadoCreado.fullName ?? datos.fullName,
+      username: empleadoCreado.email ?? datos.email,
     };
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return (
@@ -76,12 +107,26 @@ export default function HrPage() {
         seccion={seccion}
         onSeleccionar={setSeccion}
         onLogout={handleLogout}
+        puedeContratar={puedeContratar}
       />
 
       <div className="hr-workspace">
         <HrTopbar seccion={seccion} />
 
         <main className="hr-main">
+          {loading && (
+            <div className="hr-payroll__empty" role="status">
+              Cargando empleados...
+            </div>
+          )}
+
+          {error && (
+            <div className="hr-payroll__error" role="alert">
+              <i className="bi bi-exclamation-circle" />
+              {error}
+            </div>
+          )}
+
           <div hidden={seccion !== 'resumen'}>
             <HrSummary empleados={empleados} />
           </div>
@@ -95,10 +140,19 @@ export default function HrPage() {
           </div>
 
           <div hidden={seccion !== 'contratacion'}>
-            <HrHiring
-              empleados={empleados}
-              onContratar={contratarEmpleado}
-            />
+            {puedeContratar ? (
+               <HrHiring
+                 empleados={empleados}
+                 sucursales={sucursales}
+                 roles={rolesPermitidos}
+                 onContratar={contratarEmpleado}
+                 puedeContratar={puedeContratar}
+               />
+            ) : (
+              <div className="hr-payroll__empty">
+                La contratación requiere permisos de administrador.
+              </div>
+            )}
           </div>
         </main>
       </div>
