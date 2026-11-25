@@ -303,32 +303,15 @@ JOIN ingredient i
 INSERT INTO branch (name, address, phone)
 VALUES
 ('Sucursal San Salvador', 'Boulevard de los Héroes, San Salvador', '2222-1000'),
-('Sucursal Santa Ana', 'Avenida Independencia, Santa Ana', '2444-2000');
+('Sucursal Santa Ana', 'Avenida Independencia, Santa Ana', '2444-2000'),
+('Sucursal San Miguel', 'Calle Siramay, San Miguel', '2261-3000');
 
 
 -- =====================================================
 -- EMPLOYEES AND LOGINS
--- Password for every demo employee: Origenes123!
+-- Password for every demo employee: Prueba123!
+-- 1 admin general + 1 manager por sucursal + 26 empleados = 30 logins
 -- =====================================================
-
-INSERT INTO employee (
-    email,
-    password_hash,
-    role,
-    branch_id,
-    full_name,
-    job_title,
-    hire_date,
-    base_salary
-)
-VALUES
-    ('admin@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'ADMINISTRATOR', 1, 'Ana Martínez', 'Administradora General', CAST('2022-01-10' AS DATE), 1800.00),
-    ('gerente@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'MANAGER', 1, 'Carlos Pérez', 'Gerente de Sucursal', CAST('2022-03-15' AS DATE), 1500.00),
-    ('empleado@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'EMPLOYEE', 1, 'María López', 'Cajera', CAST('2023-06-01' AS DATE), 500.00),
-    ('rrhh@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'HR', 1, 'José Ramírez', 'Encargado de Recursos Humanos', CAST('2022-08-20' AS DATE), 1200.00),
-    ('inventario@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'INVENTORY_MANAGER', 2, 'Luis Gómez', 'Encargado de Inventario', CAST('2023-02-10' AS DATE), 900.00);
-
-
 
 INSERT INTO employee (
     branch_id,
@@ -342,46 +325,53 @@ INSERT INTO employee (
     base_salary
 )
 SELECT
-    b.branch_id,
-
-    'empleado' || b.branch_id || '_' || n.num || '@empresa.com',
-
-    '$2b$10$hashficticioparapruebas',
-
-    CASE
-        WHEN n.num = 1 THEN 'MANAGER'
-        ELSE 'EMPLOYEE'
-    END,
-
+    v.branch_id,
+    v.email,
+    p.password_hash,
+    v.role,
     TRUE,
+    v.full_name,
+    v.job_title,
+    CAST(v.hire_date AS DATE),
+    v.base_salary
+FROM (
+    VALUES
+        (1, 'admin@origenessv.com', 'ADMINISTRATOR', 'Ana Martínez', 'Administradora General', '2022-01-10', 1800.00),
+        (1, 'gerente@origenessv.com', 'MANAGER', 'Carlos Pérez', 'Gerente de Sucursal', '2022-03-15', 1500.00),
+        (1, 'empleado@origenessv.com', 'EMPLOYEE', 'María López', 'Cajera', '2023-06-01', 500.00),
+        (1, 'chef@origenessv.com', 'EMPLOYEE', 'Sofía Pérez', 'Chef de Cocina', '2023-07-12', 620.00),
+        (1, 'delivery@origenessv.com', 'EMPLOYEE', 'Daniel Torres', 'Repartidor', '2023-08-18', 480.00),
+        (1, 'cajero2@origenessv.com', 'EMPLOYEE', 'Laura Flores', 'Cajera', '2023-09-04', 520.00),
+        (1, 'cocina2@origenessv.com', 'EMPLOYEE', 'Miguel Ramírez', 'Cocina', '2023-10-11', 580.00),
+        (1, 'repartidor2@origenessv.com', 'EMPLOYEE', 'Andrea Castillo', 'Repartidor', '2024-01-15', 480.00),
+        (1, 'cajero3@origenessv.com', 'EMPLOYEE', 'Gabriela Morales', 'Cajera', '2024-03-01', 520.00),
+        (1, 'cocina3@origenessv.com', 'EMPLOYEE', 'Gustavo Ramírez', 'Cocina', '2024-04-12', 580.00),
 
-    (ARRAY[
-        'Carlos Garcia',
-        'Maria Rodriguez',
-        'Jose Martinez',
-        'Ana Lopez',
-        'Luis Hernandez',
-        'Sofia Perez',
-        'Daniel Torres',
-        'Laura Flores',
-        'Miguel Ramirez',
-        'Andrea Castillo'
-    ])[n.num],
+        (2, 'gerente.santaana@origenessv.com', 'MANAGER', 'Camila Reyes', 'Gerente de Sucursal', '2022-05-20', 1450.00),
+        (2, 'cajero.santaana@origenessv.com', 'EMPLOYEE', 'Alejandro Romero', 'Cajero', '2023-04-03', 500.00),
+        (2, 'chef.santaana@origenessv.com', 'EMPLOYEE', 'Patricia Molina', 'Chef de Cocina', '2023-06-22', 620.00),
+        (2, 'delivery.santaana@origenessv.com', 'EMPLOYEE', 'Oscar Navarro', 'Repartidor', '2023-07-30', 480.00),
+        (2, 'cajero2.santaana@origenessv.com', 'EMPLOYEE', 'Diana Guzman', 'Cajera', '2023-10-02', 520.00),
+        (2, 'cocina2.santaana@origenessv.com', 'EMPLOYEE', 'Manuel Ortiz', 'Cocina', '2024-02-05', 580.00),
+        (2, 'repartidor2.santaana@origenessv.com', 'EMPLOYEE', 'Claudia Rivas', 'Repartidora', '2024-03-18', 480.00),
+        (2, 'cajero3.santaana@origenessv.com', 'EMPLOYEE', 'Viviana Molina', 'Cajera', '2024-05-06', 520.00),
+        (2, 'cocina3.santaana@origenessv.com', 'EMPLOYEE', 'Rafael Herrera', 'Cocina', '2024-06-17', 580.00),
+        (2, 'repartidor3.santaana@origenessv.com', 'EMPLOYEE', 'Marcos Rivas', 'Repartidor', '2024-07-22', 480.00),
 
-    CASE
-        WHEN n.num = 1 THEN 'Gerente de Sucursal'
-        ELSE 'Empleado'
-    END,
-
-    CURRENT_DATE - (n.num * 30),
-
-    CASE
-        WHEN n.num = 1 THEN 1800.00
-        ELSE 850.00 + (n.num * 50)
-    END
-
-FROM branch b
-CROSS JOIN generate_series(1, 10) AS n(num);
+        (3, 'gerente.sanmiguel@origenessv.com', 'MANAGER', 'Isabel Herrera', 'Gerente de Sucursal', '2022-06-27', 1450.00),
+        (3, 'cajero.sanmiguel@origenessv.com', 'EMPLOYEE', 'Eduardo Fuentes', 'Cajero', '2023-05-15', 500.00),
+        (3, 'chef.sanmiguel@origenessv.com', 'EMPLOYEE', 'Natalia Cabrera', 'Chef de Cocina', '2023-08-07', 620.00),
+        (3, 'delivery.sanmiguel@origenessv.com', 'EMPLOYEE', 'Francisco Aguilar', 'Repartidor', '2023-09-25', 480.00),
+        (3, 'cajero2.sanmiguel@origenessv.com', 'EMPLOYEE', 'Rosa Martinez', 'Cajera', '2024-01-08', 520.00),
+        (3, 'cocina2.sanmiguel@origenessv.com', 'EMPLOYEE', 'Hector Molina', 'Cocina', '2024-02-19', 580.00),
+        (3, 'repartidor2.sanmiguel@origenessv.com', 'EMPLOYEE', 'Beatriz Santos', 'Repartidora', '2024-04-01', 480.00),
+        (3, 'cajero3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Lorena Flores', 'Cajera', '2024-05-13', 520.00),
+        (3, 'cocina3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Iván Cabrera', 'Cocina', '2024-06-24', 580.00),
+        (3, 'repartidor3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Rodrigo Aguilar', 'Repartidor', '2024-08-05', 480.00)
+) AS v(branch_id, email, role, full_name, job_title, hire_date, base_salary)
+CROSS JOIN (
+    SELECT crypt('Prueba123!', gen_salt('bf')) AS password_hash
+) AS p;
 
 -- =====================================================
 -- CUSTOMER
@@ -528,7 +518,8 @@ INSERT INTO cash_register (branch_id, name)
 VALUES
 (1, 'Caja Principal'),
 (1, 'Caja 2'),
-(2, 'Caja Principal');
+(2, 'Caja Principal'),
+(3, 'Caja Principal');
 
 INSERT INTO document_sequence (branch_id, document_type, last_number)
 SELECT
@@ -540,16 +531,17 @@ CROSS JOIN (VALUES ('FINAL_CONSUMER'), ('CREDIT_TAX')) AS d(document_type);
 
 
 -- =====================================================
--- INITIAL BRANCH INVENTORY (BRANCH 1)
+-- INITIAL BRANCH INVENTORY (ALL BRANCHES)
 -- =====================================================
 
 INSERT INTO branch_inventory (branch_id, ingredient_id, quantity, minimum_stock)
 SELECT
-    1,
+    b.branch_id,
     i.ingredient_id,
     CASE i.unit WHEN 'unit' THEN 100 ELSE 5000 END,
     CASE i.unit WHEN 'unit' THEN 10 ELSE 500 END
-FROM ingredient i;
+FROM branch b
+CROSS JOIN ingredient i;
 
 
 -- =====================================================
@@ -618,9 +610,9 @@ INSERT INTO purchase (
     status
 )
 VALUES
-(1, 1, (SELECT employee_id FROM employee WHERE email = 'inventario@origenessv.com'), 'FAC-001', '2026-11-15 09:00', 150.00, 19.50, 169.50, 'PAID'),
-(2, 1, (SELECT employee_id FROM employee WHERE email = 'inventario@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
-(3, 2, (SELECT employee_id FROM employee WHERE email = 'inventario@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
+(1, 1, (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'), 'FAC-001', '2026-11-15 09:00', 150.00, 19.50, 169.50, 'PAID'),
+(2, 1, (SELECT employee_id FROM employee WHERE email = 'gerente.santaana@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
+(3, 2, (SELECT employee_id FROM employee WHERE email = 'gerente.sanmiguel@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
 
 INSERT INTO purchase_detail (purchase_id, ingredient_id, quantity, unit_cost, subtotal)
 SELECT
@@ -671,7 +663,7 @@ INSERT INTO cash_shift (
 )
 VALUES
 (1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-17 08:00', '2026-11-17 17:00', 100.00, 426.47, 'CLOSED'),
-(1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-18 08:00', NULL, 100.00, NULL, 'OPEN');
+(1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-18 08:00', '2026-11-18 17:00', 100.00, 100.00, 'CLOSED');
 
 
 -- =====================================================
@@ -694,8 +686,8 @@ INSERT INTO invoice (
     status
 )
 VALUES
-(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'PAID'),
-(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'PAID');
+(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'CANCELLED'),
+(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'CANCELLED');
 
 INSERT INTO invoice_detail (invoice_id, product_id, quantity, unit_price, subtotal)
 SELECT
@@ -766,4 +758,4 @@ FROM (
 JOIN ingredient i
     ON i.name = v.ingredient_name
 CROSS JOIN employee e
-WHERE e.email = 'inventario@origenessv.com';
+WHERE e.email = 'gerente@origenessv.com';
