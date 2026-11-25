@@ -1,0 +1,160 @@
+
+import { formatearMonedaCajero } from '../../mocks/CashierMocks.js';
+import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
+
+const obtenerClaseEstado = (estado) => {
+  const clases = {
+    Pendiente: 'pending',
+    'En preparación': 'preparing',
+    Listo: 'ready',
+    Entregado: 'delivered',
+  };
+
+  return clases[estado] ?? 'pending';
+};
+
+export default function CashierSummary({
+  ordenes = [],
+  ventasTurno = 0,
+  sucursal,
+}) {
+  const pedidosPendientes = ordenes.filter(
+    (pedido) => pedido.estado === 'Pendiente'
+  ).length;
+
+  const indicadores = [
+    {
+      id: 'ventas',
+      titulo: 'Ventas del turno',
+      valor: formatearMonedaCajero(ventasTurno),
+      detalle: 'Acumulado de ventas registradas',
+      icono: 'bi-currency-dollar',
+      color: 'primary',
+    },
+    {
+      id: 'pendientes',
+      titulo: 'Pedidos pendientes',
+      valor: String(pedidosPendientes).padStart(2, '0'),
+      detalle: 'Esperando atención',
+      icono: 'bi-clock-history',
+      color: 'warning',
+    },
+    {
+      id: 'pedidos',
+      titulo: 'Pedidos registrados',
+      valor: String(ordenes.length).padStart(2, '0'),
+      detalle: 'Pedidos de la sucursal',
+      icono: 'bi-receipt',
+      color: 'info',
+    },
+  ];
+
+  const actividadReciente = ordenes.slice(0, 5);
+
+  return (
+    <section className="cashier-summary">
+      <header className="cashier-section-header">
+        <div>
+          <h1>Resumen del turno</h1>
+          <p>
+            Consulta la actividad y el estado actual de tu jornada.
+          </p>
+        </div>
+
+        <p className="cashier-summary__branch">
+          <strong>Sucursal:</strong> {sucursal}
+        </p>
+      </header>
+
+      <div className="cashier-indicators">
+        {indicadores.map((indicador) => (
+          <article
+            key={indicador.id}
+            className={`cashier-indicator cashier-indicator--${indicador.color}`}
+          >
+            <div className="cashier-indicator__icon">
+              <i
+                className={`bi ${indicador.icono}`}
+                aria-hidden="true"
+              />
+            </div>
+
+            <div className="cashier-indicator__content">
+              <span>{indicador.titulo}</span>
+              <strong>{indicador.valor}</strong>
+              <small>{indicador.detalle}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <section className="cashier-activity">
+        <div className="cashier-activity__header">
+          <div>
+            <h2>Actividad reciente</h2>
+            <p>
+              Últimos pedidos registrados en esta sucursal.
+            </p>
+          </div>
+        </div>
+
+        <div className="cashier-activity__table-wrapper">
+          <table className="cashier-activity__table">
+            <thead>
+              <tr>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Origen</th>
+                <th>Hora</th>
+                <th>Total</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {actividadReciente.map((pedido) => (
+                <tr key={pedido.id}>
+                  <td>
+                    <strong>{pedido.id}</strong>
+                  </td>
+
+                  <td>{pedido.cliente}</td>
+
+                  <td>
+                    <span className="cashier-orders__origin-text">
+                      {obtenerOrigenPedido(pedido)}
+                    </span>
+                  </td>
+
+                  <td>{pedido.hora}</td>
+
+                  <td>
+                    {formatearMonedaCajero(pedido.total)}
+                  </td>
+
+                  <td>
+                    <span
+                      className={`cashier-order-status cashier-order-status--${obtenerClaseEstado(
+                        pedido.estado
+                      )}`}
+                    >
+                      {pedido.estado}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+
+              {actividadReciente.length === 0 && (
+                <tr>
+                  <td colSpan="6">
+                    No hay pedidos registrados.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  );
+}

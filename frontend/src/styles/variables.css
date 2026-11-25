@@ -1,0 +1,79 @@
+:root {
+  --primary-500: #4096ff;
+  --primary-600: #1677ff;
+  --primary-700: #0958d9;
+
+  --grey-100: #f5f5f5;
+  --grey-300: #d9d9d9;
+  --grey-500: #8c8c8c;
+  --grey-700: #434343;
+  --grey-900: #141414;
+
+  --success: #52c41a;
+  --error: #ff4d4f;
+  --warning: #faad14;
+
+  --ember-bg: var(--grey-100);
+  --ember-fg: var(--grey-900);
+  --ember-card: #ffffff;
+  --ember-muted: var(--grey-100);
+  --ember-muted-fg: var(--grey-700);
+  --ember-border: var(--grey-300);
+  --ember-sidebar: #ffffff;
+  --ember-accent: rgba(64, 150, 255, 0.1);
+  --ember-primary: var(--primary-600);
+  --ember-primary-hover: var(--primary-700);
+  --ember-primary-soft: rgba(64, 150, 255, 0.12);
+  --ember-ring: rgba(22, 119, 255, 0.18);
+  --ember-chart-1: var(--primary-600);
+  --ember-chart-2: var(--primary-500);
+  --ember-chart-3: var(--primary-700);
+  --ember-font: "Geist", "Inter", "Segoe UI Variable Display", "Segoe UI", "Helvetica Neue",
+    Arial, sans-serif;
+  --ember-sidebar-width: 16rem;
+  --ember-radius-card: 16px;
+  --ember-radius-control: 10px;
+  --ember-shadow: 0 8px 24px rgba(20, 20, 20, 0.06);
+  --ember-focus-ring: 0 0 0 0.2rem var(--ember-ring);
+  --ember-transition: 0.18s ease;
+  --auth-font: var(--ember-font);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--auth-font);
+  color: var(--ember-fg);
+  background-color: var(--ember-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--ember-primary);
+}
+
+::selection {
+  color: #ffffff;
+  background-color: var(--ember-primary);
+}
+
+.form-control:focus {
+  border-color: var(--ember-primary);
+  box-shadow: var(--ember-focus-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

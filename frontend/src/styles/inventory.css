@@ -1,0 +1,726 @@
+.inv-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  color: #1f2937;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Sidebar idéntico a Cajero / RRHH */
+.inv-sidebar {
+  width: 230px;
+  background: #ffffff;
+  border-right: 1px solid #eaecf0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  flex-shrink: 0;
+}
+
+.inv-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 20px;
+}
+
+.inv-sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.inv-sidebar__title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+  line-height: 1.2;
+}
+
+.inv-sidebar__role {
+  font-size: 0.72rem;
+  color: #6b7280;
+}
+
+.inv-sidebar__section-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  padding: 8px 10px 6px;
+}
+
+.inv-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.inv-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.inv-sidebar__item:hover {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.inv-sidebar__item.is-active {
+  background: #eff6ff;
+  color: #1677ff;
+  font-weight: 600;
+}
+
+.inv-sidebar__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+}
+
+.inv-sidebar__label {
+  flex: 1;
+}
+
+.inv-sidebar__badge {
+  background: #fff1f0;
+  color: #cf1322;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.inv-sidebar__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #d1d5db;
+}
+
+.inv-sidebar__item.is-active .inv-sidebar__dot {
+  background: #1677ff;
+}
+
+.inv-sidebar__footer {
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inv-sidebar__status-text {
+  font-size: 0.72rem;
+  color: #6b7280;
+  padding: 0 6px;
+}
+
+.inv-sidebar__logout {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.inv-sidebar__logout:hover {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+}
+
+/* Main Area */
+.inv-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Breadcrumb bar idéntica a Cajero / RRHH */
+.inv-breadcrumb {
+  background: #ffffff;
+  border-bottom: 1px solid #eaecf0;
+  padding: 12px 28px;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inv-breadcrumb__root {
+  color: #6b7280;
+}
+
+.inv-breadcrumb__sep {
+  color: #9ca3af;
+}
+
+.inv-breadcrumb__current {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Page Header */
+.inv-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 28px 18px;
+  flex-wrap: wrap;
+}
+
+.inv-topbar__title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.inv-topbar__subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.inv-branch-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inv-branch-box__label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #9ca3af;
+  letter-spacing: 0.05em;
+}
+
+.inv-branch-box select {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #111827;
+  min-width: 200px;
+  outline: none;
+}
+
+.inv-content {
+  padding: 0 28px 32px;
+}
+
+.inv-banner-offline {
+  margin: 0 28px 16px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+/* 4 Tarjetas KPI estilo exacto de Cajero / RRHH */
+.inv-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.inv-kpi-card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.03);
+}
+
+.inv-kpi-card__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.inv-kpi-card__icon--blue {
+  background: #eff6ff;
+  color: #1677ff;
+}
+
+.inv-kpi-card__icon--green {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.inv-kpi-card__icon--gold {
+  background: #fefce8;
+  color: #ca8a04;
+}
+
+.inv-kpi-card__icon--red {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.inv-kpi-card__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.inv-kpi-card__label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.inv-kpi-card__value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 2px 0;
+  line-height: 1.2;
+}
+
+.inv-kpi-card__hint {
+  font-size: 0.74rem;
+  color: #9ca3af;
+}
+
+/* Panel contenedor de tabla (idéntico a "Personal de la empresa" en RRHH) */
+.inv-panel-card,
+.inv-table-wrapper,
+.inv-card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.03);
+  overflow: hidden;
+}
+
+.inv-panel-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px 16px;
+  flex-wrap: wrap;
+}
+
+.inv-panel-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.inv-panel-card__subtitle {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.inv-panel-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inv-pill-filter {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: none;
+  background: #eff6ff;
+  color: #1677ff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inv-pill-filter.is-active {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+/* Tables */
+.inv-table-scroll {
+  overflow-x: auto;
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.inv-table th {
+  text-align: left;
+  padding: 12px 22px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-top: 1px solid #f3f4f6;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.inv-table td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.inv-table tr:last-child td {
+  border-bottom: none;
+}
+
+.inv-table__name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.inv-table__sub {
+  font-size: 0.74rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.inv-table__empty {
+  text-align: center;
+  padding: 32px;
+  color: #9ca3af;
+}
+
+/* Status pills idénticas a Cajero / RRHH */
+.inv-status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.inv-status--success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.inv-status--warning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.inv-status--danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.inv-status--blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Inputs & Buttons */
+.inv-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.inv-toolbar__search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.inv-input,
+.inv-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 0.84rem;
+  color: #111827;
+  outline: none;
+}
+
+.inv-input--sm,
+.inv-select--sm {
+  width: auto;
+  min-width: 170px;
+  padding: 7px 11px;
+  font-size: 0.8rem;
+}
+
+.inv-input:focus,
+.inv-select:focus {
+  border-color: #1677ff;
+}
+
+.inv-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.inv-btn:hover {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.inv-btn--primary {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #ffffff;
+}
+
+.inv-btn--primary:hover {
+  background: #4096ff;
+  border-color: #4096ff;
+  color: #ffffff;
+}
+
+.inv-btn--secondary {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.inv-btn--danger-ghost {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+}
+
+.inv-btn--sm {
+  padding: 5px 11px;
+  font-size: 0.78rem;
+}
+
+/* Purchases & Modal */
+.inv-purchases-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.inv-debt-summary {
+  background: #ffffff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #eaecf0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.inv-debt-summary__amount {
+  color: #dc2626;
+  font-size: 1rem;
+}
+
+.inv-card {
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+
+.inv-card__title {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.inv-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.inv-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.inv-form__group label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.inv-purchase-lines__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.inv-purchase-lines__header h4 {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.inv-line-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.inv-line-row__subtotal {
+  font-weight: 600;
+  min-width: 70px;
+  text-align: right;
+  font-size: 0.85rem;
+}
+
+.inv-purchase-totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+  margin-top: 10px;
+}
+
+.inv-purchase-totals > div {
+  display: flex;
+  gap: 16px;
+  font-size: 0.86rem;
+}
+
+.inv-purchase-totals__grand {
+  font-size: 0.98rem !important;
+  color: #1677ff;
+}
+
+.inv-toast {
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.inv-toast--success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.inv-toast--error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.inv-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.inv-modal {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 440px;
+  padding: 20px 22px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.inv-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.inv-modal__header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.inv-modal__close {
+  border: none;
+  background: transparent;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: #9ca3af;
+}
+
+.inv-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.inv-muted {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.inv-loading {
+  padding: 40px;
+  text-align: center;
+  color: #6b7280;
+}
+
+@media (max-width: 900px) {
+  .inv-layout {
+    flex-direction: column;
+  }
+  .inv-sidebar {
+    width: 100%;
+  }
+  .inv-line-row {
+    grid-template-columns: 1fr;
+  }
+}

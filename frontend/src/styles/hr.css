@@ -1,0 +1,1487 @@
+/* RRHH — estilos compactados. Se conserva el orden de la cascada y los selectores originales. */
+.hr-shell {
+  display: flex;
+  min-height: 100vh;
+  color: var(--ember-fg);
+  background-color: var(--ember-bg);
+  font-family: var(--ember-font);
+}
+
+.hr-workspace {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.hr-main {
+  width: 100%;
+  min-width: 0;
+  padding: 1.5rem clamp(1rem, 2vw, 2rem) 2rem;
+}
+
+.hr-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex: 0 0 var(--ember-sidebar-width);
+  flex-direction: column;
+  gap: 1.5rem;
+  width: var(--ember-sidebar-width);
+  height: 100vh;
+  padding: 1.1rem 0.75rem;
+  background-color: var(--ember-sidebar);
+  border-right: 1px solid var(--ember-border);
+}
+
+.hr-sidebar__brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 2.65rem;
+  padding: 0.15rem 0.4rem;
+}
+
+.hr-sidebar__mark {
+  display: grid;
+  flex: 0 0 2.4rem;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.hr-sidebar__mark-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hr-sidebar__brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.hr-sidebar__brand-text strong {
+  color: var(--ember-fg);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.hr-sidebar__brand-text small {
+  color: var(--ember-muted-fg);
+  font-size: 0.57rem;
+}
+
+.hr-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hr-sidebar__section {
+  margin: 0 0 0.5rem 0.65rem;
+  color: var(--ember-muted-fg);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hr-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 10px 12px;
+  color: #4b5563;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.hr-nav-item>i {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.hr-nav-item:hover {
+  color: #111827;
+  background-color: #f9fafb;
+}
+
+.hr-nav-item.is-active {
+  color: #1677ff;
+  background-color: #eff6ff;
+  font-weight: 600;
+}
+
+.hr-nav-item.is-active>i {
+  color: inherit;
+}
+
+.hr-nav-item__dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin-left: auto;
+  background-color: var(--ember-chart-1);
+  border-radius: 50%;
+}
+
+.hr-nav-item__dot--empleados {
+  background-color: var(--ember-chart-2);
+}
+
+.hr-nav-item__dot--planillas {
+  background-color: var(--ember-chart-3);
+}
+
+.hr-nav-item__dot--contratacion {
+  background-color: var(--success);
+}
+
+.hr-nav-item.is-active .hr-nav-item__dot {
+  background-color: #1677ff;
+}
+
+.hr-sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.hr-sidebar__status-text {
+  padding: 0 6px;
+  color: #6b7280;
+  font-size: 0.72rem;
+}
+
+.hr-sidebar__logout {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.hr-sidebar__logout:hover {
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.hr-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  height: 4rem;
+  min-height: 4rem;
+  padding: 0 clamp(1rem, 2vw, 2rem);
+  background-color: color-mix(in srgb, var(--ember-bg) 92%, transparent);
+  border-bottom: 1px solid var(--ember-border);
+  backdrop-filter: blur(12px);
+}
+
+.hr-topbar__crumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--ember-muted-fg);
+  font-size: 0.76rem;
+}
+
+.hr-topbar__crumbs span {
+  color: var(--ember-muted-fg);
+}
+
+.hr-topbar__crumbs i {
+  font-size: 0.6rem;
+}
+
+.hr-topbar__crumbs strong {
+  color: var(--ember-fg);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.hr-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.hr-section-header h1 {
+  margin: 0 0 7px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.hr-section-header p {
+  margin: 0;
+  color: var(--ember-muted-fg);
+  font-size: 13px;
+}
+
+.hr-shell button:focus-visible {
+  outline: 2px solid var(--ember-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--ember-ring);
+}
+
+@media (max-width: 768px) {
+  .hr-sidebar {
+    flex: 0 0 5rem;
+    width: 5rem;
+    padding: 20px 10px;
+  }
+
+  .hr-sidebar__brand-text,
+  .hr-sidebar__section,
+  .hr-nav-item span,
+  .hr-sidebar__status-text,
+  .hr-sidebar__logout span {
+    display: none;
+  }
+
+  .hr-nav-item {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .hr-sidebar__logout {
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .hr-main {
+    padding: 20px 15px;
+  }
+
+  .hr-topbar {
+    padding: 0 18px;
+  }
+
+  .hr-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.hr-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hr-indicators {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.hr-indicator {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-height: 145px;
+  padding: 22px;
+  background: var(--ember-card);
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-indicator__icon {
+  display: grid;
+  flex: 0 0 44px;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  font-size: 20px;
+}
+
+.hr-indicator--primary .hr-indicator__icon {
+  color: var(--ember-primary);
+  background: var(--ember-primary-soft);
+}
+
+.hr-indicator--success .hr-indicator__icon {
+  color: var(--success);
+  background: rgba(82, 196, 26, 0.12);
+}
+
+.hr-indicator--warning .hr-indicator__icon {
+  color: var(--warning);
+  background: rgba(250, 173, 20, 0.13);
+}
+
+.hr-indicator--info .hr-indicator__icon {
+  color: var(--primary-600);
+  background: var(--ember-primary-soft);
+}
+
+.hr-indicator__content {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.hr-indicator__content>span {
+  color: var(--ember-muted-fg);
+  font-size: 12px;
+}
+
+.hr-indicator__content strong {
+  color: var(--ember-fg);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.hr-indicator__content small {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-activity {
+  min-width: 0;
+  padding: 24px;
+  background: var(--ember-card);
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-activity__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.hr-activity__header h2 {
+  margin: 0 0 6px;
+  color: var(--ember-fg);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.hr-activity__header p {
+  margin: 0;
+  color: var(--ember-muted-fg);
+  font-size: 13px;
+}
+
+.hr-activity__count {
+  padding: 7px 11px;
+  border-radius: 20px;
+  background: var(--ember-primary-soft);
+  color: var(--ember-primary);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hr-activity__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.hr-activity__table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.hr-activity__table th {
+  padding: 13px 12px;
+  color: var(--ember-muted-fg);
+  background: var(--ember-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.hr-activity__table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--ember-border);
+  color: var(--ember-fg);
+  font-size: 12px;
+}
+
+.hr-activity__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.hr-activity__table tbody tr:hover td {
+  background: var(--ember-muted);
+}
+
+.hr-employee-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hr-employee-cell strong {
+  color: var(--ember-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hr-employee-cell small {
+  color: var(--ember-muted-fg);
+  font-size: 10px;
+}
+
+.hr-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hr-status--active {
+  color: #389E0D;
+  background: rgba(82, 196, 26, 0.12);
+}
+
+.hr-status--inactive {
+  color: var(--ember-muted-fg);
+  background: var(--ember-muted);
+}
+
+.hr-table-empty {
+  padding: 35px !important;
+  color: var(--ember-muted-fg) !important;
+  text-align: center;
+}
+
+@media (max-width: 1200px) {
+  .hr-indicators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .hr-indicators {
+    grid-template-columns: 1fr;
+  }
+
+  .hr-activity {
+    padding: 17px;
+  }
+
+  .hr-activity__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.hr-employees {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.hr-employees__total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.hr-employees__total strong {
+  color: var(--ember-fg);
+  font-size: 25px;
+}
+
+.hr-employees__total span,
+.hr-employees__results {
+  color: var(--ember-muted-fg);
+  font-size: 12px;
+}
+
+.hr-employees__panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+  background: var(--ember-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-employees__toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 180px 200px auto;
+  gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid var(--ember-border);
+}
+
+.hr-employees__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 43px;
+  padding: 0 13px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+  background: var(--ember-bg);
+  color: var(--ember-muted-fg);
+}
+
+.hr-employees__search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ember-fg);
+  font: inherit;
+  font-size: 12px;
+}
+
+.hr-employees__search input::placeholder {
+  color: var(--ember-muted-fg);
+}
+
+.hr-employees__search:focus-within {
+  border-color: var(--ember-primary);
+  box-shadow: 0 0 0 3px var(--ember-ring);
+}
+
+.hr-employees__toolbar select {
+  min-width: 0;
+  min-height: 43px;
+  padding: 0 12px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+  outline: 0;
+  background: var(--ember-bg);
+  color: var(--ember-fg);
+  font: inherit;
+  font-size: 12px;
+}
+
+.hr-employees__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 43px;
+  padding: 0 12px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+  background: var(--ember-card);
+  color: var(--ember-muted-fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.hr-employees__clear:hover {
+  border-color: var(--ember-primary);
+  color: var(--ember-primary);
+}
+
+.hr-employees__results {
+  padding: 16px 20px 12px;
+}
+
+.hr-employees__results strong {
+  color: var(--ember-fg);
+}
+
+.hr-employees__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.hr-employees__table {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.hr-employees__table th {
+  padding: 14px 15px;
+  background: var(--ember-muted);
+  color: var(--ember-muted-fg);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hr-employees__table td {
+  padding: 15px;
+  border-top: 1px solid var(--ember-border);
+  color: var(--ember-fg);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hr-employees__table tbody tr:hover td {
+  background: var(--ember-muted);
+}
+
+.hr-employees__empty {
+  padding: 45px 15px !important;
+  color: var(--ember-muted-fg) !important;
+  text-align: center;
+}
+
+.hr-employees__empty i,
+.hr-employees__empty strong,
+.hr-employees__empty span {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.hr-employees__empty i {
+  font-size: 25px;
+}
+
+.hr-employees__empty strong {
+  color: var(--ember-fg);
+}
+
+.hr-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(20, 20, 20, 0.48);
+}
+
+.hr-detail-modal {
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+  background: var(--ember-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.hr-detail__header>div>span {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-detail__header h2 {
+  margin: 6px 0 0;
+  color: var(--ember-fg);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.hr-detail__header button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ember-border);
+  border-radius: 8px;
+  background: var(--ember-card);
+  color: var(--ember-muted-fg);
+  cursor: pointer;
+}
+
+.hr-detail__header button:hover {
+  border-color: var(--ember-primary);
+  color: var(--ember-primary);
+  background: var(--ember-primary-soft);
+}
+
+.hr-detail__profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px;
+  margin-bottom: 22px;
+  border-radius: 12px;
+  background: var(--ember-muted);
+}
+
+.hr-detail__avatar {
+  display: grid;
+  flex: 0 0 48px;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--ember-primary-soft);
+  color: var(--ember-primary);
+  font-size: 23px;
+}
+
+.hr-detail__profile>div:last-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.hr-detail__profile strong {
+  color: var(--ember-fg);
+  font-size: 13px;
+}
+
+.hr-detail__profile>div>span:not(.hr-status) {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.hr-detail__grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ember-border);
+}
+
+.hr-detail__grid article span {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-detail__grid article strong {
+  overflow-wrap: anywhere;
+  color: var(--ember-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 1000px) {
+  .hr-employees__toolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hr-employees__search {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 650px) {
+  .hr-employees__toolbar {
+    grid-template-columns: 1fr;
+    padding: 15px;
+  }
+
+  .hr-employees__search {
+    grid-column: auto;
+  }
+
+  .hr-employees__total {
+    align-items: flex-start;
+  }
+
+  .hr-detail-modal {
+    padding: 18px;
+  }
+
+  .hr-detail__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hr-payroll {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.hr-payroll__form,
+.hr-payroll__result {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hr-payroll__panel {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+  background: var(--ember-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-payroll__panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.hr-payroll__panel-header h2 {
+  margin: 0 0 6px;
+  color: var(--ember-fg);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.hr-payroll__panel-header p {
+  margin: 0;
+  color: var(--ember-muted-fg);
+  font-size: 12px;
+}
+
+.hr-payroll__panel-header>i {
+  color: var(--ember-primary);
+  font-size: 22px;
+}
+
+.hr-payroll__dates {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 17px;
+}
+
+.hr-payroll__dates label,
+.hr-payroll__employee label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ember-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hr-payroll__dates input,
+.hr-payroll__employee input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+  outline: 0;
+  background: var(--ember-bg);
+  color: var(--ember-fg);
+  font: inherit;
+  font-size: 12px;
+}
+
+.hr-payroll__dates input:focus,
+.hr-payroll__employee input:focus {
+  border-color: var(--ember-primary);
+  box-shadow: 0 0 0 3px var(--ember-ring);
+}
+
+.hr-payroll__dates label small {
+  color: var(--ember-muted-fg);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.hr-payroll__employee-count {
+  padding: 7px 11px;
+  border-radius: 20px;
+  background: var(--ember-primary-soft);
+  color: var(--ember-primary);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hr-payroll__employees {
+  display: flex;
+  flex-direction: column;
+}
+
+.hr-payroll__employee {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 180px) minmax(160px, 200px);
+  align-items: center;
+  gap: 18px;
+  padding: 17px 0;
+  border-top: 1px solid var(--ember-border);
+}
+
+.hr-payroll__employee-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.hr-payroll__employee-info strong {
+  color: var(--ember-fg);
+  font-size: 13px;
+}
+
+.hr-payroll__employee-info span,
+.hr-payroll__employee-info small {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-payroll__empty {
+  padding: 30px 10px;
+  color: var(--ember-muted-fg);
+  font-size: 13px;
+  text-align: center;
+}
+
+.hr-payroll__error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border: 1px solid rgba(255, 77, 79, 0.25);
+  border-radius: var(--ember-radius-control);
+  background: rgba(255, 77, 79, 0.08);
+  color: var(--error);
+  font-size: 12px;
+}
+
+.hr-payroll__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.hr-payroll__actions button,
+.hr-payroll__success button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 17px;
+  border-radius: var(--ember-radius-control);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hr-payroll__secondary {
+  border: 1px solid var(--ember-border);
+  background: var(--ember-card);
+  color: var(--ember-muted-fg);
+}
+
+.hr-payroll__primary,
+.hr-payroll__success button {
+  border: 0;
+  background: var(--ember-primary);
+  color: #fff;
+}
+
+.hr-payroll__primary:hover,
+.hr-payroll__success button:hover {
+  background: var(--ember-primary-hover);
+}
+
+.hr-payroll__primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hr-payroll__success {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 20px;
+  border: 1px solid rgba(82, 196, 26, 0.25);
+  border-radius: var(--ember-radius-card);
+  background: rgba(82, 196, 26, 0.07);
+}
+
+.hr-payroll__success>div {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.hr-payroll__success>div>i {
+  color: var(--success);
+  font-size: 25px;
+}
+
+.hr-payroll__success h2 {
+  margin: 0 0 5px;
+  color: var(--ember-fg);
+  font-size: 16px;
+}
+
+.hr-payroll__success p {
+  margin: 0;
+  color: var(--ember-muted-fg);
+  font-size: 12px;
+}
+
+.hr-payroll__period-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.hr-payroll__period-info>div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hr-payroll__period-info span {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-payroll__period-info strong {
+  color: var(--ember-fg);
+  font-size: 13px;
+}
+
+.hr-payroll__totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.hr-payroll__totals article {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+  background: var(--ember-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-payroll__totals article span {
+  color: var(--ember-muted-fg);
+  font-size: 12px;
+}
+
+.hr-payroll__totals article strong {
+  color: var(--ember-fg);
+  font-size: 21px;
+  overflow-wrap: anywhere;
+}
+
+.hr-payroll__totals article:last-child strong,
+.hr-payroll__net {
+  color: var(--success) !important;
+}
+
+.hr-payroll__table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.hr-payroll__table {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.hr-payroll__table th {
+  padding: 13px 12px;
+  background: var(--ember-muted);
+  color: var(--ember-muted-fg);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hr-payroll__table td {
+  padding: 14px 12px;
+  border-top: 1px solid var(--ember-border);
+  color: var(--ember-fg);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.hr-payroll__table tfoot th {
+  border-top: 1px solid var(--ember-border);
+  color: var(--ember-fg);
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .hr-payroll__employee {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hr-payroll__employee-info {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 650px) {
+  .hr-payroll__panel {
+    padding: 17px;
+  }
+
+  .hr-payroll__dates,
+  .hr-payroll__totals,
+  .hr-payroll__period-info {
+    grid-template-columns: 1fr;
+  }
+
+  .hr-payroll__employee {
+    grid-template-columns: 1fr;
+  }
+
+  .hr-payroll__employee-info {
+    grid-column: auto;
+  }
+
+  .hr-payroll__actions,
+  .hr-payroll__success {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hr-payroll__success button {
+    width: 100%;
+  }
+}
+
+
+/* Ajustes finales RRHH: identidad y consistencia con Cajero */
+.hr-sidebar__mark-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.hr-indicator__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.hr-indicator__icon i {
+  font-size: 27px;
+  line-height: 1;
+}
+
+.hr-indicator--primary .hr-indicator__icon,
+.hr-indicator--success .hr-indicator__icon,
+.hr-indicator--info .hr-indicator__icon {
+  color: #0958d9;
+}
+
+.hr-indicator--warning .hr-indicator__icon {
+  color: #ad6800;
+}
+
+/* ========================================
+   RRHH - Detalle de empleado estilo Cajero
+======================================== */
+
+.hr-detail-backdrop.cashier-orders__modal-backdrop {
+  z-index: 2000;
+  backdrop-filter: blur(3px);
+}
+
+.hr-detail-modal.cashier-orders__modal {
+  max-width: 640px;
+  padding: 24px;
+}
+
+.hr-detail__header.cashier-orders__modal-header {
+  margin-bottom: 22px;
+}
+
+.hr-detail__header.cashier-orders__modal-header>div>span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-detail__header.cashier-orders__modal-header h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.hr-detail__header.cashier-orders__modal-header button {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  background: var(--ember-card);
+}
+
+.hr-detail__grid.cashier-orders__detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid>div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 12px;
+  background: var(--ember-muted);
+  border: 1px solid var(--ember-border);
+  border-radius: 10px;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid>div>span {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-detail__grid.cashier-orders__detail-grid>div>strong {
+  color: var(--ember-fg);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+/* Estado inactivo: color warning */
+.hr-status--inactive {
+  color: var(--warning);
+  background: rgba(250, 173, 20, 0.13);
+}
+
+@media (max-width: 650px) {
+  .hr-detail-modal.cashier-orders__modal {
+    padding: 18px;
+  }
+
+  .hr-detail__grid.cashier-orders__detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+}
+
+.hr-hiring__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.hr-hiring__form,
+.hr-hiring__aside {
+  padding: 24px;
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-card);
+}
+
+.hr-hiring__form {
+  background: var(--ember-card);
+  box-shadow: var(--ember-shadow);
+}
+
+.hr-hiring__form h2,
+.hr-hiring__aside h2 {
+  margin: 0;
+  color: var(--ember-fg);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.hr-hiring__alert {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.hr-hiring__alert--error {
+  color: #cf1322;
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+}
+
+.hr-hiring__alert--success {
+  color: #237804;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.hr-hiring__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.hr-hiring__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.hr-hiring__field span {
+  color: var(--ember-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hr-hiring__field small {
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+}
+
+.hr-hiring__field input,
+.hr-hiring__field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 12px;
+  color: var(--ember-fg);
+  background: var(--ember-card);
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+  outline: 0;
+  font: 13px var(--ember-font);
+}
+
+.hr-hiring__field input:focus,
+.hr-hiring__field select:focus {
+  border-color: var(--ember-primary);
+  box-shadow: 0 0 0 3px var(--ember-ring);
+}
+
+.hr-hiring__submit {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 22px;
+  padding: 11px 16px;
+  color: #ffffff;
+  background: var(--ember-primary);
+  border: 0;
+  border-radius: var(--ember-radius-control);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hr-hiring__submit:hover {
+  background: var(--ember-primary-hover);
+}
+
+.hr-hiring__aside {
+  background: var(--ember-primary-soft);
+}
+
+.hr-hiring__aside-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 14px;
+  color: var(--ember-primary);
+  background: var(--ember-card);
+  border-radius: 11px;
+  font-size: 19px;
+}
+
+.hr-hiring__aside p {
+  margin: 10px 0 16px;
+  color: var(--ember-muted-fg);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.hr-hiring__aside ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hr-hiring__aside li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--ember-fg);
+  font-size: 12px;
+}
+
+.hr-hiring__aside li i {
+  color: var(--ember-primary);
+}
+
+@media (max-width: 900px) {
+  .hr-hiring__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .hr-hiring__grid {
+    grid-template-columns: 1fr;
+  }
+}
