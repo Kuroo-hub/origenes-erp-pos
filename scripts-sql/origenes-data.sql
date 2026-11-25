@@ -329,6 +329,60 @@ VALUES
     ('inventario@origenessv.com', crypt('Origenes123!', gen_salt('bf')), 'INVENTORY_MANAGER', 2, 'Luis Gómez', 'Encargado de Inventario', CAST('2023-02-10' AS DATE), 900.00);
 
 
+
+INSERT INTO employee (
+    branch_id,
+    email,
+    password_hash,
+    role,
+    active,
+    full_name,
+    job_title,
+    hire_date,
+    base_salary
+)
+SELECT
+    b.branch_id,
+
+    'empleado' || b.branch_id || '_' || n.num || '@empresa.com',
+
+    '$2b$10$hashficticioparapruebas',
+
+    CASE
+        WHEN n.num = 1 THEN 'MANAGER'
+        ELSE 'EMPLOYEE'
+    END,
+
+    TRUE,
+
+    (ARRAY[
+        'Carlos Garcia',
+        'Maria Rodriguez',
+        'Jose Martinez',
+        'Ana Lopez',
+        'Luis Hernandez',
+        'Sofia Perez',
+        'Daniel Torres',
+        'Laura Flores',
+        'Miguel Ramirez',
+        'Andrea Castillo'
+    ])[n.num],
+
+    CASE
+        WHEN n.num = 1 THEN 'Gerente de Sucursal'
+        ELSE 'Empleado'
+    END,
+
+    CURRENT_DATE - (n.num * 30),
+
+    CASE
+        WHEN n.num = 1 THEN 1800.00
+        ELSE 850.00 + (n.num * 50)
+    END
+
+FROM branch b
+CROSS JOIN generate_series(1, 10) AS n(num);
+
 -- =====================================================
 -- CUSTOMER
 -- =====================================================
@@ -350,6 +404,120 @@ VALUES
     'Comercio al por menor',
     'San Salvador, El Salvador'
 );
+
+
+INSERT INTO customer (
+    full_name,
+    tax_id,
+    registration_number,
+    business_name,
+    economic_activity,
+    tax_address
+)
+VALUES
+('Carlos Garcia', NULL, NULL, NULL, NULL, NULL),
+('Maria Rodriguez', NULL, NULL, NULL, NULL, NULL),
+('Jose Martinez', NULL, NULL, NULL, NULL, NULL),
+('Ana Lopez', NULL, NULL, NULL, NULL, NULL),
+('Luis Hernandez', NULL, NULL, NULL, NULL, NULL),
+('Sofia Perez', NULL, NULL, NULL, NULL, NULL),
+('Daniel Torres', NULL, NULL, NULL, NULL, NULL),
+('Laura Flores', NULL, NULL, NULL, NULL, NULL),
+('Miguel Ramirez', NULL, NULL, NULL, NULL, NULL),
+('Andrea Castillo', NULL, NULL, NULL, NULL, NULL),
+('Pedro Rivera', NULL, NULL, NULL, NULL, NULL),
+('Gabriela Morales', NULL, NULL, NULL, NULL, NULL),
+('Fernando Diaz', NULL, NULL, NULL, NULL, NULL),
+('Valeria Vargas', NULL, NULL, NULL, NULL, NULL),
+('Roberto Cruz', NULL, NULL, NULL, NULL, NULL),
+('Camila Reyes', NULL, NULL, NULL, NULL, NULL),
+('Ricardo Mendoza', NULL, NULL, NULL, NULL, NULL),
+('Elena Aguilar', NULL, NULL, NULL, NULL, NULL),
+('Alejandro Romero', NULL, NULL, NULL, NULL, NULL),
+('Patricia Molina', NULL, NULL, NULL, NULL, NULL),
+('Oscar Navarro', NULL, NULL, NULL, NULL, NULL),
+('Diana Guzman', NULL, NULL, NULL, NULL, NULL),
+('Manuel Ortiz', NULL, NULL, NULL, NULL, NULL),
+('Claudia Rivas', NULL, NULL, NULL, NULL, NULL),
+('Javier Santos', NULL, NULL, NULL, NULL, NULL),
+('Isabel Herrera', NULL, NULL, NULL, NULL, NULL),
+('Andres Pineda', NULL, NULL, NULL, NULL, NULL),
+('Monica Campos', NULL, NULL, NULL, NULL, NULL),
+('Eduardo Fuentes', NULL, NULL, NULL, NULL, NULL),
+('Natalia Cabrera', NULL, NULL, NULL, NULL, NULL),
+('Francisco Aguilar', NULL, NULL, NULL, NULL, NULL),
+('Rosa Martinez', NULL, NULL, NULL, NULL, NULL),
+('Hector Molina', NULL, NULL, NULL, NULL, NULL),
+('Beatriz Santos', NULL, NULL, NULL, NULL, NULL),
+('Julio Escobar', NULL, NULL, NULL, NULL, NULL),
+('Teresa Quintanilla', NULL, NULL, NULL, NULL, NULL),
+('Mauricio Alvarado', NULL, NULL, NULL, NULL, NULL),
+('Karla Benitez', NULL, NULL, NULL, NULL, NULL),
+('Esteban Mejia', NULL, NULL, NULL, NULL, NULL),
+('Lucia Bonilla', NULL, NULL, NULL, NULL, NULL),
+('Rafael Salazar', NULL, NULL, NULL, NULL, NULL),
+('Veronica Argueta', NULL, NULL, NULL, NULL, NULL),
+('Gabriel Amaya', NULL, NULL, NULL, NULL, NULL),
+('Cecilia Palacios', NULL, NULL, NULL, NULL, NULL),
+('Arturo Calderon', NULL, NULL, NULL, NULL, NULL),
+('Miriam Escamilla', NULL, NULL, NULL, NULL, NULL),
+('Samuel Figueroa', NULL, NULL, NULL, NULL, NULL),
+('Adriana Villalta', NULL, NULL, NULL, NULL, NULL),
+('Cristian Portillo', NULL, NULL, NULL, NULL, NULL),
+('Silvia Alvarenga', NULL, NULL, NULL, NULL, NULL),
+('Ruben Guardado', NULL, NULL, NULL, NULL, NULL),
+('Paola Menendez', NULL, NULL, NULL, NULL, NULL),
+('Enrique Barahona', NULL, NULL, NULL, NULL, NULL),
+('Lorena Escobar', NULL, NULL, NULL, NULL, NULL),
+('Victor Peraza', NULL, NULL, NULL, NULL, NULL),
+('Sandra Alas', NULL, NULL, NULL, NULL, NULL),
+('Mario Caceres', NULL, NULL, NULL, NULL, NULL),
+('Rebeca Chacon', NULL, NULL, NULL, NULL, NULL),
+('Alberto Lemus', NULL, NULL, NULL, NULL, NULL),
+('Noemi Padilla', NULL, NULL, NULL, NULL, NULL),
+('German Quintanilla', NULL, NULL, NULL, NULL, NULL),
+('Irene Menjivar', NULL, NULL, NULL, NULL, NULL),
+('David Arguello', NULL, NULL, NULL, NULL, NULL),
+('Fabiola Rosales', NULL, NULL, NULL, NULL, NULL),
+('Benjamin Molina', NULL, NULL, NULL, NULL, NULL),
+('Alejandra Chavarria', NULL, NULL, NULL, NULL, NULL),
+('Kevin Marroquin', NULL, NULL, NULL, NULL, NULL),
+('Daniela Alfaro', NULL, NULL, NULL, NULL, NULL),
+('Rodrigo Pacheco', NULL, NULL, NULL, NULL, NULL),
+('Monserrat Orellana', NULL, NULL, NULL, NULL, NULL),
+('Ivan Melendez', NULL, NULL, NULL, NULL, NULL),
+('Carolina Alfaro', NULL, NULL, NULL, NULL, NULL),
+('Oscar Beltran', NULL, NULL, NULL, NULL, NULL),
+('Melissa Sorto', NULL, NULL, NULL, NULL, NULL),
+('Nestor Calderon', NULL, NULL, NULL, NULL, NULL),
+('Gloria Pineda', NULL, NULL, NULL, NULL, NULL),
+('Fabian Escobar', NULL, NULL, NULL, NULL, NULL),
+('Mariana Rivas', NULL, NULL, NULL, NULL, NULL),
+('Angel Villanueva', NULL, NULL, NULL, NULL, NULL),
+('Tatiana Guevara', NULL, NULL, NULL, NULL, NULL),
+('Rene Bonilla', NULL, NULL, NULL, NULL, NULL),
+('Jessica Alvarado', NULL, NULL, NULL, NULL, NULL),
+('Armando Reyes', NULL, NULL, NULL, NULL, NULL),
+('Cristina Portillo', NULL, NULL, NULL, NULL, NULL),
+('Salvador Rivas', NULL, NULL, NULL, NULL, NULL),
+('Pilar Hernandez', NULL, NULL, NULL, NULL, NULL),
+('Jonathan Campos', NULL, NULL, NULL, NULL, NULL),
+('Mirna Flores', NULL, NULL, NULL, NULL, NULL),
+('Elias Romero', NULL, NULL, NULL, NULL, NULL),
+('Claudia Menendez', NULL, NULL, NULL, NULL, NULL),
+('German Rivera', NULL, NULL, NULL, NULL, NULL),
+('Alicia Fuentes', NULL, NULL, NULL, NULL, NULL),
+('Alexis Guzman', NULL, NULL, NULL, NULL, NULL),
+('Marta Pineda', NULL, NULL, NULL, NULL, NULL),
+('Brayan Castillo', NULL, NULL, NULL, NULL, NULL),
+('Glenda Navarro', NULL, NULL, NULL, NULL, NULL),
+('Francisca Morales', NULL, NULL, NULL, NULL, NULL),
+('Leonardo Diaz', NULL, NULL, NULL, NULL, NULL),
+('Xiomara Reyes', NULL, NULL, NULL, NULL, NULL),
+('Oscar Antonio Garcia', NULL, NULL, NULL, NULL, NULL),
+('Reina Marquez', NULL, NULL, NULL, NULL, NULL),
+('Walter Hernandez', NULL, NULL, NULL, NULL, NULL);
+
 
 
 -- =====================================================
