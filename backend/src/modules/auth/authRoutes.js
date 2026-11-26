@@ -5,7 +5,8 @@ import { authorize } from "../../middlewares/authorize.js";
 import {
     getCurrentEmployeeController,
     loginController,
-    registerEmployeeController
+    registerEmployeeController,
+    logoutController
 } from "./authController.js";
 
 const loginLimiter = rateLimit({
@@ -23,6 +24,7 @@ const loginLimiter = rateLimit({
 const router = Router();
 
 router.post("/login", loginLimiter, loginController);
+router.post("/logout", logoutController);
 router.post("/register", authenticate, authorize("ADMINISTRATOR", "HR"), registerEmployeeController);
 router.get("/me", authenticate, getCurrentEmployeeController);
 

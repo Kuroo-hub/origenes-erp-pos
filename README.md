@@ -4,11 +4,11 @@
 
 # Orígenes SV
 
-**ERP / POS de demostración para restaurante**
+**ERP / POS para restaurante**
 
-Frontend para operar ventas, cocina, entregas, inventario, recursos humanos, caja y reportes.
+Frontend y backend real para operar ventas, cocina, entregas, inventario, recursos humanos, caja y reportes.
 
-`React 18` · `Vite 5` · `React Router 6` · `Bootstrap 5`
+`React 18` · `Vite 8` · `React Router 7` · `Bootstrap 5`
 
 </div>
 
@@ -18,8 +18,8 @@ Frontend para operar ventas, cocina, entregas, inventario, recursos humanos, caj
 
 | Aspecto | Detalle |
 | --- | --- |
-| Tipo de proyecto | Frontend de demostración, sin backend real conectado |
-| Datos | Mocks en memoria; se reinician al recargar la página |
+| Tipo de proyecto | ERP/POS con backend real y PostgreSQL |
+| Datos | Persistidos en PostgreSQL; se cargan con los scripts de `scripts-sql/` |
 | Rutas | `frontend/src/routes/AppRoutes.jsx` |
 | Estado compartido | `frontend/src/context/OrderContext.jsx` |
 | Alcance de este README | Páginas vigentes, sus verificaciones y la estructura actual |
@@ -211,8 +211,7 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 - Muestra dirección, teléfono, método de pago y monto a cobrar.
 - Los pedidos por llamada se cobran en efectivo contra entrega y el pago pasa a `COLLECTED` al entregar.
 - Usa la sucursal compartida del contexto.
-- Si el backend no responde, utiliza datos de demostración.
-- En modo demostración, la sucursal 1 parte con dos entregas activas: `ORD-3048` y `ORD-3047`.
+- Las entregas se leen directamente de la API; no hay modo demostración ni datos mock.
 
 **Verificación**
 
@@ -223,10 +222,9 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Revisar pedido con pago pendiente | Se muestra el monto a cobrar al entregar. |
 | Confirmar la entrega | El pedido pasa al historial y el pago queda cobrado si era efectivo. |
 | Cambiar de sucursal | La lista se filtra por la sucursal activa. |
-| Abrir sin backend | Se muestra el modo de demostración con datos mock. |
+| Abrir sin backend | Se muestra el error de conexión; la API debe estar encendida. |
 
 ![texto alternativo](readme_images/mockup_delivery.png)
-
 
 ---
 
@@ -352,19 +350,18 @@ origenes-erp-pos/
 | `components/` | Componentes visuales organizados por módulo. |
 | `context/` | Estado compartido de sucursal, pedidos y caja. |
 | `hooks/` | Hooks reutilizables del frontend. |
-| `mocks/` | Datos de demostración del sistema. |
 | `pages/` | Contenedores de página asociados a cada ruta. |
 | `routes/` | Definición central de rutas. |
-| `services/` | Llamadas a API con respaldo en mocks. |
+| `services/` | Llamadas a la API del backend. |
 | `styles/` | Estilos por módulo y variables globales. |
 
 ### Datos compartidos
 
-- **Sucursales únicas:** Centro Histórico, Santa Ana y San Miguel.
-- **Catálogo central:** `frontend/src/mocks/SucursalesMocks.js`.
-- **Sucursal activa, pedidos y caja:** `frontend/src/context/OrderContext.jsx`.
-- **Cajero → Cocina/Repartidor:** los pedidos creados en Cajero viven en el contexto compartido.
-- **Manager → Cajero/Owner:** la apertura y cierre de caja se refleja en los otros módulos de la misma sesión.
+- **Sucursales reales:** San Salvador, Santa Ana y San Miguel, persistidas en PostgreSQL.
+- **Catálogo central:** se consulta desde la API (`frontend/src/services/catalogApi.js`).
+- **Sucursal activa, pedidos y caja:** `frontend/src/context/OrderContext.jsx` sincroniza con el backend.
+- **Cajero → Cocina/Repartidor:** los pedidos creados en Cajero se guardan en la base de datos y se consultan desde los otros módulos.
+- **Manager → Cajero/Owner:** la apertura y cierre de caja queda registrada en la base de datos para todos los módulos.
 - **Owner:** usa su propio selector de alcance para reportes, independiente de la sucursal operativa compartida.
 
 ---
@@ -381,3 +378,27 @@ origenes-erp-pos/
 ## Persistencia de datos
 
 Todos los pedidos, caja, cambios de stock y todo lo demas se guarda en la base de datos dedicada a la pagina web del producto para eliminar la limitante de los mocks.
+
+### Scripts SQL
+
+Hay exactamente dos archivos SQL, que se ejecutan en este orden sobre una base recién creada:
+
+1. `scripts-sql/origenes-ddl.sql` crea el esquema (tablas y restricciones).
+2. `scripts-sql/origenes-data.sql` carga todos los datos de prueba.
+
+La carga limpia deja:
+
+- San Salvador: 14 pedidos, caja abierta con $150.00 y margen positivo.
+- Santa Ana: 7 pedidos, caja abierta con $120.00 y margen positivo.
+- San Miguel: 5 pedidos, caja abierta con $100.00 y margen positivo.
+- Pagos en efectivo, tarjeta y Chivo, movimientos manuales de caja, entregas en cocina/reparto y alertas de stock en las tres sucursales.
+- Todas las facturas quedan en estado final `COMPLETED`: siguen guardadas y suman en los reportes, pero no aparecen en el listado del cajero.
+
+Una orden nueva se crea como `PAID` y pasa a `COMPLETED` automáticamente cuando cocina la marca `READY` (o cuando reparto la marca `DELIVERED`).
+
+```bash
+psql -h 127.0.0.1 -p 5433 -U postgres -d origenessv -f scripts-sql/origenes-ddl.sql
+psql -h 127.0.0.1 -p 5433 -U postgres -d origenessv -f scripts-sql/origenes-data.sql
+```
+
+Con `gerente@origenessv.com`, `gerente.santaana@origenessv.com` o `gerente.sanmiguel@origenessv.com` / `Prueba123!` se pueden revisar `/manager` y `/gerencia`. El panel `/gerencia` muestra margen neto positivo por sucursal y en el total.

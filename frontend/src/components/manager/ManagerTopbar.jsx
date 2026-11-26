@@ -35,7 +35,7 @@ export default function ManagerTopbar({
         <label className="cashier-topbar__sucursal">
           <i className="bi bi-geo-alt" aria-hidden="true" />
           <select
-            value={sucursalId}
+            value={sucursalId ?? ''}
             onChange={(evento) => onCambiarSucursal(Number(evento.target.value))}
             aria-label="Sucursal del manager"
           >

@@ -1,6 +1,5 @@
 import React from 'react';
 
-
 const TAB_META = {
   overview: {
     crumb: 'Resumen ejecutivo',
@@ -19,8 +18,22 @@ const TAB_META = {
   },
 };
 
-const OwnerTopbar = ({ activeTab, selectedBranch, onChangeBranch, branches = [], allowAll = true }) => {
+const SUCURSALES_RESPALDO = [
+  { id: 1, branch_id: 1, name: 'Sucursal San Salvador' },
+  { id: 2, branch_id: 2, name: 'Sucursal Santa Ana' },
+  { id: 3, branch_id: 3, name: 'Sucursal San Miguel' },
+];
+
+const OwnerTopbar = ({
+  activeTab,
+  selectedBranch,
+  onChangeBranch,
+  branches = [],
+  allowAll = true,
+}) => {
   const current = TAB_META[activeTab] || TAB_META.overview;
+  const opcionesSucursal =
+    Array.isArray(branches) && branches.length > 0 ? branches : SUCURSALES_RESPALDO;
 
   return (
     <header className="own-header-wrapper">
@@ -40,15 +53,19 @@ const OwnerTopbar = ({ activeTab, selectedBranch, onChangeBranch, branches = [],
           <span className="own-branch-box__label">ALCANCE DE REPORTE</span>
           <select
             id="owner-branch-select"
-            value={selectedBranch}
+            value={String(selectedBranch ?? 'ALL')}
             onChange={(e) => onChangeBranch(e.target.value)}
           >
             {allowAll && <option value="ALL">Todas las sucursales</option>}
-            {branches.map((sucursal) => (
-              <option key={sucursal.branch_id ?? sucursal.id} value={sucursal.branch_id ?? sucursal.id}>
-                {sucursal.name ?? sucursal.nombre}
-              </option>
-            ))}
+            {opcionesSucursal.map((sucursal) => {
+              const id = String(sucursal.branch_id ?? sucursal.id);
+              const nombre = sucursal.name ?? sucursal.nombre ?? `Sucursal ${id}`;
+              return (
+                <option key={id} value={id}>
+                  {nombre}
+                </option>
+              );
+            })}
           </select>
         </div>
       </div>

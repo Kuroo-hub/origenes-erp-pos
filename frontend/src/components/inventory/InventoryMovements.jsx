@@ -7,15 +7,17 @@ const MOVEMENT_META = {
   ADJUSTMENT: { label: 'Ajuste / Merma', badge: 'danger', sign: '-' },
 };
 
-const InventoryMovements = ({ movements }) => {
+const InventoryMovements = ({ movements = [] }) => {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredMovements = movements.filter((mov) => {
     const matchesType = typeFilter === 'ALL' || mov.movement_type === typeFilter;
-    const matchesText =
-      mov.ingredient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (mov.reason || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const nombreInsumo = String(mov?.ingredient_name ?? mov?.name ?? '').toLowerCase();
+    const motivo = String(mov?.reason ?? '').toLowerCase();
+    const termino = String(searchTerm ?? '').toLowerCase();
+
+    const matchesText = nombreInsumo.includes(termino) || motivo.includes(termino);
     return matchesType && matchesText;
   });
 
@@ -68,7 +70,7 @@ const InventoryMovements = ({ movements }) => {
                 </td>
               </tr>
             ) : (
-              filteredMovements.map((mov) => {
+              filteredMovements.map((mov, index) => {
                 const meta = MOVEMENT_META[mov.movement_type] || {
                   label: mov.movement_type,
                   badge: 'blue',
@@ -76,9 +78,11 @@ const InventoryMovements = ({ movements }) => {
                 };
 
                 return (
-                  <tr key={mov.movement_id}>
+                  <tr key={mov.movement_id ?? mov.id ?? index}>
                     <td>{mov.created_at}</td>
-                    <td className="inv-table__name">{mov.ingredient_name}</td>
+                    <td className="inv-table__name">
+                      {mov.ingredient_name ?? mov.name ?? 'Insumo'}
+                    </td>
                     <td>
                       <span className={`inv-status inv-status--${meta.badge}`}>
                         {meta.label}
@@ -89,10 +93,10 @@ const InventoryMovements = ({ movements }) => {
                         {meta.sign}
                         {Number(mov.quantity).toLocaleString('es-SV')}
                       </strong>{' '}
-                      {mov.unit}
+                      {mov.unit ?? ''}
                     </td>
                     <td>{mov.reason}</td>
-                    <td>{mov.user_email || 'inventario@origenessv.com'}</td>
+                    <td>{mov.user_email || 'admin@origenessv.com'}</td>
                   </tr>
                 );
               })

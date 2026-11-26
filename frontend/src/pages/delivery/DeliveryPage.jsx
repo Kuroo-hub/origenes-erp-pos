@@ -28,11 +28,39 @@ const DELIVERY_STATUS_META = {
   DELIVERED: { label: 'Entregado', badge: 'success' },
 };
 
+const SUCURSALES_OFICIALES = [
+  { id: 1, branch_id: 1, name: 'Sucursal San Salvador' },
+  { id: 2, branch_id: 2, name: 'Sucursal Santa Ana' },
+  { id: 3, branch_id: 3, name: 'Sucursal San Miguel' },
+];
+
 const DeliveryPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { sucursalId, seleccionarSucursal, sucursales, recargarDatos } = useOrders();
+  const { sucursalId, seleccionarSucursal, sucursales = [], recargarDatos } = useOrders();
   const [activeTab, setActiveTab] = useState('active');
+  const [localBranchId, setLocalBranchId] = useState(null);
+
+  const listaSucursales =
+    Array.isArray(sucursales) && sucursales.length > 0
+      ? sucursales
+      : SUCURSALES_OFICIALES;
+
+  const branchActual = Number(
+    localBranchId ??
+      sucursalId ??
+      listaSucursales[0]?.branch_id ??
+      listaSucursales[0]?.id ??
+      1
+  );
+
+  const handleChangeBranch = (nuevoId) => {
+    const idNumerico = Number(nuevoId);
+    setLocalBranchId(idNumerico);
+    if (typeof seleccionarSucursal === 'function') {
+      seleccionarSucursal(idNumerico);
+    }
+  };
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +79,7 @@ const DeliveryPage = () => {
 
     try {
       const res = await getDeliveryOrders(branchId);
-      setOrders(Array.isArray(res) ? res : res.data || []);
+      setOrders(Array.isArray(res) ? res : res?.data || []);
     } catch (err) {
       setOrders([]);
       setError(err?.message ?? 'No se pudieron cargar las entregas.');
@@ -61,11 +89,11 @@ const DeliveryPage = () => {
   }, []);
 
   useEffect(() => {
-    loadDeliveries(sucursalId);
-  }, [sucursalId, loadDeliveries]);
+    loadDeliveries(branchActual);
+  }, [branchActual, loadDeliveries]);
 
   const pedidos = orders.filter(
-    (order) => Number(order.branch_id) === Number(sucursalId)
+    (order) => Number(order.branch_id) === Number(branchActual)
   );
 
   const activeOrders = pedidos.filter((o) => o.delivery_status !== 'DELIVERED');
@@ -73,8 +101,12 @@ const DeliveryPage = () => {
   const pickedUpCount = activeOrders.filter((o) => o.delivery_status === 'IN_TRANSIT').length;
 
   const cashToCollect = activeOrders
-    .filter((o) => o.payment_method === 'CASH')
-    .reduce((sum, o) => sum + Number(o.total_amount), 0);
+    .filter(
+      (o) =>
+        o.payment_status === 'PENDING_COLLECTION' ||
+        o.payment_method === 'CASH'
+    )
+    .reduce((sum, o) => sum + Number(o.total_amount ?? 0), 0);
 
   const handleAdvanceStatus = async (order, nextStatus) => {
     setFeedback(null);
@@ -83,9 +115,9 @@ const DeliveryPage = () => {
       await updateDeliveryStatus(order.order_id, {
         delivery_status: nextStatus,
       });
-       await loadDeliveries(sucursalId);
-       await recargarDatos(sucursalId);
-       setFeedback({
+      await loadDeliveries(branchActual);
+      await recargarDatos?.(branchActual);
+      setFeedback({
         type: 'success',
         text:
           nextStatus === 'IN_TRANSIT'
@@ -100,8 +132,10 @@ const DeliveryPage = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    if (typeof logout === 'function') {
+      await logout();
+    }
     navigate('/login');
   };
 
@@ -111,22 +145,21 @@ const DeliveryPage = () => {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         pendingCount={activeOrders.length}
-        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 
       <div className="del-main">
         <DeliveryTopbar
           activeTab={activeTab}
-          selectedBranch={sucursalId}
-          onChangeBranch={seleccionarSucursal}
-          branches={sucursales}
+          selectedBranch={branchActual}
+          onChangeBranch={handleChangeBranch}
+          branches={listaSucursales}
         />
 
         {error && <div className="del-banner-offline">{error}</div>}
 
         <main className="del-content">
-          {/* 4 Tarjetas KPI estilo exacto de Cajero / RRHH */}
+          {/* 4 Tarjetas KPI */}
           <div className="del-kpi-grid">
             <article className="del-kpi-card">
               <div className="del-kpi-card__icon del-kpi-card__icon--blue">
@@ -190,7 +223,10 @@ const DeliveryPage = () => {
                 activeOrders.map((order) => {
                   const statusMeta =
                     DELIVERY_STATUS_META[order.delivery_status] || DELIVERY_STATUS_META.READY;
-                  const mustCollect = order.payment_method === 'CASH';
+                  const mustCollect =
+                    order.payment_status === 'PENDING_COLLECTION' ||
+                    order.payment_method === 'CASH';
+                  const items = Array.isArray(order.items) ? order.items : [];
 
                   return (
                     <article key={order.order_id} className="del-order-card">
@@ -230,12 +266,14 @@ const DeliveryPage = () => {
 
                       {/* Detalle de productos */}
                       <ul className="del-order-card__items">
-                        {order.items.map((item, idx) => (
+                        {items.map((item, idx) => (
                           <li key={idx}>
                             <span>
-                              {item.quantity}x {item.name}
+                              {item.quantity}x {item.name ?? item.product_name ?? 'Producto'}
                             </span>
-                            <span>${(item.quantity * item.price).toFixed(2)}</span>
+                            <span>
+                              ${(Number(item.quantity ?? 0) * Number(item.price ?? 0)).toFixed(2)}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -256,8 +294,8 @@ const DeliveryPage = () => {
                         </div>
                         <strong className="del-payment-box__amount">
                           {mustCollect
-                            ? `$${Number(order.total_amount).toFixed(2)}`
-                            : `$0.00 (Pagado: $${Number(order.total_amount).toFixed(2)})`}
+                            ? `$${Number(order.total_amount ?? 0).toFixed(2)}`
+                            : `$0.00 (Pagado: $${Number(order.total_amount ?? 0).toFixed(2)})`}
                         </strong>
                       </div>
 
@@ -331,7 +369,7 @@ const DeliveryPage = () => {
                           <td>{ord.delivery_address}</td>
                           <td>{PAYMENT_LABELS[ord.payment_method] || ord.payment_method}</td>
                           <td className="del-table__name">
-                            ${Number(ord.total_amount).toFixed(2)}
+                            ${Number(ord.total_amount ?? 0).toFixed(2)}
                           </td>
                           <td>
                             <span className="del-status del-status--success">Entregado</span>

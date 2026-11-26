@@ -1,7 +1,7 @@
 import { AppError } from "../../utils/AppError.js";
 
 const ISSS_RATE = 0.03;
-const ISSS_CAP = 30;
+const ISSS_BIWEEKLY_CAP = 15;
 const AFP_RATE = 0.0725;
 
 function roundMoney(value) {
@@ -9,22 +9,26 @@ function roundMoney(value) {
 }
 
 function calculateIncomeTax(taxableBase) {
-    if (taxableBase <= 176) {
+    if (taxableBase <= 275) {
         return 0;
     }
 
-    if (taxableBase <= 447.24) {
-        return (taxableBase - 176) * 0.10 + 8.80;
+    if (taxableBase <= 447.62) {
+        return (taxableBase - 275) * 0.10 + 8.83;
     }
 
     if (taxableBase <= 1019.05) {
-        return (taxableBase - 447.24) * 0.20 + 35.92;
+        return (taxableBase - 447.62) * 0.20 + 30.00;
     }
 
-    return (taxableBase - 1019.05) * 0.30 + 150.28;
+    return (taxableBase - 1019.05) * 0.30 + 144.28;
 }
 
-export function calculateBiweeklyPayroll(baseSalary, otherDeductions = 0, bonus = 0) {
+export function calculateBiweeklyPayroll(
+    baseSalary,
+    otherDeductions = 0,
+    bonus = 0
+) {
     const monthlySalary = Number(baseSalary);
     const additionalDeductions = Number(otherDeductions);
     const employeeBonus = Number(bonus);
@@ -44,16 +48,32 @@ export function calculateBiweeklyPayroll(baseSalary, otherDeductions = 0, bonus 
     const baseBiweeklySalary = roundMoney(monthlySalary / 2);
     const bonusAmount = roundMoney(employeeBonus);
     const grossSalary = roundMoney(baseBiweeklySalary + bonusAmount);
-    const isssDeduction = roundMoney(Math.min(grossSalary * ISSS_RATE, ISSS_CAP));
+
+    const isssDeduction = roundMoney(
+        Math.min(grossSalary * ISSS_RATE, ISSS_BIWEEKLY_CAP)
+    );
+
     const afpDeduction = roundMoney(grossSalary * AFP_RATE);
-    const taxableBase = roundMoney(grossSalary - isssDeduction - afpDeduction);
+
+    const taxableBase = roundMoney(
+        grossSalary - isssDeduction - afpDeduction
+    );
+
     const incomeTax = roundMoney(calculateIncomeTax(taxableBase));
+
     const netSalary = roundMoney(
-        grossSalary - isssDeduction - afpDeduction - incomeTax - additionalDeductions
+        grossSalary -
+        isssDeduction -
+        afpDeduction -
+        incomeTax -
+        additionalDeductions
     );
 
     if (netSalary < 0) {
-        throw new AppError("Las deducciones superan el salario neto del empleado.", 400);
+        throw new AppError(
+            "Las deducciones superan el salario disponible del empleado.",
+            400
+        );
     }
 
     return {

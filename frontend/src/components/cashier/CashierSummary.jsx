@@ -7,6 +7,8 @@ const obtenerClaseEstado = (estado) => {
     Pendiente: 'pending',
     'En preparación': 'preparing',
     Listo: 'ready',
+    Entregado: 'delivered',
+    Completa: 'completed',
     Anulada: 'cancelled',
   };
 

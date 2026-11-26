@@ -1,12 +1,13 @@
 -- =====================================================
 -- ORIGENES SV - POSTGRESQL
--- Commercial and Administrative Management System
+-- Esquema de la base de datos
 -- =====================================================
 
-CREATE DATABASE origenessv;
-
--- Connect to origenessv before executing the rest (psql meta-command).
-\c origenessv
+-- IMPORTANTE: primero crea la base de datos 'origenessv' desde pgAdmin.
+-- Luego selecciona/conectate a esa base y ejecuta este archivo.
+-- Despues ejecuta scripts-sql/origenes-data.sql sobre la misma base.
+-- No uses CREATE DATABASE ni \c dentro del Query Tool.
+-- Este archivo solo crea las tablas; no carga datos.
 
 -- Required for bcrypt password hashing (crypt/gen_salt).
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -276,13 +277,15 @@ CREATE TABLE invoice (
     total NUMERIC(12,2) NOT NULL CHECK (total >= 0),
 
     status VARCHAR(20) NOT NULL CHECK (
-        status IN ('PENDING', 'PAID', 'CANCELLED')
+        status IN ('PENDING', 'PAID', 'COMPLETED', 'CANCELLED')
     ),
 
     kitchen_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (kitchen_status IN ('PENDING','PREPARING','READY')),
 
     is_delivery BOOLEAN NOT NULL DEFAULT FALSE,
     delivery_status VARCHAR(20),
+    kitchen_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (kitchen_status IN ('PENDING', 'PREPARING', 'READY')),
     delivery_address VARCHAR(255),
     delivery_phone VARCHAR(20),
 
@@ -297,6 +300,7 @@ CREATE TABLE invoice (
 
     UNIQUE (branch_id, document_type, consecutive_number)
 );
+
 
 CREATE TABLE invoice_detail (
     invoice_detail_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

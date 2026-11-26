@@ -73,6 +73,11 @@ export default function CashierPage() {
   const [errorRecetas, setErrorRecetas] = useState(false);
   const [errorStock, setErrorStock] = useState('');
 
+  const ordenesVisibles = useMemo(
+    () => ordenesSucursal.filter((orden) => !orden.completada),
+    [ordenesSucursal]
+  );
+
   useEffect(() => {
     let activo = true;
     let huboErrorReceta = false;
@@ -97,8 +102,8 @@ export default function CashierPage() {
               return [
                 producto.id,
                 respuestaReceta?.data?.ingredients ??
-                  respuestaReceta?.ingredients ??
-                  [],
+                respuestaReceta?.ingredients ??
+                [],
               ];
             } catch {
               huboErrorReceta = true;
@@ -188,6 +193,9 @@ export default function CashierPage() {
       id: `ORD-${Date.now()}`,
       cliente: datosPedido.cliente.trim() || 'Cliente presencial',
       tipoEntrega: datosPedido.tipoEntrega ?? 'local',
+      isDelivery: datosPedido.isDelivery === true ||
+        datosPedido.tipoEntrega === 'domicilio',
+
       direccion: datosPedido.direccion ?? '',
       numeroCasa: datosPedido.numeroCasa ?? '',
       telefono: datosPedido.telefono ?? '',
@@ -206,10 +214,14 @@ export default function CashierPage() {
     await recargarInventario();
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch {
+      window.alert('No se pudo cerrar la sesion. Intentalo de nuevo.');
+    }
+  }
 
   return (
     <div className="cashier-shell">
@@ -266,7 +278,7 @@ export default function CashierPage() {
 
           {seccion === 'ordenes' && (
             <CashierOrders
-              ordenes={ordenesSucursal}
+              ordenes={ordenesVisibles}
               onCambiarEstado={cambiarEstado}
             />
           )}

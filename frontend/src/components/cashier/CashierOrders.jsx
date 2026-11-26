@@ -8,6 +8,8 @@ const ESTADOS = [
   'Pendiente',
   'En preparación',
   'Listo',
+  'Entregado',
+  'Completa',
   'Anulada',
 ];
 
@@ -18,6 +20,8 @@ const obtenerClaseEstado = (estado) => {
     Pendiente: 'cashier-order-status--pending',
     'En preparación': 'cashier-order-status--preparing',
     Listo: 'cashier-order-status--ready',
+    Entregado: 'cashier-order-status--delivered',
+    Completa: 'cashier-order-status--completed',
     Anulada: 'cashier-order-status--cancelled',
   };
 

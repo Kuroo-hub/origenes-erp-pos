@@ -49,8 +49,10 @@ export default function ManagerPage() {
   const handleCerrar = async (monto) => {
     setFeedback(null);
     try {
-      await cerrarCaja(sucursalId, monto);
-      setFeedback({ type: 'success', text: 'Caja cerrada correctamente.' });
+      const cierre = await cerrarCaja(sucursalId, monto);
+      const diferencia = Number(cierre?.diferencia ?? 0);
+      const estado = diferencia === 0 ? 'Caja cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante';
+      setFeedback({ type: 'success', text: `Caja cerrada. ${estado}: $${Math.abs(diferencia).toFixed(2)}. Efectivo esperado: $${Number(cierre?.efectivoEsperado ?? 0).toFixed(2)}.` });
     } catch (error) {
       setFeedback({ type: 'error', text: error?.message ?? 'No se pudo cerrar la caja.' });
     }

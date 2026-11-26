@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { id: 'branches', label: 'Sucursales', Icon: IconBuilding },
 ];
 
-const OwnerSidebar = ({ activeTab, onSelectTab, isOffline = false, onLogout }) => {
+const OwnerSidebar = ({ activeTab, onSelectTab, onLogout }) => {
   return (
     <aside className="own-sidebar">
       <div className="own-sidebar__brand">
@@ -42,9 +42,6 @@ const OwnerSidebar = ({ activeTab, onSelectTab, isOffline = false, onLogout }) =
       </nav>
 
       <div className="own-sidebar__footer">
-        <span className="own-sidebar__status-text">
-          {isOffline ? 'Modo demostración' : 'Conectado a API'}
-        </span>
         <button type="button" className="own-sidebar__logout" onClick={onLogout}>
           Cerrar sesión
         </button>

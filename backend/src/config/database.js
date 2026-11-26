@@ -14,6 +14,11 @@ export const pool = new Pool({
     connectionTimeoutMillis: 5000
 });
 
+// Evita que un error inesperado de una conexión inactiva derribe el proceso.
+pool.on("error", (error) => {
+    console.error("Error inesperado en el pool de PostgreSQL:", error.message);
+});
+
 export async function testDatabaseConnection() {
     const result = await pool.query(
         "SELECT current_database() AS database_name"

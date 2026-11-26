@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import CashMovementTable from '../shared/CashMovementTable.jsx';
+import { getCashSessionSummary } from '../../services/cashFlowApi.js';
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
 const formatearHora = (timestamp) =>
@@ -22,6 +24,8 @@ export default function ManagerCashRegister({
   const [montoFinal, setMontoFinal] = useState('');
   const [cashRegisterId, setCashRegisterId] = useState('');
   const [error, setError] = useState('');
+  const [resumen, setResumen] = useState(null);
+  const [revision, setRevision] = useState(0);
 
   const cajasDisponibles = useMemo(
     () => registrosCaja.filter((registro) => registro.active !== false),
@@ -54,6 +58,31 @@ export default function ManagerCashRegister({
     caja?.montoInicial,
     caja?.montoFinal,
   ]);
+
+  useEffect(() => {
+    let activo = true;
+    setResumen(null);
+
+    if (abierta && caja?.sessionId) {
+      getCashSessionSummary(caja.sessionId)
+        .then((respuesta) => {
+          if (activo) setResumen(respuesta?.data ?? null);
+        })
+        .catch((caughtError) => {
+          if (activo) setError(caughtError?.message ?? 'No se pudo consultar la caja.');
+        });
+    }
+
+    return () => {
+      activo = false;
+    };
+  }, [abierta, caja?.sessionId, revision]);
+
+  const esperado = resumen ? Number(resumen.montoEfectivoEsperado) : null;
+  const diferencia =
+    esperado !== null && /^\d{1,10}(\.\d{1,2})?$/.test(montoFinal)
+      ? Math.round((Number(montoFinal) - esperado) * 100) / 100
+      : null;
 
   const handleAbrir = () => {
     if (montoInicial === '' || Number(montoInicial) < 0) {
@@ -149,10 +178,6 @@ export default function ManagerCashRegister({
               <strong>{formatearHora(caja?.cerradaDesde)}</strong>
             </div>
 
-            <div>
-              <span>Modo</span>
-              <strong>Demostración</strong>
-            </div>
           </div>
 
           <div className="cashier-cart__customer">
@@ -210,6 +235,65 @@ export default function ManagerCashRegister({
               />
             </label>
           </div>
+
+          {abierta && (
+            <div className="cashflow-reconciliation">
+              <div>
+                Efectivo esperado:{' '}
+                <span>
+                  {esperado === null
+                    ? 'Cargando...'
+                    : formatearMonedaCajero(esperado)}
+                </span>
+              </div>
+              <div>
+                Ventas en efectivo:{' '}
+                {resumen
+                  ? formatearMonedaCajero(
+                      (resumen.payments ?? [])
+                        .filter((pago) => pago.metodo === 'CASH')
+                        .reduce((suma, pago) => suma + Number(pago.total ?? 0), 0)
+                    )
+                  : '—'}
+              </div>
+              <div>
+                Ingresos:{' '}
+                {formatearMonedaCajero(
+                  Number(resumen?.movements?.total_ingresos ?? 0)
+                )}{' '}
+                | Egresos:{' '}
+                {formatearMonedaCajero(
+                  Number(resumen?.movements?.total_egresos ?? 0)
+                )}
+              </div>
+              <div>
+                Diferencia:{' '}
+                <span>
+                  {diferencia === null
+                    ? 'Ingresá el monto contado'
+                    : `${formatearMonedaCajero(Math.abs(diferencia))} (${
+                        diferencia === 0
+                          ? 'Cuadrada'
+                          : diferencia > 0
+                            ? 'Sobrante'
+                            : 'Faltante'
+                      })`}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="cashflow-button is-secondary"
+                onClick={() => setRevision((valor) => valor + 1)}
+              >
+                <i className="bi bi-arrow-clockwise" aria-hidden="true" />
+                Actualizar resumen
+              </button>
+            </div>
+          )}
+
+          {resumen?.movementDetails && (
+            <CashMovementTable movements={resumen.movementDetails} />
+          )}
 
           {error && (
             <p className="manager-caja-error" role="alert">
