@@ -19,7 +19,7 @@ export async function authenticate(req, res, next) {
             {
                 throw createError("Token de acceso requerido.", 401);
             }
-
+            
         payload = verifyAuthToken(token);
         employeeId = Number(payload.sub);
 

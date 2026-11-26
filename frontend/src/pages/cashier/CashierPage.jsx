@@ -197,10 +197,15 @@ export default function CashierPage() {
     setFactura(respuesta?.data ?? respuesta ?? null);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = async () => {
+    try
+    {
+      await logout();
+      navigate('/login', { replace: true });
+    } catch{
+      window.alert('No se pudo cerrar la sesion. Intentalo de nuevo.');
+    }
+  }
 
   return (
     <div className="cashier-shell">
