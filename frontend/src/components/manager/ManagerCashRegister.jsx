@@ -1,3 +1,4 @@
+import CashMovementTable from '../shared/CashMovementTable.jsx';
 import { useEffect, useState } from 'react';
 import { getCashSessionSummary } from '../../services/cashFlowApi.js';
 import { formatearMonedaCajero } from '../../utils/formatters.js';
@@ -39,6 +40,7 @@ export default function ManagerCashRegister({
     caja?.montoFinal,
   ]);
 
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
     let activo = true;
     setResumen(null);
@@ -47,7 +49,7 @@ export default function ManagerCashRegister({
         .catch(e => { if (activo) setError(e.message); });
     }
     return () => { activo = false; };
-  }, [abierta, caja?.sessionId]);
+  }, [abierta, caja?.sessionId, revision]);
 
   const esperado = resumen ? Number(resumen.montoEfectivoEsperado) : null;
   const diferencia = esperado !== null && /^\d{1,10}(\.\d{1,2})?$/.test(montoFinal)
@@ -143,10 +145,7 @@ export default function ManagerCashRegister({
               <strong>{formatearHora(caja?.cerradaDesde)}</strong>
             </div>
 
-            <div>
-              <span>Modo</span>
-              <strong>Demostración</strong>
-            </div>
+
           </div>
 
           <div className="manager-caja-amounts">
@@ -181,10 +180,12 @@ export default function ManagerCashRegister({
             </label>
           </div>
 
-          {abierta && <div className="alert alert-info mt-3">
-            <div>Efectivo esperado: <strong>{esperado === null ? 'Cargando...' : formatearMonedaCajero(esperado)}</strong></div>
+          {abierta && <div className="cashflow-reconciliation">
+            <div>Efectivo esperado: <span>{esperado === null ? 'Cargando...' : formatearMonedaCajero(esperado)}</span></div>
+            <div>Ventas en efectivo: {resumen ? formatearMonedaCajero((resumen.payments ?? []).filter(p => p.metodo === "CASH").reduce((sum, p) => sum + Number(p.total), 0)) : "—"}</div>
             <div>Ingresos: {formatearMonedaCajero(Number(resumen?.movements?.total_ingresos ?? 0))} | Egresos: {formatearMonedaCajero(Number(resumen?.movements?.total_egresos ?? 0))}</div>
-            <div>Diferencia: <strong>{diferencia === null ? 'Ingresá el monto contado' : `${formatearMonedaCajero(Math.abs(diferencia))} (${diferencia === 0 ? 'Cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'})`}</strong></div>
+            <div>Diferencia: <span>{diferencia === null ? 'Ingresá el monto contado' : `${formatearMonedaCajero(Math.abs(diferencia))} (${diferencia === 0 ? 'Cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'})`}</span></div>
+            <button type="button" className="cashflow-button is-secondary" onClick={() => setRevision(v => v + 1)}>Actualizar resumen</button>
           </div>}
           {error && (
             <p className="manager-caja-error" role="alert">
@@ -245,6 +246,7 @@ export default function ManagerCashRegister({
           </ul>
         </article>
       </div>
+      {abierta && resumen && <CashMovementTable movements={resumen.movementDetails} />}
     </section>
   );
 }

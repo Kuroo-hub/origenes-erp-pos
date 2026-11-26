@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import CashMovementTable from '../shared/CashMovementTable.jsx';
 import { useOrders } from '../../context/OrderContext.jsx';
 import { getCashSessionSummary, addCashMovement, getCashSessionHistory } from '../../services/cashFlowApi.js';
 import { formatearMonedaCajero as dinero } from '../../utils/formatters.js';
@@ -44,40 +45,44 @@ export default function CashierCashFlow({ sucursal }) {
     finally { setOcupado(false); }
   };
   const pagos = resumen?.payments ?? [];
-  const ventas = pagos.reduce((sum, p) => sum + amount(p.total), 0);
   const efectivo = amount(resumen?.montoEfectivoEsperado);
   const diferencia = validMoney(contado, true) ? Math.round((amount(contado) - efectivo) * 100) / 100 : null;
   return (
     <section className="cashier-cashflow">
-      <header className="cashier-section-header"><div><h1>Flujo y cuadre de caja</h1><p>Movimientos reales de la sesión de {sucursal} registrados en PostgreSQL.</p></div>
-        <button className="btn btn-outline-secondary" onClick={cargar} disabled={cargando}>Actualizar</button></header>
+      <header className="cashier-section-header"><div><h1>Flujo y cuadre de caja</h1><p>Control de efectivo de {sucursal}.</p></div>
+        <button className="cashflow-button is-secondary" onClick={cargar} disabled={cargando}>Actualizar</button></header>
       {error && <p className="alert alert-danger" role="alert">{error}</p>}
       {cargando && <p>Consultando caja...</p>}
       {resumen ? <>
         <div className="cashier-cashflow__summary">
-          {[['Fondo inicial', resumen.session.monto_inicial], ['Ventas pagadas', ventas], ['Ingresos manuales', resumen.movements.total_ingresos], ['Egresos manuales', resumen.movements.total_egresos], ['Efectivo esperado', efectivo]].map(([nombre, valor]) => (
-            <article className="cashier-cashflow__card" key={nombre}><span>{nombre}</span><strong>{dinero(amount(valor))}</strong></article>
+          {[['Fondo inicial', resumen.session.monto_inicial], ['Ventas en efectivo', pagos.filter(p => p.metodo === 'CASH').reduce((sum, p) => sum + amount(p.total), 0)], ['Ingresos manuales', resumen.movements.total_ingresos], ['Egresos manuales', resumen.movements.total_egresos], ['Efectivo esperado', efectivo]].map(([nombre, valor]) => (
+            <article className="cashier-cashflow__card" key={nombre}><span>{nombre}</span><span className="cashflow-value">{dinero(amount(valor))}</span></article>
           ))}
         </div>
-        <section className="cashier-cashflow__movements"><h2>Ventas por método de pago</h2>
-          <table className="table"><thead><tr><th>Método</th><th>Total</th></tr></thead><tbody>
+        <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Ventas por método de pago</h2></div>
+          <table className="cashier-activity__table"><thead><tr><th>Método</th><th>Total</th></tr></thead><tbody>
             {pagos.map((p) => <tr key={p.metodo}><td>{({ CASH: 'Efectivo', CARD: 'Tarjeta', BITCOIN: 'Bitcoin', CHIVO: 'Chivo Wallet' })[p.metodo] ?? p.metodo}</td><td>{dinero(amount(p.total))}</td></tr>)}
           </tbody></table>
-          <h2>Registrar ingreso o egreso</h2>
-          <form onSubmit={registrar} className="d-flex flex-wrap gap-2 align-items-end">
-            <label>Tipo<select className="form-select" value={tipo} onChange={e => setTipo(e.target.value)}><option value="INGRESO">Ingreso</option><option value="EGRESO">Egreso</option></select></label>
-            <label>Monto ($)<input className="form-control" type="number" min="0.01" step="0.01" required value={monto} onChange={e => setMonto(e.target.value)} /></label>
-            <label>Concepto<input className="form-control" maxLength={150} required value={concepto} onChange={e => setConcepto(e.target.value)} /></label>
-            <button className="btn btn-primary" disabled={ocupado}>Registrar movimiento</button>
-          </form>
-          <h2 className="mt-4">Vista previa del arqueo</h2>
-          <label>Efectivo contado ($)<input className="form-control" type="number" min="0" step="0.01" value={contado} onChange={e => setContado(e.target.value)} /></label>
-          <p className="mt-2">Diferencia: <strong>{diferencia === null ? 'Ingresá el efectivo contado' : `${dinero(Math.abs(diferencia))} — ${diferencia === 0 ? 'Caja cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'}`}</strong></p>
-          <p>El cierre definitivo se realiza en Apertura y cierre de caja.</p>
         </section>
-      </> : !cargando && <p>No hay sesión abierta. Abrí una caja para registrar movimientos y calcular el cuadre.</p>}
-      <section className="cashier-cashflow__movements"><h2>Historial de sesiones</h2>
-        <div className="table-responsive"><table className="table"><thead><tr><th>Caja</th><th>Apertura</th><th>Estado</th><th>Inicial</th><th>Esperado</th><th>Contado al cierre</th><th>Diferencia</th></tr></thead><tbody>
+        <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Registrar movimiento</h2></div>
+          <form onSubmit={registrar} className="cashflow-form">
+            <label>Tipo<select  value={tipo} onChange={e => setTipo(e.target.value)}><option value="INGRESO">Ingreso</option><option value="EGRESO">Egreso</option></select></label>
+            <label>Monto ($)<input  type="number" min="0.01" step="0.01" required value={monto} onChange={e => setMonto(e.target.value)} /></label>
+            <label>Concepto<input  maxLength={150} required value={concepto} onChange={e => setConcepto(e.target.value)} /></label>
+            <button className="cashflow-button" disabled={ocupado}>Registrar movimiento</button>
+          </form>
+        </section>
+        <CashMovementTable movements={resumen.movementDetails} />
+        <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Arqueo de caja</h2></div>
+          <p className="cashflow-note">Efectivo esperado: {dinero(efectivo)}</p>
+          <div className="cashflow-form">
+          <label>Efectivo contado ($)<input  type="number" min="0" step="0.01" value={contado} onChange={e => setContado(e.target.value)} /></label>
+          <p className="cashflow-result">Diferencia: <span>{diferencia === null ? 'Ingresá el efectivo contado' : `${dinero(Math.abs(diferencia))} — ${diferencia === 0 ? 'Caja cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'}`}</span></p></div>
+          <p className="cashflow-note">El cierre definitivo se realiza en Apertura y cierre de caja.</p>
+        </section>
+      </> : !cargando && !error && <p>No hay sesión abierta. Abrí una caja para registrar movimientos y calcular el cuadre.</p>}
+      <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Historial de sesiones</h2></div>
+        <div className="table-responsive"><table className="cashier-activity__table"><thead><tr><th>Caja</th><th>Apertura</th><th>Estado</th><th>Inicial</th><th>Esperado</th><th>Contado al cierre</th><th>Diferencia</th></tr></thead><tbody>
           {historial.map(h => <tr key={h.id}><td>{h.nombreCaja}</td><td>{new Date(h.fechaApertura).toLocaleString('es-SV')}</td><td>{h.estado}</td><td>{dinero(amount(h.montoInicial))}</td><td>{dinero(amount(h.efectivoEsperado))}</td><td>{h.montoFinalReal == null ? '—' : dinero(amount(h.montoFinalReal))}</td><td>{h.diferencia == null ? '—' : `${dinero(Math.abs(amount(h.diferencia)))} (${amount(h.diferencia) === 0 ? 'Cuadrada' : amount(h.diferencia) > 0 ? 'Sobrante' : 'Faltante'})`}</td></tr>)}
         </tbody></table></div>
       </section>

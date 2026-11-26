@@ -16,6 +16,7 @@ import {
     findCashSessionForUpdate,
     findSessionPayments,
     findSessionMovementsSummary,
+    findSessionMovements,
     findExpectedCash,
     createCashMovement,
     updateCashSessionClose,
@@ -174,6 +175,7 @@ export async function getCashSessionSummaryService(sessionId, user) {
             session,
             payments,
             movements,
+            movementDetails: await findSessionMovements(client, id),
             montoEfectivoEsperado: expectedCash.monto_esperado
         };
     });

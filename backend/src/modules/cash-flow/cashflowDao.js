@@ -380,3 +380,14 @@ export async function findCashSessionHistory(limit, offset, branchId = null) {
 
     return result.rows;
 }
+
+// Detalle de movimientos registrados en la sesión.
+export async function findSessionMovements(client, sessionId) {
+    const result = await client.query(
+        `SELECT cash_movement_id, movement_type, description, amount, created_at
+         FROM cash_movement WHERE shift_id = $1
+         ORDER BY created_at DESC, cash_movement_id DESC`,
+        [sessionId]
+    );
+    return result.rows;
+}
