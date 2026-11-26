@@ -20,7 +20,7 @@ const extraerLista = (respuesta) =>
 const InventoryPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { sucursalId, seleccionarSucursal, sucursales } = useOrders();
+  const { sucursalId, seleccionarSucursal, sucursales, versionStock } = useOrders();
   const [activeTab, setActiveTab] = useState('stock');
 
   const [inventory, setInventory] = useState([]);
@@ -52,7 +52,7 @@ const InventoryPage = () => {
 
   useEffect(() => {
     loadBranchData(sucursalId);
-  }, [sucursalId, loadBranchData]);
+  }, [sucursalId, loadBranchData, versionStock]);
 
   const lowStockCount = inventory.filter(
     (item) => Number(item.quantity) <= Number(item.minimum_stock)
@@ -69,6 +69,7 @@ const InventoryPage = () => {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         alertCount={lowStockCount}
+        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 

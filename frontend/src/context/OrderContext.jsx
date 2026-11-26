@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
-import { getSales, registerSale } from '../services/salesApi.js';
+import { getSales, registerSale, updateKitchenStatus } from '../services/salesApi.js';
 import {
   getActiveCashSessions,
   closeCashSession,
@@ -27,6 +27,30 @@ const METODOS_FRONTEND_BACKEND = {
   chivo: 'CHIVO'
 };
 
+const ESTADOS_FACTURA = {
+  PAID: 'Pagada',
+  CANCELLED: 'Anulada',
+  PENDING: 'Pendiente'
+};
+
+const ESTADOS_ENTREGA = {
+  READY: 'Listo en sucursal',
+  IN_TRANSIT: 'En camino',
+  DELIVERED: 'Entregado'
+};
+
+const ESTADOS_COCINA = {
+  PENDING: 'Pendiente',
+  PREPARING: 'En preparación',
+  READY: 'Listo'
+};
+
+const ESTADOS_COCINA_BACKEND = {
+  Pendiente: 'PENDING',
+  'En preparación': 'PREPARING',
+  Listo: 'READY'
+};
+
 const extraerLista = (respuesta) =>
   Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
 
@@ -44,17 +68,26 @@ function mapearVenta(venta) {
   const paymentMethod = METODOS_BACKEND_FRONTEND[venta.paymentMethod] ?? 'efectivo';
   const prefijo = venta.documentType === 'CREDIT_TAX' ? 'CCF' : 'FAC';
 
+  const kitchenStatus = venta.kitchenStatus ?? 'PENDING';
+  const estadoEntrega = venta.deliveryStatus ?? null;
+
   return {
     id: `${prefijo}-${venta.consecutiveNumber ?? venta.invoiceId}`,
+    invoiceId: Number(venta.invoiceId ?? 0) || null,
     cliente: venta.customerName || 'Cliente presencial',
     origen: 'Presencial',
     hora: formatearHora(venta.issueDate),
     created_at: venta.issueDate,
-    estado: venta.status === 'CANCELLED' ? 'Entregado' : 'Pendiente',
+    estadoFactura: venta.status ?? null,
+    estadoFacturaTexto: ESTADOS_FACTURA[venta.status] ?? venta.status ?? '',
+    estado: venta.status === 'CANCELLED' ? 'Anulada' : ESTADOS_COCINA[kitchenStatus] ?? 'Pendiente',
+    kitchenStatus,
     sucursalId: Number(venta.branchId),
     sucursal: venta.branchName,
     tipoEntrega: venta.isDelivery ? 'domicilio' : 'local',
-    deliveryStatus: venta.deliveryStatus ?? null,
+    deliveryStatus: estadoEntrega,
+    estadoEntrega,
+    estadoEntregaTexto: ESTADOS_ENTREGA[estadoEntrega] ?? '',
     direccion: venta.deliveryAddress ?? '',
     numeroCasa: '',
     telefono: venta.deliveryPhone ?? '',
@@ -82,6 +115,7 @@ export function OrderProvider({ children }) {
   const [sucursalId, setSucursalId] = useState(user?.branchId ?? null);
   const [cargandoDatos, setCargandoDatos] = useState(Boolean(token));
   const [errorDatos, setErrorDatos] = useState('');
+  const [versionStock, setVersionStock] = useState(0);
 
   useEffect(() => {
     if (!token) {
@@ -146,7 +180,7 @@ export function OrderProvider({ children }) {
       try {
         const [ventas, sesiones, registros] = await Promise.all([
           getSales(branchId),
-          getActiveCashSessions(),
+          getActiveCashSessions(branchId),
           getCashRegisters(branchId)
         ]);
 
@@ -154,9 +188,6 @@ export function OrderProvider({ children }) {
         setSesionesActivas(extraerLista(sesiones));
         setRegistrosCaja(extraerLista(registros));
       } catch (caughtError) {
-        setOrdenes([]);
-        setSesionesActivas([]);
-        setRegistrosCaja([]);
         setErrorDatos(caughtError?.message ?? 'No se pudieron cargar los datos de la sucursal.');
       } finally {
         setCargandoDatos(false);
@@ -270,15 +301,42 @@ export function OrderProvider({ children }) {
     });
 
     await recargarDatos(pedido.sucursalId ?? sucursalId);
+    setVersionStock((actual) => actual + 1);
 
     return respuesta;
   };
 
-  const cambiarEstado = (id, estado) => {
-    setOrdenes((actuales) =>
-      actuales.map((orden) => (orden.id === id ? { ...orden, estado } : orden))
-    );
-  };
+  const cambiarEstado = useCallback(
+    async (id, estado) => {
+      const orden = ordenes.find((item) => item.id === id);
+
+      if (!orden) {
+        throw new Error('No se encontró la orden solicitada.');
+      }
+
+      const kitchenStatus = ESTADOS_COCINA_BACKEND[estado];
+
+      if (!orden.invoiceId || !kitchenStatus) {
+        throw new Error('No se pudo actualizar el estado de la orden.');
+      }
+
+      const respuesta = await updateKitchenStatus(orden.invoiceId, {
+        kitchen_status: kitchenStatus
+      });
+      const actualizado = respuesta?.data?.kitchen_status ?? kitchenStatus;
+
+      setOrdenes((actuales) =>
+        actuales.map((item) =>
+          item.id === id
+            ? { ...item, kitchenStatus: actualizado, estado: ESTADOS_COCINA[actualizado] ?? estado }
+            : item
+        )
+      );
+
+      return respuesta;
+    },
+    [ordenes]
+  );
 
   const valor = useMemo(
     () => ({
@@ -298,6 +356,7 @@ export function OrderProvider({ children }) {
       registrosCaja,
       cargandoDatos,
       errorDatos,
+      versionStock,
       recargarDatos,
       caja,
       cajaAbierta,
@@ -315,9 +374,11 @@ export function OrderProvider({ children }) {
       registrosCaja,
       cargandoDatos,
       errorDatos,
+      versionStock,
       recargarDatos,
       caja,
-      cajaAbierta
+      cajaAbierta,
+      cambiarEstado
     ]
   );
 

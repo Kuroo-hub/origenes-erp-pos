@@ -2,7 +2,7 @@
 import { createError } from "../../utils/errors.js";
 import { formatCents, toCents } from "../../utils/money.js";
 import { withTransaction } from "../../utils/transaction.js";
-import { validateId } from "../../utils/validation.js";
+import { parseBranchFilter, validateId } from "../../utils/validation.js";
 
 import {
     findCashRegisterById,
@@ -21,6 +21,12 @@ import {
     updateCashSessionClose,
     findCashSessionHistory
 } from "./cashflowDao.js";
+
+function validateSessionBranch(session, branchId) {
+    if (branchId !== null && Number(session.branchId) !== branchId) {
+        throw createError("No tiene permisos para acceder a otra sucursal.", 403);
+    }
+}
 
 function validateAmount(amount, allowZero = false) {
     const value = String(amount ?? "");
@@ -123,17 +129,23 @@ export async function getCashRegistersByBranchService(branchId) {
 }
 
 // 2. Consulta todas las sesiones abiertas.
-export async function getActiveCashSessionsService() {
-    return findAllActiveCashSessions();
+export async function getActiveCashSessionsService(branchId = null) {
+    const parsedBranchId = parseBranchFilter(branchId);
+
+    return findAllActiveCashSessions(parsedBranchId);
 }
 
 // 3. Consulta una sesión por su ID.
-export async function getCashSessionByIdService(sessionId) {
+export async function getCashSessionByIdService(sessionId, branchId = null) {
     const id = validateId(sessionId, "ID de sesión");
+    const parsedBranchId = parseBranchFilter(branchId);
 
-    const session = await findCashSessionById(id);
+    const session = await findCashSessionById(id, undefined, parsedBranchId);
 
-    if (!session) {
+    if (
+        !session ||
+        (parsedBranchId !== null && Number(session.branchId) !== parsedBranchId)
+    ) {
         throw createError("No se encontró la sesión de caja.", 404);
     }
 
@@ -141,14 +153,18 @@ export async function getCashSessionByIdService(sessionId) {
 }
 
 // 4. Consulta el resumen financiero de una sesión.
-export async function getCashSessionSummaryService(sessionId) {
+export async function getCashSessionSummaryService(sessionId, branchId = null) {
     const id = validateId(sessionId, "ID de sesión");
+    const parsedBranchId = parseBranchFilter(branchId);
 
     return withTransaction(async (client) => {
 
-        const session = await findCashSessionById(id, client);
+        const session = await findCashSessionById(id, client, parsedBranchId);
 
-        if (!session) {
+        if (
+            !session ||
+            (parsedBranchId !== null && Number(session.branchId) !== parsedBranchId)
+        ) {
             throw createError("No se encontró la sesión de caja.", 404);
         }
 
@@ -183,10 +199,12 @@ export async function addCashMovementService({
     employeeId,
     type,
     amount,
-    concept
+    concept,
+    branchId = null
 }) {
     const id = validateId(sessionId, "ID de sesión");
     const cashierId = validateId(employeeId, "ID de empleado");
+    const parsedBranchId = parseBranchFilter(branchId);
     const validAmount = validateAmount(amount);
 
     if (!["INGRESO", "EGRESO"].includes(type)) {
@@ -211,6 +229,8 @@ export async function addCashMovementService({
         if (!session) {
             throw createError("La sesión no existe.", 404);
         }
+
+        validateSessionBranch(session, parsedBranchId);
 
         if (session.estado !== "ABIERTA") {
             throw createError(
@@ -246,10 +266,12 @@ export async function addCashMovementService({
 export async function closeCashSessionService({
     sessionId,
     employeeId,
-    realAmount
+    realAmount,
+    branchId = null
 }) {
     const id = validateId(sessionId, "ID de sesión");
     const cashierId = validateId(employeeId, "ID de empleado");
+    const parsedBranchId = parseBranchFilter(branchId);
     const validRealAmount = validateAmount(realAmount, true);
 
     return withTransaction(async (client) => {
@@ -260,6 +282,8 @@ export async function closeCashSessionService({
         if (!session) {
             throw createError("La sesión no existe.", 404);
         }
+
+        validateSessionBranch(session, parsedBranchId);
 
         if (session.estado !== "ABIERTA") {
             throw createError("La sesión ya está cerrada.", 409);
@@ -311,10 +335,12 @@ export async function closeCashSessionService({
 // 7. Consulta el historial de sesiones.
 export async function getCashSessionHistoryService({
     limit = 20,
-    offset = 0
+    offset = 0,
+    branchId = null
 } = {}) {
     const parsedLimit = Number(limit);
     const parsedOffset = Number(offset);
+    const parsedBranchId = parseBranchFilter(branchId);
 
     if (
         !Number.isInteger(parsedLimit) ||
@@ -332,5 +358,5 @@ export async function getCashSessionHistoryService({
         );
     }
 
-    return findCashSessionHistory(parsedLimit, parsedOffset);
+    return findCashSessionHistory(parsedLimit, parsedOffset, parsedBranchId);
 }

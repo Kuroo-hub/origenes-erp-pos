@@ -8,17 +8,17 @@ const ESTADOS = [
   'Pendiente',
   'En preparación',
   'Listo',
-  'Entregado',
+  'Anulada',
 ];
 
-const ESTADOS_CAMBIO = ESTADOS.filter((estado) => estado !== 'Todos');
+const ESTADOS_CAMBIO = ['Pendiente', 'En preparación', 'Listo'];
 
 const obtenerClaseEstado = (estado) => {
   const clases = {
     Pendiente: 'cashier-order-status--pending',
     'En preparación': 'cashier-order-status--preparing',
     Listo: 'cashier-order-status--ready',
-    Entregado: 'cashier-order-status--delivered',
+    Anulada: 'cashier-order-status--cancelled',
   };
 
   return clases[estado] ?? '';
@@ -31,6 +31,7 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
   const [estado, setEstado] = useState('Todos');
   const [origen, setOrigen] = useState('Todos');
   const [idSeleccionada, setIdSeleccionada] = useState(null);
+  const [errorCambio, setErrorCambio] = useState('');
 
   const ordenSeleccionada =
     ordenes.find((orden) => orden.id === idSeleccionada) ?? null;
@@ -57,8 +58,14 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
     });
   }, [ordenes, busqueda, estado, origen]);
 
-  const cambiarEstadoOrden = (id, nuevoEstado) => {
-    onCambiarEstado?.(id, nuevoEstado);
+  const cambiarEstadoOrden = async (id, nuevoEstado) => {
+    setErrorCambio('');
+
+    try {
+      await onCambiarEstado?.(id, nuevoEstado);
+    } catch (caughtError) {
+      setErrorCambio(caughtError?.message ?? 'No se pudo actualizar el estado de la orden.');
+    }
   };
 
   return (
@@ -69,6 +76,13 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
           <p>Consulta y actualiza los pedidos registrados en tu sucursal.</p>
         </div>
       </header>
+
+      {errorCambio && (
+        <div className="cashier-orders__error" role="alert">
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
+          {errorCambio}
+        </div>
+      )}
 
       <div className="cashier-orders__filters">
         <div className="cashier-pos__search">
@@ -151,10 +165,10 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
                     >
                       {orden.estado}
                     </span>
-                    {esPedidoPorLlamada(orden) ? (
+                    {esPedidoPorLlamada(orden) || orden.estado === 'Anulada' ? (
                       <span className="cashier-orders__estado-bloqueado">
                         <i className="bi bi-lock" aria-hidden="true" />
-                        Delivery
+                        {orden.estado === 'Anulada' ? 'Factura anulada' : 'Delivery'}
                       </span>
                     ) : (
                       <select
@@ -249,9 +263,11 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
 
                 <div>
                   <span>Estado</span>
-                  {esPedidoPorLlamada(ordenSeleccionada) ? (
+                  {esPedidoPorLlamada(ordenSeleccionada) || ordenSeleccionada.estado === 'Anulada' ? (
                     <strong>
-                      {ordenSeleccionada.estado} · gestionado por Delivery
+                      {ordenSeleccionada.estado === 'Anulada'
+                        ? 'Factura anulada'
+                        : `${ordenSeleccionada.estado} · gestionado por Delivery`}
                     </strong>
                   ) : (
                     <select
@@ -271,6 +287,16 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
                       ))}
                     </select>
                   )}
+                </div>
+
+                <div>
+                  <span>Factura</span>
+                  <strong>{ordenSeleccionada.estadoFacturaTexto || '—'}</strong>
+                </div>
+
+                <div>
+                  <span>Entrega</span>
+                  <strong>{ordenSeleccionada.estadoEntregaTexto || '—'}</strong>
                 </div>
               </div>
 

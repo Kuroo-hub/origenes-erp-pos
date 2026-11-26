@@ -10,6 +10,7 @@ import {
 } from "./hrDao.js";
 import { calculateBiweeklyPayroll } from "./payrollCalculator.js";
 import { withTransaction } from "../../utils/transaction.js";
+import { parseBranchFilter } from "../../utils/validation.js";
 
 function parseEmployeeId(value) {
     const employeeId = Number(value);
@@ -48,19 +49,24 @@ export async function getEmployees(branchId = null) {
     return employees.map(normalizeEmployee);
 }
 
-export async function getEmployee(employeeIdValue) {
+export async function getEmployee(employeeIdValue, branchId = null) {
     const employeeId = parseEmployeeId(employeeIdValue);
-    const employee = await findEmployeeById(employeeId);
+    const parsedBranchId = parseBranchFilter(branchId);
+    const employee = await findEmployeeById(employeeId, parsedBranchId);
 
     if (!employee) {
+        throw new AppError("No se encontró el empleado solicitado.", 404);
+    }
+
+    if (parsedBranchId !== null && Number(employee.branchId) !== parsedBranchId) {
         throw new AppError("No se encontró el empleado solicitado.", 404);
     }
 
     return normalizeEmployee(employee);
 }
 
-export async function getEmployeePerformance(employeeIdValue) {
-    const employee = await getEmployee(employeeIdValue);
+export async function getEmployeePerformance(employeeIdValue, branchId = null) {
+    const employee = await getEmployee(employeeIdValue, branchId);
     const payrollPerformance = await findPayrollPerformanceByEmployeeId(employee.employeeId);
 
     return {
@@ -78,7 +84,8 @@ export async function getEmployeePerformance(employeeIdValue) {
     };
 }
 
-export async function runPayroll(payload) {
+export async function runPayroll(payload, branchId = null) {
+    const parsedBranchId = parseBranchFilter(branchId);
     const startDate = validateDate(payload?.startDate, "fecha de inicio");
     const endDate = validateDate(payload?.endDate, "fecha de finalización");
     const paymentDate = payload?.paymentDate
@@ -138,7 +145,7 @@ export async function runPayroll(payload) {
             throw new AppError("Ya existe una planilla para el período indicado.", 409);
         }
 
-        const employees = await findActiveEmployeesForPayroll(client);
+        const employees = await findActiveEmployeesForPayroll(client, parsedBranchId);
         if (employees.length === 0) {
             throw new AppError("No hay empleados activos para procesar la planilla.", 422);
         }

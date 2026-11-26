@@ -16,7 +16,10 @@ export async function listEmployees(req, res) {
 }
 
 export async function getEmployeeById(req, res) {
-    const employee = await getEmployee(req.params.id);
+    const employee = await getEmployee(
+        req.params.id,
+        resolveBranchId(req, req.query.branchId ?? req.body.branchId)
+    );
 
     return res.status(200).json({
         success: true,
@@ -25,7 +28,10 @@ export async function getEmployeeById(req, res) {
 }
 
 export async function getPerformanceByEmployeeId(req, res) {
-    const performance = await getEmployeePerformance(req.params.id);
+    const performance = await getEmployeePerformance(
+        req.params.id,
+        resolveBranchId(req, req.query.branchId ?? req.body.branchId)
+    );
 
     return res.status(200).json({
         success: true,
@@ -34,7 +40,10 @@ export async function getPerformanceByEmployeeId(req, res) {
 }
 
 export async function processPayroll(req, res) {
-    const payroll = await runPayroll(req.body);
+    const payroll = await runPayroll(
+        req.body,
+        resolveBranchId(req, req.query.branchId ?? req.body.branchId)
+    );
 
     return res.status(201).json({
         success: true,

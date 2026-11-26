@@ -30,7 +30,7 @@ export async function findAllEmployees(branchId = null) {
     return result.rows;
 }
 
-export async function findEmployeeById(employeeId) {
+export async function findEmployeeById(employeeId, branchId = null) {
     const result = await pool.query(`
         SELECT
             e.employee_id AS "employeeId",
@@ -48,7 +48,8 @@ export async function findEmployeeById(employeeId) {
         FROM employee e
         INNER JOIN branch b ON b.branch_id = e.branch_id
         WHERE e.employee_id = $1
-    `, [employeeId]);
+          AND ($2::INTEGER IS NULL OR e.branch_id = $2)
+    `, [employeeId, branchId]);
 
     return result.rows[0] ?? null;
 }
@@ -71,7 +72,7 @@ export async function findPayrollPerformanceByEmployeeId(employeeId) {
     return result.rows[0];
 }
 
-export async function findActiveEmployeesForPayroll(client) {
+export async function findActiveEmployeesForPayroll(client, branchId = null) {
     const result = await client.query(`
         SELECT
             e.employee_id AS "employeeId",
@@ -79,8 +80,9 @@ export async function findActiveEmployeesForPayroll(client) {
             e.base_salary AS "baseSalary"
         FROM employee e
         WHERE e.active = TRUE
+          AND ($2::INTEGER IS NULL OR e.branch_id = $2)
         ORDER BY e.employee_id ASC
-    `);
+    `, [branchId]);
 
     return result.rows;
 }

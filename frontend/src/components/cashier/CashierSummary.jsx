@@ -7,7 +7,7 @@ const obtenerClaseEstado = (estado) => {
     Pendiente: 'pending',
     'En preparación': 'preparing',
     Listo: 'ready',
-    Entregado: 'delivered',
+    Anulada: 'cancelled',
   };
 
   return clases[estado] ?? 'pending';
@@ -18,8 +18,12 @@ export default function CashierSummary({
   ventasTurno = 0,
   sucursal,
 }) {
-  const pedidosPendientes = ordenes.filter(
-    (pedido) => pedido.estado === 'Pendiente'
+  const pedidosEnPreparacion = ordenes.filter(
+    (pedido) => pedido.estado === 'En preparación'
+  ).length;
+
+  const pedidosListos = ordenes.filter(
+    (pedido) => pedido.estado === 'Listo'
   ).length;
 
   const indicadores = [
@@ -32,20 +36,20 @@ export default function CashierSummary({
       color: 'primary',
     },
     {
-      id: 'pendientes',
-      titulo: 'Pedidos pendientes',
-      valor: String(pedidosPendientes).padStart(2, '0'),
-      detalle: 'Esperando atención',
+      id: 'preparacion',
+      titulo: 'En preparación',
+      valor: String(pedidosEnPreparacion).padStart(2, '0'),
+      detalle: 'Pedidos en cocina',
       icono: 'bi-clock-history',
       color: 'warning',
     },
     {
-      id: 'pedidos',
-      titulo: 'Pedidos registrados',
-      valor: String(ordenes.length).padStart(2, '0'),
-      detalle: 'Pedidos de la sucursal',
-      icono: 'bi-receipt',
-      color: 'info',
+      id: 'listos',
+      titulo: 'Pedidos listos',
+      valor: String(pedidosListos).padStart(2, '0'),
+      detalle: 'Listos para entrega',
+      icono: 'bi-check2-circle',
+      color: 'success',
     },
   ];
 

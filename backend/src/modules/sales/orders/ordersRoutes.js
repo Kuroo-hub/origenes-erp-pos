@@ -3,7 +3,8 @@ import { authenticate } from "../../../middlewares/authenticate.js";
 import { authorize } from "../../../middlewares/authorize.js";
 import {
     getDeliveryOrdersController,
-    patchDeliveryStatusController
+    patchDeliveryStatusController,
+    patchKitchenStatusController
 } from "./ordersController.js";
 
 const router = Router();
@@ -15,6 +16,12 @@ router.patch(
     authenticate,
     deliveryStaff,
     patchDeliveryStatusController
+);
+router.patch(
+    "/:invoiceId/kitchen-status",
+    authenticate,
+    deliveryStaff,
+    patchKitchenStatusController
 );
 
 export default router;

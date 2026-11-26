@@ -111,49 +111,15 @@ const InventoryPurchases = ({
 
     try {
       await createSupplierPurchase(payload);
-      setFeedback({
-        type: 'success',
-        text: `Factura ${payload.invoice_number} registrada y stock actualizado.`,
-      });
       await onRefresh();
-    } catch {
-      // Actualización local en modo demostración
-      const newPurchase = {
-        purchase_id: Date.now(),
-        payable_id: Date.now() + 1,
-        branch_id: branchId,
-        supplier_name: supplierObj ? supplierObj.name : 'Proveedor',
-        invoice_number: payload.invoice_number,
-        purchase_date: new Date().toISOString().slice(0, 16).replace('T', ' '),
-        subtotal: payload.subtotal,
-        vat: payload.vat,
-        total: payload.total,
-        outstanding_amount: paymentStatus === 'PAID' ? 0 : payload.total,
-        status: paymentStatus,
-        items_count: validDetails.length,
-      };
-
-      setPurchases((prev) => [newPurchase, ...prev]);
-
-      // Incrementar existencias en el estado de inventario
-      setInventory((prev) =>
-        prev.map((inv) => {
-          const match = validDetails.find((d) => d.ingredient_id === inv.ingredient_id);
-          if (!match) return inv;
-          return { ...inv, quantity: Number(inv.quantity) + match.quantity };
-        })
-      );
-
-      setFeedback({
-        type: 'success',
-        text: `Factura ${payload.invoice_number} registrada localmente y sumada al inventario.`,
-      });
-    } finally {
-      setSubmitting(false);
       setShowNewForm(false);
       setInvoiceNumber('');
       setDueDate('');
       setItems([{ ingredient_id: '', quantity: '', unit_cost: '' }]);
+    } catch (error) {
+      setFeedback({ type: 'error', text: error?.message ?? 'No se pudo registrar la compra.' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -186,21 +152,8 @@ const InventoryPurchases = ({
       });
       await onRefresh();
       setFeedback({ type: 'success', text: 'Abono registrado exitosamente.' });
-    } catch {
-      const remaining = Number((pending - amount).toFixed(2));
-      const newStatus = remaining === 0 ? 'PAID' : 'PARTIAL';
-
-      setPurchases((prev) =>
-        prev.map((p) =>
-          p.purchase_id === payingPurchase.purchase_id
-            ? { ...p, outstanding_amount: remaining, status: newStatus }
-            : p
-        )
-      );
-      setFeedback({
-        type: 'success',
-        text: `Abono de $${amount.toFixed(2)} aplicado a factura ${payingPurchase.invoice_number}.`,
-      });
+    } catch (error) {
+      setFeedback({ type: 'error', text: error?.message ?? 'No se pudo registrar el abono.' });
     } finally {
       setSubmitting(false);
       setPayingPurchase(null);

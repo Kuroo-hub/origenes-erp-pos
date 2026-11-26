@@ -31,7 +31,7 @@ const DELIVERY_STATUS_META = {
 const DeliveryPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { sucursalId, seleccionarSucursal, sucursales } = useOrders();
+  const { sucursalId, seleccionarSucursal, sucursales, recargarDatos } = useOrders();
   const [activeTab, setActiveTab] = useState('active');
 
   const [orders, setOrders] = useState([]);
@@ -40,6 +40,12 @@ const DeliveryPage = () => {
   const [feedback, setFeedback] = useState(null);
 
   const loadDeliveries = useCallback(async (branchId) => {
+    if (!branchId) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -58,14 +64,16 @@ const DeliveryPage = () => {
     loadDeliveries(sucursalId);
   }, [sucursalId, loadDeliveries]);
 
-  const pedidos = orders;
+  const pedidos = orders.filter(
+    (order) => Number(order.branch_id) === Number(sucursalId)
+  );
 
   const activeOrders = pedidos.filter((o) => o.delivery_status !== 'DELIVERED');
   const deliveredOrders = pedidos.filter((o) => o.delivery_status === 'DELIVERED');
   const pickedUpCount = activeOrders.filter((o) => o.delivery_status === 'IN_TRANSIT').length;
 
   const cashToCollect = activeOrders
-    .filter((o) => o.payment_status === 'PENDING_COLLECTION')
+    .filter((o) => o.payment_method === 'CASH')
     .reduce((sum, o) => sum + Number(o.total_amount), 0);
 
   const handleAdvanceStatus = async (order, nextStatus) => {
@@ -75,8 +83,9 @@ const DeliveryPage = () => {
       await updateDeliveryStatus(order.order_id, {
         delivery_status: nextStatus,
       });
-      await loadDeliveries(sucursalId);
-      setFeedback({
+       await loadDeliveries(sucursalId);
+       await recargarDatos(sucursalId);
+       setFeedback({
         type: 'success',
         text:
           nextStatus === 'IN_TRANSIT'
@@ -181,7 +190,7 @@ const DeliveryPage = () => {
                 activeOrders.map((order) => {
                   const statusMeta =
                     DELIVERY_STATUS_META[order.delivery_status] || DELIVERY_STATUS_META.READY;
-                  const mustCollect = order.payment_status === 'PENDING_COLLECTION';
+                  const mustCollect = order.payment_method === 'CASH';
 
                   return (
                     <article key={order.order_id} className="del-order-card">

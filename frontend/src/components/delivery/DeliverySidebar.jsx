@@ -45,7 +45,7 @@ const DeliverySidebar = ({ activeTab, onSelectTab, pendingCount = 0, isOffline =
 
       <div className="del-sidebar__footer">
         <span className="del-sidebar__status-text">
-          {isOffline ? 'Modo demostración' : 'Conectado a API'}
+          {isOffline ? 'Sin conexión' : 'Conectado a API'}
         </span>
         <button type="button" className="del-sidebar__logout" onClick={onLogout}>
           Cerrar sesión
