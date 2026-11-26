@@ -12,10 +12,13 @@ const STATUS_LABELS = {
   CANCELLED: 'Anulada',
 };
 
+const getIngredientName = (item) =>
+  item?.name ?? item?.ingredient_name ?? item?.nombre ?? 'Insumo';
+
 const InventoryPurchases = ({
   branchId,
-  inventory,
-  purchases,
+  inventory = [],
+  purchases = [],
   setPurchases,
   setInventory,
   onRefresh,
@@ -100,10 +103,12 @@ const InventoryPurchases = ({
       .map((row) => {
         const qty = Number(row.quantity);
         const cost = Number(row.unit_cost);
-        const ing = inventory.find((i) => i.ingredient_id === Number(row.ingredient_id));
+        const ing = inventory.find(
+          (i) => Number(i.ingredient_id) === Number(row.ingredient_id)
+        );
         return {
           ingredient_id: Number(row.ingredient_id),
-          ingredient_name: ing ? ing.name : 'Insumo',
+          ingredient_name: getIngredientName(ing),
           quantity: qty,
           unit_cost: cost,
           subtotal: Number((qty * cost).toFixed(2)),
@@ -311,7 +316,7 @@ const InventoryPurchases = ({
                   <option value="">Seleccionar insumo...</option>
                   {inventory.map((ing) => (
                     <option key={ing.ingredient_id} value={ing.ingredient_id}>
-                      {ing.name} ({ing.unit})
+                      {getIngredientName(ing)} ({ing.unit ?? ''})
                     </option>
                   ))}
                 </select>

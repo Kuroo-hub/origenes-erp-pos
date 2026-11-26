@@ -8,7 +8,10 @@ const TYPE_LABELS = {
   RESALE: 'Producto Reventa',
 };
 
-const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
+const getItemName = (item) =>
+  item?.name ?? item?.ingredient_name ?? item?.nombre ?? 'Insumo';
+
+const InventoryStock = ({ branchId, inventory = [], setInventory, onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [onlyAlerts, setOnlyAlerts] = useState(false);
@@ -34,14 +37,18 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
   const healthyCount = totalItems - criticalItems.length;
   const detalleAlertas = criticalItems
     .slice(0, 4)
-    .map((item) => `${item.name} (${item.quantity}${item.unit ? ` ${item.unit}` : ''})`)
+    .map(
+      (item) =>
+        `${getItemName(item)} (${item.quantity}${item.unit ? ` ${item.unit}` : ''})`
+    )
     .join(', ');
   const alertasExtras = criticalItems.length > 4
     ? ` y ${criticalItems.length - 4} más`
     : '';
 
   const filteredInventory = inventory.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const itemName = String(getItemName(item)).toLowerCase();
+    const matchesSearch = itemName.includes(String(searchTerm ?? '').toLowerCase());
     const matchesType = typeFilter === 'ALL' || item.ingredient_type === typeFilter;
     const isLow = Number(item.quantity) <= Number(item.minimum_stock);
     const matchesAlert = !onlyAlerts || isLow;
@@ -243,7 +250,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
                   return (
                     <tr key={item.ingredient_id}>
                       <td>
-                        <div className="inv-table__name">{item.name}</div>
+                        <div className="inv-table__name">{getItemName(item)}</div>
                         <div className="inv-table__sub">Unidad: {item.unit}</div>
                       </td>
                       <td>{TYPE_LABELS[item.ingredient_type] || item.ingredient_type}</td>
@@ -285,7 +292,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
         <div className="inv-modal-backdrop" role="dialog" aria-modal="true">
           <div className="inv-modal">
             <div className="inv-modal__header">
-              <h3>Ajuste de Inventario: {selectedItem.name}</h3>
+              <h3>Ajuste de Inventario: {getItemName(selectedItem)}</h3>
               <button
                 type="button"
                 className="inv-modal__close"
