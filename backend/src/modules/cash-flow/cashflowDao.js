@@ -119,7 +119,7 @@ export async function findCashRegistersByBranch(branchId) {
 }
 
 // Obtiene todas las sesiones abiertas.
-export async function findAllActiveCashSessions() {
+export async function findAllActiveCashSessions(branchId = null) {
     const result = await pool.query(
         `SELECT
             cs.shift_id AS id,
@@ -139,8 +139,10 @@ export async function findAllActiveCashSessions() {
             ON b.branch_id = cr.branch_id
          INNER JOIN employee e
              ON e.employee_id = cs.employee_id
-         WHERE cs.status = 'OPEN'
-         ORDER BY cs.opening_date DESC`
+          WHERE cs.status = 'OPEN'
+            AND ($1::INTEGER IS NULL OR b.branch_id = $1)
+          ORDER BY cs.opening_date DESC`,
+        [branchId]
     );
 
     return result.rows;
@@ -168,11 +170,12 @@ const CASH_SESSION_DETAILS_QUERY = `SELECT
     ON b.branch_id = cr.branch_id
  INNER JOIN employee e
      ON e.employee_id = cs.employee_id
- WHERE cs.shift_id = $1`;
+  WHERE cs.shift_id = $1
+    AND ($2::INTEGER IS NULL OR cr.branch_id = $2)`;
 
 // Obtiene una sesión por su ID.
-export async function findCashSessionById(sessionId, client = pool) {
-    const result = await client.query(CASH_SESSION_DETAILS_QUERY, [sessionId]);
+export async function findCashSessionById(sessionId, client = pool, branchId = null) {
+    const result = await client.query(CASH_SESSION_DETAILS_QUERY, [sessionId, branchId]);
 
     return result.rows[0] ?? null;
 }
@@ -181,15 +184,18 @@ export async function findCashSessionById(sessionId, client = pool) {
 export async function findCashSessionForUpdate(client, sessionId) {
     const result = await client.query(
         `SELECT
-            *,
-            shift_id AS id,
+            cs.*,
+            cs.shift_id AS id,
+            cr.branch_id AS "branchId",
             CASE
-                WHEN status = 'OPEN' THEN 'ABIERTA'
+                WHEN cs.status = 'OPEN' THEN 'ABIERTA'
                 ELSE 'CERRADA'
             END AS estado
-         FROM cash_shift
-         WHERE shift_id = $1
-         FOR UPDATE`,
+         FROM cash_shift cs
+         INNER JOIN cash_register cr
+             ON cr.cash_register_id = cs.cash_register_id
+         WHERE cs.shift_id = $1
+         FOR UPDATE OF cs`,
         [sessionId]
     );
 
@@ -327,7 +333,7 @@ export async function updateCashSessionClose(
 }
 
 // Obtiene el historial de sesiones con paginación.
-export async function findCashSessionHistory(limit, offset) {
+export async function findCashSessionHistory(limit, offset, branchId = null) {
     const result = await pool.query(
         `SELECT
             cs.shift_id AS id,
@@ -347,11 +353,12 @@ export async function findCashSessionHistory(limit, offset) {
             ON cr.cash_register_id = cs.cash_register_id
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-         INNER JOIN employee e
-             ON e.employee_id = cs.employee_id
-         ORDER BY cs.opening_date DESC
-         LIMIT $1 OFFSET $2`,
-        [limit, offset]
+          INNER JOIN employee e
+              ON e.employee_id = cs.employee_id
+          WHERE ($3::INTEGER IS NULL OR b.branch_id = $3)
+          ORDER BY cs.opening_date DESC
+          LIMIT $1 OFFSET $2`,
+        [limit, offset, branchId]
     );
 
     return result.rows;

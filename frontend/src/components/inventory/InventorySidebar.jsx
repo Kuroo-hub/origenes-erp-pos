@@ -49,7 +49,7 @@ const InventorySidebar = ({ activeTab, onSelectTab, alertCount = 0, isOffline = 
 
       <div className="inv-sidebar__footer">
         <span className="inv-sidebar__status-text">
-          {isOffline ? 'Modo demostración' : 'Conectado a API'}
+          {isOffline ? 'Sin conexión' : 'Conectado a API'}
         </span>
         <button type="button" className="inv-sidebar__logout" onClick={onLogout}>
           Cerrar sesión

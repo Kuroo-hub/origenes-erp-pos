@@ -279,6 +279,8 @@ CREATE TABLE invoice (
         status IN ('PENDING', 'PAID', 'CANCELLED')
     ),
 
+    kitchen_status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (kitchen_status IN ('PENDING','PREPARING','READY')),
+
     is_delivery BOOLEAN NOT NULL DEFAULT FALSE,
     delivery_status VARCHAR(20),
     delivery_address VARCHAR(255),

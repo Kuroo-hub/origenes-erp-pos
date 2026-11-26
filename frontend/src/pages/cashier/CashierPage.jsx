@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CashierSidebar from '../../components/cashier/CashierSidebar.jsx';
 import CashierTopbar from '../../components/cashier/CashierTopbar.jsx';
@@ -62,15 +62,20 @@ export default function CashierPage() {
     seleccionarSucursal,
     registrarPedido,
     cambiarEstado,
+    versionStock,
   } = useOrders();
 
   const [productos, setProductos] = useState([]);
   const [alertasStock, setAlertasStock] = useState([]);
   const [inventarioSucursal, setInventarioSucursal] = useState([]);
   const [factura, setFactura] = useState(null);
+  const [errorProductos, setErrorProductos] = useState('');
+  const [errorRecetas, setErrorRecetas] = useState(false);
+  const [errorStock, setErrorStock] = useState('');
 
   useEffect(() => {
     let activo = true;
+    let huboErrorReceta = false;
 
     getProducts()
       .then(async (respuesta) => {
@@ -96,6 +101,7 @@ export default function CashierPage() {
                   [],
               ];
             } catch {
+              huboErrorReceta = true;
               return [producto.id, []];
             }
           })
@@ -103,6 +109,7 @@ export default function CashierPage() {
 
         if (!activo) return;
 
+        setErrorRecetas(huboErrorReceta);
         const recetasPorProducto = Object.fromEntries(paresRecetas);
         setProductos(
           base.map((producto) => ({
@@ -111,8 +118,11 @@ export default function CashierPage() {
           }))
         );
       })
-      .catch(() => {
-        if (activo) setProductos([]);
+      .catch((caughtError) => {
+        if (activo) {
+          setProductos([]);
+          setErrorProductos(caughtError?.message ?? 'No se pudieron cargar los productos.');
+        }
       });
 
     return () => {
@@ -120,43 +130,37 @@ export default function CashierPage() {
     };
   }, []);
 
-  useEffect(() => {
-    let activo = true;
-
+  const recargarInventario = useCallback(async () => {
     if (!sucursalId) {
       setAlertasStock([]);
       setInventarioSucursal([]);
-      return undefined;
+      return;
     }
 
-    Promise.all([
-      getBranchStockAlerts(sucursalId),
-      getBranchInventory(sucursalId),
-    ])
-      .then(([respuestaAlertas, respuestaInventario]) => {
-        if (!activo) return;
+    try {
+      const [respuestaAlertas, respuestaInventario] = await Promise.all([
+        getBranchStockAlerts(sucursalId),
+        getBranchInventory(sucursalId),
+      ]);
 
-        const filasAlertas = Array.isArray(respuestaAlertas)
-          ? respuestaAlertas
-          : respuestaAlertas?.data ?? [];
-        const filasInventario = Array.isArray(respuestaInventario)
-          ? respuestaInventario
-          : respuestaInventario?.data ?? [];
+      const filasAlertas = Array.isArray(respuestaAlertas)
+        ? respuestaAlertas
+        : respuestaAlertas?.data ?? [];
+      const filasInventario = Array.isArray(respuestaInventario)
+        ? respuestaInventario
+        : respuestaInventario?.data ?? [];
 
-        setAlertasStock(filasAlertas);
-        setInventarioSucursal(filasInventario);
-      })
-      .catch(() => {
-        if (activo) {
-          setAlertasStock([]);
-          setInventarioSucursal([]);
-        }
-      });
-
-    return () => {
-      activo = false;
-    };
+      setAlertasStock(filasAlertas);
+      setInventarioSucursal(filasInventario);
+      setErrorStock('');
+    } catch (caughtError) {
+      setErrorStock(caughtError?.message ?? 'No se pudo cargar el inventario de la sucursal.');
+    }
   }, [sucursalId]);
+
+  useEffect(() => {
+    recargarInventario();
+  }, [recargarInventario, versionStock]);
 
   const productosSucursal = useMemo(
     () =>
@@ -174,6 +178,10 @@ export default function CashierPage() {
       }),
     [productos, inventarioSucursal]
   );
+
+  const estadoConexion = errorProductos || errorRecetas || errorStock
+    ? 'Error de datos'
+    : 'Conectado a API';
 
   const registrarVenta = async (datosPedido) => {
     const respuesta = await registrarPedido({
@@ -195,6 +203,7 @@ export default function CashierPage() {
     });
 
     setFactura(respuesta?.data ?? respuesta ?? null);
+    await recargarInventario();
   };
 
   const handleLogout = () => {
@@ -208,6 +217,7 @@ export default function CashierPage() {
         seccion={seccion}
         onSeleccionar={setSeccion}
         onLogout={handleLogout}
+        estadoConexion={estadoConexion}
       />
 
       <div className="cashier-workspace">
@@ -219,6 +229,18 @@ export default function CashierPage() {
         />
 
         <main className="cashier-main">
+          {(errorProductos || errorRecetas || errorStock) && (
+            <div className="cashier-caja-banner">
+              <i className="bi bi-exclamation-triangle-fill" />
+              <div>
+                <strong>Error de datos</strong>
+                <span>
+                  {errorProductos || errorStock || 'No se pudieron cargar las recetas de los productos.'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {!cajaAbierta && (
             <div className="cashier-caja-banner">
               <i className="bi bi-lock-fill" />
@@ -237,6 +259,7 @@ export default function CashierPage() {
               productos={productosSucursal}
               alertasStock={alertasStock}
               cajaAbierta={cajaAbierta}
+              bloqueadoPorError={Boolean(errorProductos || errorRecetas || errorStock)}
               onRegistrarPedido={registrarVenta}
             />
           )}

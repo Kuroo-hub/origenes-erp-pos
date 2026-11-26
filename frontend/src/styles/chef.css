@@ -207,6 +207,49 @@
   border-radius: 999px;
 }
 
+.chef-orders__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.chef-orders__filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--ember-muted-fg);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.chef-orders__filters select {
+  min-width: 11rem;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.6rem;
+  color: var(--ember-fg);
+  background: var(--ember-card);
+  border: 1px solid var(--ember-border);
+  border-radius: 0.65rem;
+  font: inherit;
+  font-size: 0.8rem;
+  outline: 0;
+}
+
+.chef-orders__error {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.75rem;
+  color: #a8071a;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #fff1f0;
+  border: 1px solid #ffccc7;
+  border-radius: 0.65rem;
+}
+
 .chef-orders__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
@@ -407,6 +450,20 @@
   font-weight: 700;
 }
 
+.chef-order__error {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  padding: 0.6rem 0.7rem;
+  color: #a8071a;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #fff1f0;
+  border: 1px solid #ffccc7;
+  border-radius: 0.6rem;
+}
+
 .chef-order__footer {
   display: flex;
   flex-direction: column;
@@ -451,6 +508,13 @@
 
 .chef-order__action:active {
   transform: translateY(0);
+}
+
+.chef-order__action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .chef-order__action--ready {

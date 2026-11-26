@@ -1,10 +1,27 @@
+import { useState } from 'react';
 import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
 
 export default function ChefOrderCard({ orden, minutos, tiempo, urgencia, onCambiarEstado }) {
+  const [procesando, setProcesando] = useState(false);
+  const [error, setError] = useState('');
+
   const claseEstado = {
     Pendiente: 'pendiente',
     'En preparación': 'preparando',
   }[orden.estado] ?? 'pendiente';
+
+  const cambiarEstado = async (nuevoEstado) => {
+    setProcesando(true);
+    setError('');
+
+    try {
+      await onCambiarEstado?.(orden.id, nuevoEstado);
+    } catch (caughtError) {
+      setError(caughtError?.message ?? 'No se pudo actualizar el estado de la orden.');
+    } finally {
+      setProcesando(false);
+    }
+  };
 
   return (
     <article className={`chef-order chef-order--${urgencia.id}`}>
@@ -36,6 +53,10 @@ export default function ChefOrderCard({ orden, minutos, tiempo, urgencia, onCamb
           {orden.sucursal}
         </span>
         <span>
+          <i className="bi bi-receipt" aria-hidden="true" />
+          {orden.estadoFacturaTexto || 'Factura'}
+        </span>
+        <span>
           <i className="bi bi-arrow-repeat" aria-hidden="true" />
           {obtenerOrigenPedido(orden)}
         </span>
@@ -62,26 +83,35 @@ export default function ChefOrderCard({ orden, minutos, tiempo, urgencia, onCamb
         ))}
       </ul>
 
+      {error && (
+        <div className="chef-order__error" role="alert">
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
+          {error}
+        </div>
+      )}
+
       <footer className="chef-order__footer">
         <span>Objetivo {orden.tiempoObjetivoMin} min · {minutos} min transcurridos</span>
         {orden.estado === 'Pendiente' && (
           <button
             type="button"
             className="chef-order__action"
-            onClick={() => onCambiarEstado(orden.id, 'En preparación')}
+            onClick={() => cambiarEstado('En preparación')}
+            disabled={procesando}
           >
             <i className="bi bi-play-circle" aria-hidden="true" />
-            Iniciar preparación
+            {procesando ? 'Actualizando...' : 'Iniciar preparación'}
           </button>
         )}
         {orden.estado === 'En preparación' && (
           <button
             type="button"
             className="chef-order__action chef-order__action--ready"
-            onClick={() => onCambiarEstado(orden.id, 'Listo')}
+            onClick={() => cambiarEstado('Listo')}
+            disabled={procesando}
           >
             <i className="bi bi-check2-circle" aria-hidden="true" />
-            Marcar listo
+            {procesando ? 'Actualizando...' : 'Marcar listo'}
           </button>
         )}
       </footer>

@@ -6,6 +6,8 @@ import { useOrders } from '../../context/OrderContext.jsx';
 import '../../styles/chef.css';
 
 const ESTADOS_ACTIVOS = ['Pendiente', 'En preparación'];
+const ESTADOS_COCINA = ['Todos', 'Pendiente', 'En preparación', 'Listo'];
+const TIPOS_ENTREGA = ['Todos', 'local', 'domicilio'];
 const ORDEN_URGENCIA = { critico: 0, advertencia: 1, normal: 2 };
 
 const obtenerMinutos = (createdAt, ahora) =>
@@ -33,11 +35,24 @@ export default function ChefPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [ahora, setAhora] = useState(() => Date.now());
+  const [filtroEstado, setFiltroEstado] = useState('Todos');
+  const [filtroEntrega, setFiltroEntrega] = useState('Todos');
+  const [errorCambio, setErrorCambio] = useState('');
 
   useEffect(() => {
     const temporizador = window.setInterval(() => setAhora(Date.now()), 1000);
     return () => window.clearInterval(temporizador);
   }, []);
+
+  const cambiarEstadoCocina = async (id, estado) => {
+    setErrorCambio('');
+
+    try {
+      await cambiarEstado(id, estado);
+    } catch (caughtError) {
+      setErrorCambio(caughtError?.message ?? 'No se pudo actualizar el estado de la orden.');
+    }
+  };
 
   const ordenesVisibles = useMemo(
     () =>
@@ -60,17 +75,32 @@ export default function ChefPage() {
     [ordenesSucursal, ahora]
   );
 
-  const pendientes = ordenesVisibles.filter((item) => item.orden.estado === 'Pendiente').length;
-  const enPreparacion = ordenesVisibles.filter(
-    (item) => item.orden.estado === 'En preparación'
+  const ordenesFiltradas = useMemo(
+    () =>
+      ordenesVisibles.filter(({ orden }) => {
+        const coincideEstado =
+          filtroEstado === 'Todos' || orden.estado === filtroEstado;
+        const coincideEntrega =
+          filtroEntrega === 'Todos' || orden.tipoEntrega === filtroEntrega;
+
+        return coincideEstado && coincideEntrega;
+      }),
+    [ordenesVisibles, filtroEstado, filtroEntrega]
+  );
+
+  const ordenesCocina = ordenesSucursal.filter((orden) => orden.estado !== 'Anulada');
+  const pendientes = ordenesCocina.filter((orden) => orden.estado === 'Pendiente').length;
+  const enPreparacion = ordenesCocina.filter(
+    (orden) => orden.estado === 'En preparación'
   ).length;
+  const listas = ordenesCocina.filter((orden) => orden.estado === 'Listo').length;
   const criticas = ordenesVisibles.filter((item) => item.urgencia.id === 'critico').length;
 
   const indicadores = [
     {
       id: 'activas',
       titulo: 'Órdenes activas',
-      valor: ordenesVisibles.length,
+      valor: pendientes + enPreparacion,
       detalle: 'En cola de cocina',
       icono: 'bi-clipboard-check',
       tono: 'azul',
@@ -89,6 +119,14 @@ export default function ChefPage() {
       valor: enPreparacion,
       detalle: 'Actualmente en cocina',
       icono: 'bi-cup-hot',
+      tono: 'verde',
+    },
+    {
+      id: 'listas',
+      titulo: 'Listas',
+      valor: listas,
+      detalle: 'Terminadas en cocina',
+      icono: 'bi-check2-circle',
       tono: 'verde',
     },
     {
@@ -160,27 +198,72 @@ export default function ChefPage() {
               Ordenadas por urgencia y tiempo de espera
             </p>
           </div>
-          <span className="chef-orders__count">{ordenesVisibles.length} en cocina</span>
+          <span className="chef-orders__count">{pendientes + enPreparacion} en cocina</span>
         </div>
 
-        {ordenesVisibles.length > 0 ? (
+        <div className="chef-orders__filters">
+          <label>
+            <span>Estado</span>
+            <select
+              value={filtroEstado}
+              onChange={(evento) => setFiltroEstado(evento.target.value)}
+            >
+              {ESTADOS_COCINA.map((estado) => (
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>Entrega</span>
+            <select
+              value={filtroEntrega}
+              onChange={(evento) => setFiltroEntrega(evento.target.value)}
+            >
+              {TIPOS_ENTREGA.map((tipo) => (
+                <option key={tipo} value={tipo}>
+                  {tipo === 'Todos' ? 'Todas' : tipo === 'local' ? 'En sucursal' : 'A domicilio'}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {errorCambio && (
+          <div className="chef-orders__error" role="alert">
+            <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
+            {errorCambio}
+          </div>
+        )}
+
+        {ordenesFiltradas.length > 0 ? (
           <div className="chef-orders__grid">
-            {ordenesVisibles.map(({ orden, minutos, tiempo, urgencia }) => (
+            {ordenesFiltradas.map(({ orden, minutos, tiempo, urgencia }) => (
               <ChefOrderCard
                 key={orden.id}
                 orden={orden}
                 minutos={minutos}
                 tiempo={tiempo}
                 urgencia={urgencia}
-                onCambiarEstado={cambiarEstado}
+                onCambiarEstado={cambiarEstadoCocina}
               />
             ))}
           </div>
         ) : (
           <div className="chef-orders__empty">
             <i className="bi bi-check2-circle" aria-hidden="true" />
-            <strong>No hay órdenes activas</strong>
-            <span>Las nuevas órdenes aparecerán aquí automáticamente.</span>
+            <strong>
+              {ordenesVisibles.length > 0
+                ? 'No hay órdenes con este filtro'
+                : 'No hay órdenes activas'}
+            </strong>
+            <span>
+              {ordenesVisibles.length > 0
+                ? 'Prueba con otro estado o tipo de entrega.'
+                : 'Las nuevas órdenes aparecerán aquí automáticamente.'}
+            </span>
           </div>
         )}
       </section>

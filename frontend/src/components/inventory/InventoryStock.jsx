@@ -14,7 +14,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
   const [onlyAlerts, setOnlyAlerts] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState(null);
-  const [adjustmentType, setAdjustmentType] = useState('ADJUSTMENT');
+  const [adjustmentType, setAdjustmentType] = useState('OUT');
   const [adjustmentQty, setAdjustmentQty] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +50,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
 
   const handleOpenAdjustment = (item) => {
     setSelectedItem(item);
-    setAdjustmentType('ADJUSTMENT');
+    setAdjustmentType('OUT');
     setAdjustmentQty('');
     setAdjustmentReason('');
     setFeedback(null);
@@ -89,24 +89,10 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
 
     try {
       await createInventoryAdjustment(payload);
-      setFeedback({ type: 'success', text: 'Ajuste registrado correctamente en el servidor.' });
       await onRefresh();
       handleCloseAdjustment();
-    } catch {
-      setInventory((prev) =>
-        prev.map((inv) => {
-          if (inv.ingredient_id !== selectedItem.ingredient_id) return inv;
-          const current = Number(inv.quantity);
-          const updated =
-            adjustmentType === 'IN' ? current + numericQty : Math.max(0, current - numericQty);
-          return { ...inv, quantity: updated };
-        })
-      );
-      setFeedback({
-        type: 'success',
-        text: `Ajuste aplicado localmente a ${selectedItem.name}.`,
-      });
-      handleCloseAdjustment();
+    } catch (error) {
+      setFeedback({ type: 'error', text: error?.message ?? 'No se pudo registrar el ajuste.' });
     } finally {
       setSubmitting(false);
     }
@@ -326,8 +312,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
                   value={adjustmentType}
                   onChange={(e) => setAdjustmentType(e.target.value)}
                 >
-                  <option value="ADJUSTMENT">Reducción por merma / vencimiento</option>
-                  <option value="OUT">Salida manual operativa</option>
+                  <option value="OUT">Salida por merma/vencimiento</option>
                   <option value="IN">Entrada por corrección de conteo</option>
                 </select>
               </div>
