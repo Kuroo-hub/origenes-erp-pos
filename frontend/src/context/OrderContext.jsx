@@ -124,9 +124,9 @@ export function OrderProvider({ children }) {
         const sucursalesVisibles = esAdministrador
           ? normalizadas
           : normalizadas.filter(
-              (sucursal) =>
-                Number(sucursal.id) === Number(user?.branchId)
-            );
+            (sucursal) =>
+              Number(sucursal.id) === Number(user?.branchId)
+          );
 
         setSucursales(sucursalesVisibles);
 
@@ -243,23 +243,23 @@ export function OrderProvider({ children }) {
 
   const caja = sesionActiva
     ? {
-        abierta: true,
-        abiertaDesde: sesionActiva.fechaApertura,
-        cerradaDesde: null,
-        montoInicial: Number(sesionActiva.montoInicial ?? 0),
-        montoFinal: null,
-        sessionId: sesionActiva.id,
-        nombreCaja: sesionActiva.nombreCaja
-      }
+      abierta: true,
+      abiertaDesde: sesionActiva.fechaApertura,
+      cerradaDesde: null,
+      montoInicial: Number(sesionActiva.montoInicial ?? 0),
+      montoFinal: null,
+      sessionId: sesionActiva.id,
+      nombreCaja: sesionActiva.nombreCaja
+    }
     : {
-        abierta: false,
-        abiertaDesde: null,
-        cerradaDesde: null,
-        montoInicial: null,
-        montoFinal: null,
-        sessionId: null,
-        nombreCaja: registrosCaja[0]?.name ?? null
-      };
+      abierta: false,
+      abiertaDesde: null,
+      cerradaDesde: null,
+      montoInicial: null,
+      montoFinal: null,
+      sessionId: null,
+      nombreCaja: registrosCaja[0]?.name ?? null
+    };
 
   const cajaAbierta = caja.abierta;
 
@@ -294,7 +294,9 @@ export function OrderProvider({ children }) {
   };
 
   const registrarPedido = async (pedido) => {
-    const esDomicilio = pedido.tipoEntrega === 'domicilio';
+    const esDomicilio =
+      pedido.isDelivery === true ||
+      pedido.tipoEntrega === 'domicilio';
 
     if (!sesionActiva) {
       throw new Error(
@@ -313,7 +315,11 @@ export function OrderProvider({ children }) {
         METODOS_FRONTEND_BACKEND[pedido.metodoPago] ?? 'CASH',
       isDelivery: esDomicilio,
       deliveryStatus: esDomicilio ? 'READY' : null,
-      deliveryAddress: esDomicilio ? pedido.direccion : null,
+      deliveryAddress: esDomicilio
+        ? [pedido.direccion, pedido.numeroCasa ? `Casa ${pedido.numeroCasa}` : '']
+          .filter(Boolean)
+          .join(', ')
+        : null,
       deliveryPhone: esDomicilio ? pedido.telefono : null,
       items: pedido.productos.map((producto) => ({
         productId: producto.id,

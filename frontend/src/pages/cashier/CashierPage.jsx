@@ -92,8 +92,8 @@ export default function CashierPage() {
               return [
                 producto.id,
                 respuestaReceta?.data?.ingredients ??
-                  respuestaReceta?.ingredients ??
-                  [],
+                respuestaReceta?.ingredients ??
+                [],
               ];
             } catch {
               return [producto.id, []];
@@ -180,6 +180,9 @@ export default function CashierPage() {
       id: `ORD-${Date.now()}`,
       cliente: datosPedido.cliente.trim() || 'Cliente presencial',
       tipoEntrega: datosPedido.tipoEntrega ?? 'local',
+      isDelivery: datosPedido.isDelivery === true ||
+        datosPedido.tipoEntrega === 'domicilio',
+
       direccion: datosPedido.direccion ?? '',
       numeroCasa: datosPedido.numeroCasa ?? '',
       telefono: datosPedido.telefono ?? '',
@@ -198,11 +201,10 @@ export default function CashierPage() {
   };
 
   const handleLogout = async () => {
-    try
-    {
+    try {
       await logout();
       navigate('/login', { replace: true });
-    } catch{
+    } catch {
       window.alert('No se pudo cerrar la sesion. Intentalo de nuevo.');
     }
   }

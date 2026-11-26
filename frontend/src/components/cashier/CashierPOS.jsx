@@ -172,6 +172,7 @@ export default function CashierPOS({
         cliente,
         metodoPago,
         tipoEntrega: entrega.tipo,
+          isDelivery: entrega.tipo === 'domicilio',
         direccion: entrega.direccion,
         numeroCasa: entrega.numeroCasa,
         telefono: entrega.telefono,
