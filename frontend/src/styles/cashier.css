@@ -528,13 +528,28 @@
 }
 
 .cashier-product__image {
-  display: grid;
-  place-items: center;
-  height: 125px;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 150px;
+  min-height: 150px;
+  flex: 0 0 150px;
+  overflow: hidden;
   background: var(--ember-muted);
 }
 
+.cashier-product__image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
 .cashier-product__image i {
+  display: grid;
+  place-items: center;
+  height: 100%;
   color: var(--ember-primary);
   font-size: 42px;
 }
