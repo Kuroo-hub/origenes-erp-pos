@@ -6,7 +6,7 @@ Contraseña para todos los usuarios: `Prueba123!`
 
 Los IDs corresponden a una carga limpia de `scripts-sql/origenes-ddl.sql` y `scripts-sql/origenes-data.sql`.
 
-Distribución: 1 administrador general, 1 manager por sucursal y 26 empleados. No hay usuarios `HR` ni `INVENTORY_MANAGER` en el seed.
+Distribución: 1 administrador general, 1 manager por sucursal, 26 empleados, 1 `HR` y 1 `INVENTORY_MANAGER`.
 
 | ID | Perfil | Rol | Correo | Sucursal | Ruta funcional |
 |---:|---|---|---|---|---|
@@ -40,6 +40,8 @@ Distribución: 1 administrador general, 1 manager por sucursal y 26 empleados. N
 | 28 | Cajera | EMPLOYEE | cajero3.sanmiguel@origenessv.com | San Miguel | `/cajero` |
 | 29 | Cocina | EMPLOYEE | cocina3.sanmiguel@origenessv.com | San Miguel | `/chef` |
 | 30 | Delivery | EMPLOYEE | repartidor3.sanmiguel@origenessv.com | San Miguel | `/repartidor` |
+| 31 | RRHH | HR | rrhh@origenessv.com | San Salvador | `/rrhh` |
+| 32 | Inventario | INVENTORY_MANAGER | inventario@origenessv.com | San Salvador | `/inventario` |
 
 Notas:
 
