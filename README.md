@@ -5,6 +5,8 @@ A brief description of what this project does and who it's for
 
 <div align="center">
 
+![Descripción de la imagen](readme_images/logo.png)
+
 # Orígenes SV
 
 **ERP / POS de demostración para restaurante**
@@ -144,6 +146,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Revisar un pedido a domicilio | Se muestra la marca correspondiente de entrega. |
 | Cambiar de sucursal en el contexto compartido | Cocina muestra las órdenes de la nueva sucursal. |
 
+![texto alternativo](readme_images/mockup_cocina.png)
+
 ---
 
 ### Recursos Humanos — `/rrhh`
@@ -168,6 +172,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Contratar con datos válidos | El empleado aparece en la lista y en planillas con credenciales demo. |
 | Revisar el cargo | El cargo mostrado depende del rol seleccionado, no de un campo manual. |
 | Revisar una planilla | Se muestran los descuentos y el neto correspondiente. |
+
+![texto alternativo](readme_images/mockup_rrhh.png)
 
 ---
 
@@ -194,6 +200,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Registrar factura de compra | La factura aparece en Compras y el stock se incrementa. |
 | Registrar abono | El saldo pendiente de la factura se reduce. |
 | Filtrar movimientos | La bitácora responde a búsqueda y tipo de movimiento. |
+
+![texto alternativo](readme_images/mockup_inventario.png)
 
 ---
 
@@ -222,6 +230,9 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Cambiar de sucursal | La lista se filtra por la sucursal activa. |
 | Abrir sin backend | Se muestra el modo de demostración con datos mock. |
 
+![texto alternativo](readme_images/mockup_delivery.png)
+
+
 ---
 
 ### Manager — `/manager`
@@ -246,6 +257,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Revisar Resumen | Las ventas corresponden a los pedidos del turno de la sucursal. |
 | Revisar Flujo de caja | Los movimientos corresponden a las órdenes de la sucursal activa. |
 
+![texto alternativo](readme_images/mockup_manager.png)
+
 ---
 
 ### Owner — `/gerencia`
@@ -269,6 +282,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Revisar Finanzas | Se listan cuentas por pagar y proveedores del alcance elegido. |
 | Revisar Sucursales | Cada tarjeta muestra métricas y estado de caja. |
 | Comparar Manager y Owner | Son páginas separadas con rutas y paneles propios. |
+
+![texto alternativo](readme_images/mockup_admin.png)
 
 ---
 
