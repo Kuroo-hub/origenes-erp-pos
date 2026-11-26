@@ -84,37 +84,42 @@ const InventoryStock = ({ branchId, inventory = [], setInventory, onRefresh }) =
       return;
     }
 
+    const currentStock = Number(selectedItem.quantity ?? 0);
+    if (adjustmentType !== 'IN' && numericQty > currentStock) {
+      setFeedback({
+        type: 'error',
+        text: `No puedes descontar ${numericQty} ${selectedItem.unit ?? ''} porque la existencia actual es ${currentStock}.`,
+      });
+      return;
+    }
+
     setSubmitting(true);
     setFeedback(null);
 
     const payload = {
-      branch_id: branchId,
-      ingredient_id: selectedItem.ingredient_id,
-      movement_type: adjustmentType,
+      branch_id: Number(branchId),
+      ingredient_id: Number(selectedItem.ingredient_id),
+      movement_type: adjustmentType === 'IN' ? 'IN' : 'OUT',
       quantity: numericQty,
-      reason: adjustmentReason.trim(),
+      reason:
+        adjustmentType === 'ADJUSTMENT'
+          ? `Merma / vencimiento: ${adjustmentReason.trim()}`
+          : adjustmentReason.trim(),
     };
 
     try {
       await createInventoryAdjustment(payload);
-      setFeedback({ type: 'success', text: 'Ajuste registrado correctamente en el servidor.' });
       await onRefresh();
-      handleCloseAdjustment();
-    } catch {
-      setInventory((prev) =>
-        prev.map((inv) => {
-          if (inv.ingredient_id !== selectedItem.ingredient_id) return inv;
-          const current = Number(inv.quantity);
-          const updated =
-            adjustmentType === 'IN' ? current + numericQty : Math.max(0, current - numericQty);
-          return { ...inv, quantity: updated };
-        })
-      );
       setFeedback({
         type: 'success',
-        text: `Ajuste aplicado localmente a ${getItemName(selectedItem)}.`,
+        text: 'Ajuste registrado correctamente en el servidor y en la bitácora.',
       });
       handleCloseAdjustment();
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        text: err?.message ?? 'Error al registrar el ajuste en el servidor.',
+      });
     } finally {
       setSubmitting(false);
     }
