@@ -238,10 +238,11 @@ export function OrderProvider({ children }) {
       throw new Error('No hay una sesión de caja abierta.');
     }
 
-    await closeCashSession(sesionActiva.id, {
+    const resultado = await closeCashSession(sesionActiva.id, {
       realAmount: Number(montoFinal).toFixed(2)
     });
     await recargarDatos(id);
+    return resultado.data;
   };
 
   const registrarPedido = async (pedido) => {

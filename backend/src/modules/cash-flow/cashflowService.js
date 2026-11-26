@@ -123,12 +123,12 @@ export async function getCashRegistersByBranchService(branchId) {
 }
 
 // 2. Consulta todas las sesiones abiertas.
-export async function getActiveCashSessionsService() {
-    return findAllActiveCashSessions();
+export async function getActiveCashSessionsService(user) {
+    return findAllActiveCashSessions(user.role === "ADMINISTRATOR" ? null : user.branchId);
 }
 
 // 3. Consulta una sesión por su ID.
-export async function getCashSessionByIdService(sessionId) {
+export async function getCashSessionByIdService(sessionId, user) {
     const id = validateId(sessionId, "ID de sesión");
 
     const session = await findCashSessionById(id);
@@ -137,11 +137,12 @@ export async function getCashSessionByIdService(sessionId) {
         throw createError("No se encontró la sesión de caja.", 404);
     }
 
+    assertSessionAccess(session, user);
     return session;
 }
 
 // 4. Consulta el resumen financiero de una sesión.
-export async function getCashSessionSummaryService(sessionId) {
+export async function getCashSessionSummaryService(sessionId, user) {
     const id = validateId(sessionId, "ID de sesión");
 
     return withTransaction(async (client) => {
@@ -152,6 +153,7 @@ export async function getCashSessionSummaryService(sessionId) {
             throw createError("No se encontró la sesión de caja.", 404);
         }
 
+        assertSessionAccess(session, user);
         const payments = await findSessionPayments(client, id);
 
         const movements = await findSessionMovementsSummary(
@@ -183,7 +185,8 @@ export async function addCashMovementService({
     employeeId,
     type,
     amount,
-    concept
+    concept,
+    user
 }) {
     const id = validateId(sessionId, "ID de sesión");
     const cashierId = validateId(employeeId, "ID de empleado");
@@ -219,6 +222,8 @@ export async function addCashMovementService({
             );
         }
 
+        await assertLockedSessionAccess(client, session, user);
+
         // Solo el cajero asignado puede registrar movimientos.
         if (Number(session.employee_id) !== cashierId) {
             throw createError(
@@ -246,7 +251,8 @@ export async function addCashMovementService({
 export async function closeCashSessionService({
     sessionId,
     employeeId,
-    realAmount
+    realAmount,
+    user
 }) {
     const id = validateId(sessionId, "ID de sesión");
     const cashierId = validateId(employeeId, "ID de empleado");
@@ -264,6 +270,8 @@ export async function closeCashSessionService({
         if (session.estado !== "ABIERTA") {
             throw createError("La sesión ya está cerrada.", 409);
         }
+
+        await assertLockedSessionAccess(client, session, user);
 
         if (Number(session.employee_id) !== cashierId) {
             throw createError(
@@ -311,7 +319,8 @@ export async function closeCashSessionService({
 // 7. Consulta el historial de sesiones.
 export async function getCashSessionHistoryService({
     limit = 20,
-    offset = 0
+    offset = 0,
+    user
 } = {}) {
     const parsedLimit = Number(limit);
     const parsedOffset = Number(offset);
@@ -332,5 +341,16 @@ export async function getCashSessionHistoryService({
         );
     }
 
-    return findCashSessionHistory(parsedLimit, parsedOffset);
+    return findCashSessionHistory(parsedLimit, parsedOffset, user.role === "ADMINISTRATOR" ? null : user.branchId);
+}
+
+function assertSessionAccess(session, user) {
+    if (user.role !== "ADMINISTRATOR" && Number(session.branchId) !== Number(user.branchId)) {
+        throw createError("No tiene permisos para acceder a otra sucursal.", 403);
+    }
+}
+
+async function assertLockedSessionAccess(client, session, user) {
+    const details = await findCashSessionById(session.id, client);
+    assertSessionAccess(details, user);
 }

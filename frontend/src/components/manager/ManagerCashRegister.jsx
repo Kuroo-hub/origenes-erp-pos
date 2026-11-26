@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getCashSessionSummary } from '../../services/cashFlowApi.js';
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
 const formatearHora = (timestamp) =>
@@ -20,6 +21,7 @@ export default function ManagerCashRegister({
   const [montoInicial, setMontoInicial] = useState('');
   const [montoFinal, setMontoFinal] = useState('');
   const [error, setError] = useState('');
+  const [resumen, setResumen] = useState(null);
 
   useEffect(() => {
     setMontoInicial(
@@ -37,8 +39,22 @@ export default function ManagerCashRegister({
     caja?.montoFinal,
   ]);
 
+  useEffect(() => {
+    let activo = true;
+    setResumen(null);
+    if (abierta && caja?.sessionId) {
+      getCashSessionSummary(caja.sessionId).then(r => { if (activo) setResumen(r.data); })
+        .catch(e => { if (activo) setError(e.message); });
+    }
+    return () => { activo = false; };
+  }, [abierta, caja?.sessionId]);
+
+  const esperado = resumen ? Number(resumen.montoEfectivoEsperado) : null;
+  const diferencia = esperado !== null && /^\d{1,10}(\.\d{1,2})?$/.test(montoFinal)
+    ? Math.round((Number(montoFinal) - esperado) * 100) / 100 : null;
+
   const handleAbrir = () => {
-    if (montoInicial === '' || Number(montoInicial) < 0) {
+    if (!/^\d{1,10}(\.\d{1,2})?$/.test(montoInicial)) {
       setError('Ingresa un monto inicial válido para abrir la caja.');
       return;
     }
@@ -47,11 +63,12 @@ export default function ManagerCashRegister({
   };
 
   const handleCerrar = () => {
-    if (montoFinal === '' || Number(montoFinal) < 0) {
+    if (!/^\d{1,10}(\.\d{1,2})?$/.test(montoFinal)) {
       setError('Ingresa un monto final válido para cerrar la caja.');
       return;
     }
 
+    if (esperado === null) { setError('No se pudo consultar el efectivo esperado.'); return; }
     onCerrar(Number(montoFinal));
   };
 
@@ -164,6 +181,11 @@ export default function ManagerCashRegister({
             </label>
           </div>
 
+          {abierta && <div className="alert alert-info mt-3">
+            <div>Efectivo esperado: <strong>{esperado === null ? 'Cargando...' : formatearMonedaCajero(esperado)}</strong></div>
+            <div>Ingresos: {formatearMonedaCajero(Number(resumen?.movements?.total_ingresos ?? 0))} | Egresos: {formatearMonedaCajero(Number(resumen?.movements?.total_egresos ?? 0))}</div>
+            <div>Diferencia: <strong>{diferencia === null ? 'Ingresá el monto contado' : `${formatearMonedaCajero(Math.abs(diferencia))} (${diferencia === 0 ? 'Cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'})`}</strong></div>
+          </div>}
           {error && (
             <p className="manager-caja-error" role="alert">
               <i className="bi bi-exclamation-circle" aria-hidden="true" />
@@ -186,7 +208,7 @@ export default function ManagerCashRegister({
               type="button"
               className="manager-caja-button is-closed"
               onClick={handleCerrar}
-              disabled={!abierta}
+              disabled={!abierta || esperado === null}
             >
               <i className="bi bi-lock-fill" aria-hidden="true" />
               Cerrar caja
