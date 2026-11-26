@@ -265,63 +265,198 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 
 ```text
 origenes-erp-pos/
+├─ .gitignore
 ├─ README.md
-└─ frontend/
-   ├─ index.html
-   ├─ package.json
-   ├─ package-lock.json
-   ├─ vite.config.js
-   ├─ public/
-   └─ src/
-       ├─ App.jsx
-       ├─ main.jsx
-       ├─ components/
-       │  ├─ auth/
-       │  ├─ cashier/
-       │  ├─ chef/
-       │  ├─ common/
-      │  ├─ delivery/
-      │  ├─ hr/
-      │  ├─ inventory/
-      │  ├─ manager/
-      │  └─ owner/
-      ├─ context/
-      │  └─ OrderContext.jsx
-      ├─ hooks/
-      │  └─ useAuth.js
-      ├─ mocks/
-      │  ├─ CashierMocks.js
-      │  ├─ ChefMocks.js
-      │  ├─ DeliveryMocks.js
-      │  ├─ HrMocks.js
-      │  ├─ InventoryMocks.js
-      │  ├─ OwnerMocks.js
-      │  └─ SucursalesMocks.js
-      ├─ pages/
-      │  ├─ auth/LoginPage.jsx
-      │  ├─ cashier/CashierPage.jsx
-       │  ├─ chef/ChefPage.jsx
-       │  ├─ delivery/DeliveryPage.jsx
-      │  ├─ hr/HrPage.jsx
-      │  ├─ inventory/InventoryPage.jsx
-      │  ├─ manager/ManagerPage.jsx
-      │  └─ owner/OwnerPage.jsx
-      ├─ routes/
-      │  └─ AppRoutes.jsx
-      ├─ services/
-      │  ├─ deliveryApi.js
-      │  ├─ inventoryApi.js
-      │  └─ ownerApi.js
-      └─ styles/
-         ├─ auth.css
-         ├─ cashier.css
-          ├─ chef.css
-          ├─ delivery.css
-         ├─ hr.css
-         ├─ inventory.css
-         ├─ manager.css
-         ├─ owner.css
-         └─ variables.css
+├─ users.md
+├─ backend/
+│  ├─ .env.example
+│  ├─ package.json
+│  ├─ package-lock.json
+│  └─ src/
+│     ├─ app.js
+│     ├─ server.js
+│     ├─ config/
+│     │  ├─ cookies.js
+│     │  ├─ database.js
+│     │  └─ environment.js
+│     ├─ gateway/
+│     │  └─ apiGateway.js
+│     ├─ middlewares/
+│     │  ├─ authenticate.js
+│     │  ├─ authorize.js
+│     │  └─ errorMiddleware.js
+│     ├─ modules/
+│     │  ├─ auth/
+│     │  │  ├─ authController.js
+│     │  │  ├─ authDao.js
+│     │  │  ├─ authRoutes.js
+│     │  │  ├─ authService.js
+│     │  │  ├─ authValidation.js
+│     │  │  └─ token.js
+│     │  ├─ cash-flow/
+│     │  │  ├─ cashflowController.js
+│     │  │  ├─ cashflowDao.js
+│     │  │  ├─ cashflowRoutes.js
+│     │  │  └─ cashflowService.js
+│     │  ├─ hr/
+│     │  │  ├─ hrController.js
+│     │  │  ├─ hrDao.js
+│     │  │  ├─ hrRoutes.js
+│     │  │  ├─ hrService.js
+│     │  │  └─ payrollCalculator.js
+│     │  ├─ inventory/
+│     │  │  ├─ inventoryController.js
+│     │  │  ├─ inventoryDao.js
+│     │  │  ├─ inventoryRoutes.js
+│     │  │  └─ inventoryService.js
+│     │  ├─ purchases/
+│     │  │  ├─ core/
+│     │  │  │  ├─ purchasesController.js
+│     │  │  │  ├─ purchasesDao.js
+│     │  │  │  ├─ purchasesRoutes.js
+│     │  │  │  └─ purchasesService.js
+│     │  │  └─ payables/
+│     │  │     ├─ payablesController.js
+│     │  │     ├─ payablesDao.js
+│     │  │     ├─ payablesRoutes.js
+│     │  │     └─ payablesService.js
+│     │  └─ sales/
+│     │     ├─ core/
+│     │     │  ├─ salesController.js
+│     │     │  ├─ salesDao.js
+│     │     │  ├─ salesRoutes.js
+│     │     │  └─ salesService.js
+│     │     ├─ orders/
+│     │     │  ├─ ordersController.js
+│     │     │  ├─ ordersDao.js
+│     │     │  ├─ ordersRoutes.js
+│     │     │  └─ ordersService.js
+│     │     └─ reports/
+│     │        ├─ reportsController.js
+│     │        ├─ reportsDao.js
+│     │        ├─ reportsRoutes.js
+│     │        └─ reportsService.js
+│     └─ utils/
+│        ├─ AppError.js
+│        ├─ branchAccess.js
+│        ├─ errors.js
+│        ├─ money.js
+│        ├─ transaction.js
+│        └─ validation.js
+├─ docs/
+│  └─ inventory.md
+├─ frontend/
+│  ├─ .env.example
+│  ├─ index.html
+│  ├─ package.json
+│  ├─ package-lock.json
+│  ├─ vite.config.js
+│  ├─ public/
+│  │  └─ logo-origenes.png
+│  └─ src/
+│     ├─ App.jsx
+│     ├─ main.jsx
+│     ├─ auth/
+│     │  └─ roles.js
+│     ├─ components/
+│     │  ├─ auth/
+│     │  │  ├─ Brand.jsx
+│     │  │  └─ BrandMark.jsx
+│     │  ├─ cashier/
+│     │  │  ├─ CashierCart.jsx
+│     │  │  ├─ CashierCashFlow.jsx
+│     │  │  ├─ CashierOrders.jsx
+│     │  │  ├─ CashierPOS.jsx
+│     │  │  ├─ CashierSidebar.jsx
+│     │  │  ├─ CashierSummary.jsx
+│     │  │  ├─ CashierTopbar.jsx
+│     │  │  └─ InvoiceModal.jsx
+│     │  ├─ chef/
+│     │  │  └─ ChefOrderCard.jsx
+│     │  ├─ common/
+│     │  │  └─ OrigenesLogo.jsx
+│     │  ├─ delivery/
+│     │  │  ├─ DeliveryIcons.jsx
+│     │  │  ├─ DeliverySidebar.jsx
+│     │  │  └─ DeliveryTopbar.jsx
+│     │  ├─ hr/
+│     │  │  ├─ HrEmployeeDetail.jsx
+│     │  │  ├─ HrEmployees.jsx
+│     │  │  ├─ HrHiring.jsx
+│     │  │  ├─ HrPayroll.jsx
+│     │  │  ├─ HrSidebar.jsx
+│     │  │  ├─ HrSummary.jsx
+│     │  │  └─ HrTopbar.jsx
+│     │  ├─ inventory/
+│     │  │  ├─ InventoryIcons.jsx
+│     │  │  ├─ InventoryMovements.jsx
+│     │  │  ├─ InventoryPurchases.jsx
+│     │  │  ├─ InventorySidebar.jsx
+│     │  │  ├─ InventoryStock.jsx
+│     │  │  └─ InventoryTopbar.jsx
+│     │  ├─ manager/
+│     │  │  ├─ ManagerCashRegister.jsx
+│     │  │  ├─ ManagerSidebar.jsx
+│     │  │  └─ ManagerTopbar.jsx
+│     │  └─ owner/
+│     │     ├─ OwnerIcons.jsx
+│     │     ├─ OwnerSidebar.jsx
+│     │     └─ OwnerTopbar.jsx
+│     ├─ constants/
+│     │  └─ paymentMethods.js
+│     ├─ context/
+│     │  ├─ AuthContext.jsx
+│     │  └─ OrderContext.jsx
+│     ├─ hooks/
+│     │  └─ useAuth.js
+│     ├─ pages/
+│     │  ├─ auth/
+│     │  │  └─ LoginPage.jsx
+│     │  ├─ cashier/
+│     │  │  └─ CashierPage.jsx
+│     │  ├─ chef/
+│     │  │  └─ ChefPage.jsx
+│     │  ├─ delivery/
+│     │  │  └─ DeliveryPage.jsx
+│     │  ├─ hr/
+│     │  │  └─ HrPage.jsx
+│     │  ├─ inventory/
+│     │  │  └─ InventoryPage.jsx
+│     │  ├─ manager/
+│     │  │  └─ ManagerPage.jsx
+│     │  └─ owner/
+│     │     └─ OwnerPage.jsx
+│     ├─ public/
+│     │  └─ origenes-logo.svg
+│     ├─ routes/
+│     │  ├─ AppRoutes.jsx
+│     │  └─ ProtectedRoute.jsx
+│     ├─ services/
+│     │  ├─ apiClient.js
+│     │  ├─ authApi.js
+│     │  ├─ cashFlowApi.js
+│     │  ├─ catalogApi.js
+│     │  ├─ deliveryApi.js
+│     │  ├─ hrApi.js
+│     │  ├─ inventoryApi.js
+│     │  ├─ ownerApi.js
+│     │  └─ salesApi.js
+│     ├─ styles/
+│     │  ├─ auth.css
+│     │  ├─ cashier.css
+│     │  ├─ chef.css
+│     │  ├─ delivery.css
+│     │  ├─ hr.css
+│     │  ├─ inventory.css
+│     │  ├─ manager.css
+│     │  ├─ owner.css
+│     │  └─ variables.css
+│     └─ utils/
+│        ├─ formatters.js
+│        └─ rrhh.js
+└─ scripts-sql/
+   ├─ origenes-data.sql
+   └─ origenes-ddl.sql
 ```
 
 ### Responsabilidad de cada carpeta
