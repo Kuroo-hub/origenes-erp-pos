@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Alert } from 'reactstrap';
 import CashierCart from './CashierCart.jsx';
+import { getProductImage } from '../../utils/productImages.js';
 
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
@@ -288,11 +289,11 @@ export default function CashierPOS({
 
           <div className="cashier-pos__products">
             {productosFiltrados.map((producto) => {
-      const sinStock = producto.stock != null && producto.stock <= 0;
+              const sinStock = producto.stock != null && producto.stock <= 0;
 
-      const limiteAlcanzado =
-        producto.stock != null &&
-        cantidadEnCarrito(producto.id) >= producto.stock;
+              const limiteAlcanzado =
+                producto.stock != null &&
+                cantidadEnCarrito(producto.id) >= producto.stock;
 
               return (
                 <article
@@ -300,10 +301,21 @@ export default function CashierPOS({
                   key={producto.id}
                 >
                   <div className="cashier-product__image">
-                    <i
-                      className={`bi ${producto.imagen}`}
-                      aria-hidden="true"
-                    />
+                    {getProductImage(producto.nombre) ? (
+                      <img
+                        src={getProductImage(producto.nombre)}
+                        alt={producto.nombre}
+                        loading="lazy"
+                        onError={(evento) => {
+                          evento.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <i
+                        className={`bi ${producto.imagen}`}
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
 
                   <div className="cashier-product__content">
@@ -339,11 +351,11 @@ export default function CashierPOS({
                         {formatearMonedaCajero(producto.precio)}
                       </strong>
 
-                       <span>
-                         {producto.stock == null
-                           ? 'Disponible'
-                           : `Stock: ${producto.stock}`}
-                       </span>
+                      <span>
+                        {producto.stock == null
+                          ? 'Disponible'
+                          : `Stock: ${producto.stock}`}
+                      </span>
 
                       <button
                         type="button"
