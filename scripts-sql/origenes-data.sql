@@ -1,8 +1,10 @@
 ﻿-- ORIGENES SV - DATOS DE LA BASE DE DATOS
 -- Ejecutar DESPUES de origenes-ddl.sql, conectado a la BD origenessv.
 -- Ejecutar una sola vez sobre una base recien creada y vacia.
--- ContraseÃƒÂ±a demo de los usuarios: Prueba123!
+-- Contraseña demo de los usuarios: Prueba123!
 -- No ejecutar nuevamente sobre una BD que ya tenga estos registros.
+
+SET client_encoding = 'UTF8';
 
 -- =====================================================
 -- PRODUCT CATALOG
@@ -16,7 +18,7 @@ VALUES
 ('Carne asada con papas', 'Grilled beef with potatoes', 'PREPARED', 8.50),
 ('Tacos de carne', 'Beef tacos', 'PREPARED', 4.50),
 ('Camaron al ajillo', 'Garlic shrimp', 'PREPARED', 9.50),
-('Desayuno tipico salvadoreÃƒÂ±o', 'Traditional Salvadoran breakfast', 'PREPARED', 6.00),
+('Desayuno típico salvadoreño', 'Traditional Salvadoran breakfast', 'PREPARED', 6.00),
 ('Omelette', 'Ham and cheese omelette', 'PREPARED', 4.75),
 ('Lomo de cerdo', 'Pork loin with potatoes', 'PREPARED', 8.00),
 
@@ -24,7 +26,7 @@ VALUES
 
 ('Limonada', 'Fresh lemonade', 'PREPARED', 2.00),
 ('Jugo naranja', 'Fresh orange juice', 'PREPARED', 2.25),
-('Horchata salvadoreÃƒÂ±a', 'Traditional Salvadoran horchata', 'PREPARED', 2.25),
+('Horchata salvadoreña', 'Traditional Salvadoran horchata', 'PREPARED', 2.25),
 ('Batido de fresa', 'Strawberry milkshake', 'PREPARED', 3.25),
 
 -- DESSERTS
@@ -185,19 +187,19 @@ FROM (
     ('Camaron al ajillo', 'Napkin', 3),
     ('Camaron al ajillo', 'Wet wipe', 1),
 
-    -- 6. DESAYUNO TIPICO SALVADOREÃƒâ€˜O
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Eggs', 2),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Beans', 120),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Plantain', 100),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Cream', 30),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Cheese', 40),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Tortillas', 3),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Oil', 20),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Large flat plate', 1),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Fork', 1),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Knife', 1),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Spoon', 1),
-    ('Desayuno tipico salvadoreÃƒÂ±o', 'Napkin', 2),
+    -- 6. DESAYUNO TÍPICO SALVADOREÑO
+    ('Desayuno típico salvadoreño', 'Eggs', 2),
+    ('Desayuno típico salvadoreño', 'Beans', 120),
+    ('Desayuno típico salvadoreño', 'Plantain', 100),
+    ('Desayuno típico salvadoreño', 'Cream', 30),
+    ('Desayuno típico salvadoreño', 'Cheese', 40),
+    ('Desayuno típico salvadoreño', 'Tortillas', 3),
+    ('Desayuno típico salvadoreño', 'Oil', 20),
+    ('Desayuno típico salvadoreño', 'Large flat plate', 1),
+    ('Desayuno típico salvadoreño', 'Fork', 1),
+    ('Desayuno típico salvadoreño', 'Knife', 1),
+    ('Desayuno típico salvadoreño', 'Spoon', 1),
+    ('Desayuno típico salvadoreño', 'Napkin', 2),
 
     -- 7. OMELETTE
     ('Omelette', 'Eggs', 3),
@@ -241,15 +243,15 @@ FROM (
     ('Jugo naranja', 'Straw', 1),
     ('Jugo naranja', 'Coaster', 1),
 
-    -- 11. HORCHATA SALVADOREÃƒâ€˜A
-    ('Horchata salvadoreÃƒÂ±a', 'Horchata mix', 40),
-    ('Horchata salvadoreÃƒÂ±a', 'Water', 300),
-    ('Horchata salvadoreÃƒÂ±a', 'Milk', 50),
-    ('Horchata salvadoreÃƒÂ±a', 'Sugar', 20),
-    ('Horchata salvadoreÃƒÂ±a', 'Ice', 100),
-    ('Horchata salvadoreÃƒÂ±a', 'Large glass 16 oz', 1),
-    ('Horchata salvadoreÃƒÂ±a', 'Straw', 1),
-    ('Horchata salvadoreÃƒÂ±a', 'Coaster', 1),
+    -- 11. HORCHATA SALVADOREÑA
+    ('Horchata salvadoreña', 'Horchata mix', 40),
+    ('Horchata salvadoreña', 'Water', 300),
+    ('Horchata salvadoreña', 'Milk', 50),
+    ('Horchata salvadoreña', 'Sugar', 20),
+    ('Horchata salvadoreña', 'Ice', 100),
+    ('Horchata salvadoreña', 'Large glass 16 oz', 1),
+    ('Horchata salvadoreña', 'Straw', 1),
+    ('Horchata salvadoreña', 'Coaster', 1),
 
     -- 12. BATIDO DE FRESA
     ('Batido de fresa', 'Strawberries', 120),
@@ -308,7 +310,7 @@ JOIN ingredient i
 
 INSERT INTO branch (name, address, phone)
 VALUES
-('Sucursal San Salvador', 'Boulevard de los HÃƒÂ©roes, San Salvador', '2222-1000'),
+('Sucursal San Salvador', 'Boulevard de los Héroes, San Salvador', '2222-1000'),
 ('Sucursal Santa Ana', 'Avenida Independencia, Santa Ana', '2444-2000'),
 ('Sucursal San Miguel', 'Calle Siramay, San Miguel', '2261-3000');
 
@@ -342,16 +344,16 @@ SELECT
     v.base_salary
 FROM (
     VALUES
-        (1, 'admin@origenessv.com', 'ADMINISTRATOR', 'Ana MartÃƒÂ­nez', 'Administradora General', '2022-01-10', 1800.00),
-        (1, 'gerente@origenessv.com', 'MANAGER', 'Carlos PÃƒÂ©rez', 'Gerente de Sucursal', '2022-03-15', 1500.00),
-        (1, 'empleado@origenessv.com', 'EMPLOYEE', 'MarÃƒÂ­a LÃƒÂ³pez', 'Cajera', '2023-06-01', 500.00),
-        (1, 'chef@origenessv.com', 'EMPLOYEE', 'SofÃƒÂ­a PÃƒÂ©rez', 'Chef de Cocina', '2023-07-12', 620.00),
+        (1, 'admin@origenessv.com', 'ADMINISTRATOR', 'Ana Martínez', 'Administradora General', '2022-01-10', 1800.00),
+        (1, 'gerente@origenessv.com', 'MANAGER', 'Carlos Pérez', 'Gerente de Sucursal', '2022-03-15', 1500.00),
+        (1, 'empleado@origenessv.com', 'EMPLOYEE', 'María López', 'Cajera', '2023-06-01', 500.00),
+        (1, 'chef@origenessv.com', 'EMPLOYEE', 'Sofía Pérez', 'Chef de Cocina', '2023-07-12', 620.00),
         (1, 'delivery@origenessv.com', 'EMPLOYEE', 'Daniel Torres', 'Repartidor', '2023-08-18', 480.00),
         (1, 'cajero2@origenessv.com', 'EMPLOYEE', 'Laura Flores', 'Cajera', '2023-09-04', 520.00),
-        (1, 'cocina2@origenessv.com', 'EMPLOYEE', 'Miguel RamÃƒÂ­rez', 'Cocina', '2023-10-11', 580.00),
+        (1, 'cocina2@origenessv.com', 'EMPLOYEE', 'Miguel Ramírez', 'Cocina', '2023-10-11', 580.00),
         (1, 'repartidor2@origenessv.com', 'EMPLOYEE', 'Andrea Castillo', 'Repartidor', '2024-01-15', 480.00),
         (1, 'cajero3@origenessv.com', 'EMPLOYEE', 'Gabriela Morales', 'Cajera', '2024-03-01', 520.00),
-        (1, 'cocina3@origenessv.com', 'EMPLOYEE', 'Gustavo RamÃƒÂ­rez', 'Cocina', '2024-04-12', 580.00),
+        (1, 'cocina3@origenessv.com', 'EMPLOYEE', 'Gustavo Ramírez', 'Cocina', '2024-04-12', 580.00),
 
         (2, 'gerente.santaana@origenessv.com', 'MANAGER', 'Camila Reyes', 'Gerente de Sucursal', '2022-05-20', 1450.00),
         (2, 'cajero.santaana@origenessv.com', 'EMPLOYEE', 'Alejandro Romero', 'Cajero', '2023-04-03', 500.00),
@@ -372,7 +374,7 @@ FROM (
         (3, 'cocina2.sanmiguel@origenessv.com', 'EMPLOYEE', 'Hector Molina', 'Cocina', '2024-02-19', 580.00),
         (3, 'repartidor2.sanmiguel@origenessv.com', 'EMPLOYEE', 'Beatriz Santos', 'Repartidora', '2024-04-01', 480.00),
         (3, 'cajero3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Lorena Flores', 'Cajera', '2024-05-13', 520.00),
-        (3, 'cocina3.sanmiguel@origenessv.com', 'EMPLOYEE', 'IvÃƒÂ¡n Cabrera', 'Cocina', '2024-06-24', 580.00),
+        (3, 'cocina3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Iván Cabrera', 'Cocina', '2024-06-24', 580.00),
         (3, 'repartidor3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Rodrigo Aguilar', 'Repartidor', '2024-08-05', 480.00)
 ) AS v(branch_id, email, role, full_name, job_title, hire_date, base_salary)
 CROSS JOIN (
@@ -380,7 +382,7 @@ CROSS JOIN (
 ) AS p;
 
 -- Usuarios adicionales para probar RRHH e Inventario.
--- ContraseÃ±a demo para todos: Prueba123!
+-- Contraseña demo para todos: Prueba123!
 INSERT INTO employee (
     branch_id, email, password_hash, role, active,
     full_name, job_title, hire_date, base_salary

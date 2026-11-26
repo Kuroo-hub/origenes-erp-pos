@@ -11,7 +11,8 @@ export const pool = new Pool({
     password: environment.database.password,
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000
+    connectionTimeoutMillis: 5000,
+    options: "-c client_encoding=UTF8"
 });
 
 // Evita que un error inesperado de una conexión inactiva derribe el proceso.

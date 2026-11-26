@@ -9,6 +9,8 @@
 -- No uses CREATE DATABASE ni \c dentro del Query Tool.
 -- Este archivo solo crea las tablas; no carga datos.
 
+SET client_encoding = 'UTF8';
+
 -- Required for bcrypt password hashing (crypt/gen_salt).
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
