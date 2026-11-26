@@ -3,15 +3,29 @@ import {
     loginService,
     registerEmployeeService
 } from "./authService.js";
+import { AUTH_COOKIE_NAME, authCookieOptions } from "../../config/cookies.js";
+import { verifyAuthToken } from "./token.js";
 
 export async function loginController(req, res) {
-    const session = await loginService(req.body);
+    const { token, user } = await loginService(req.body);
+    const { exp } = verifyAuthToken(token);
+
+    res.cookie(AUTH_COOKIE_NAME, token, {
+        ...authCookieOptions,
+        expires: new Date(exp * 1000)
+    });
 
     return res.status(200).json({
         success: true,
-        message: "Sesión iniciada correctamente.",
-        data: session
+        message: "Sesion iniciada correctamente.",
+        data: { user }
     });
+}
+
+export function logoutController(req, res)
+{
+    res.clearCookie(AUTH_COOKIE_NAME, authCookieOptions);
+    return res.status(204).end();
 }
 
 export async function registerEmployeeController(req, res) {

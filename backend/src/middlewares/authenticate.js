@@ -2,6 +2,7 @@ import { AppError } from "../utils/AppError.js";
 import { findActiveEmployeeById } from "../modules/auth/authDao.js";
 import { ALLOWED_ROLES } from "../modules/auth/authValidation.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
+import { AUTH_COOKIE_NAME } from "../config/cookies.js";
 
 function createError(message, statusCode = 400) {
     return new AppError(message, statusCode);
@@ -12,15 +13,12 @@ export async function authenticate(req, res, next) {
     let payload;
 
     try {
-        const header = req.get("authorization");
-        if (!header) {
-            throw createError("Token de acceso requerido.", 401);
-        }
+        const token = req.cookies?.[AUTH_COOKIE_NAME];
 
-        const [scheme, token, ...extra] = header.trim().split(/\s+/);
-        if (scheme.toLowerCase() !== "bearer" || !token || extra.length > 0) {
-            throw createError("Token de acceso inválido.", 401);
-        }
+        if(!token)
+            {
+                throw createError("Token de acceso requerido.", 401);
+            }
 
         payload = verifyAuthToken(token);
         employeeId = Number(payload.sub);
