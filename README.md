@@ -1,3 +1,8 @@
+
+# Project Title
+
+A brief description of what this project does and who it's for
+
 <div align="center">
 
 # Orígenes SV
@@ -28,6 +33,14 @@ Frontend para operar ventas, cocina, entregas, inventario, recursos humanos, caj
 
 ## Inicio rápido
 
+Ejecutar en la primera terminal el backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Ejecutar en la segunda terminal el frontend
 ```bash
 cd frontend
 npm install
