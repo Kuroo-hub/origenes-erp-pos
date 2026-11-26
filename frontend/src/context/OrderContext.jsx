@@ -28,46 +28,34 @@ const METODOS_FRONTEND_BACKEND = {
   chivo: 'CHIVO'
 };
 
-const ESTADOS_FACTURA = {
-  PAID: 'Pagada',
-  CANCELLED: 'Anulada',
-  PENDING: 'Pendiente'
-};
+const extraerLista = (respuesta) =>
+  Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
 
-const ESTADOS_ENTREGA = {
-  READY: 'Listo en sucursal',
-  IN_TRANSIT: 'En camino',
-  DELIVERED: 'Entregado'
+const ESTADOS_FACTURA = {
+  PENDING: 'Pendiente',
+  COMPLETED: 'Completa',
+  CANCELLED: 'Anulada'
 };
 
 const ESTADOS_COCINA = {
   PENDING: 'Pendiente',
-  PREPARING: 'En preparación',
+  PREPARING: 'En preparaciÃ³n',
   READY: 'Listo'
 };
 
 const ESTADOS_COCINA_BACKEND = {
-  Pendiente: 'PENDING',
-  'En preparación': 'PREPARING',
-  Listo: 'READY'
+  'En preparaciÃ³n': 'PREPARING',
+  'Listo': 'READY'
 };
 
-const extraerLista = (respuesta) =>
-  Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
-
 function formatearHora(fecha) {
-  if (!fecha) return '—';
+  if (!fecha) return 'â€”';
 
   return new Date(fecha).toLocaleTimeString('es-SV', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
   });
-}
-
-function extraerNumeroCasa(direccion) {
-  const coincidencia = /,?\s*casa\s*(?:#\s*)?([^,]+)/i.exec(direccion ?? '');
-  return coincidencia?.[1]?.trim() ?? '';
 }
 
 function mapearVenta(venta) {
@@ -77,9 +65,6 @@ function mapearVenta(venta) {
   const completada = estadoFactura === 'COMPLETED';
 
   const kitchenStatus = venta.kitchenStatus ?? 'PENDING';
-  const estadoEntrega = venta.deliveryStatus ?? null;
-  const direccionEntrega = venta.deliveryAddress ?? '';
-  const numeroCasa = extraerNumeroCasa(direccionEntrega);
 
   return {
     id: `${prefijo}-${venta.consecutiveNumber ?? venta.invoiceId}`,
@@ -101,11 +86,9 @@ function mapearVenta(venta) {
     sucursalId: Number(venta.branchId),
     sucursal: venta.branchName,
     tipoEntrega: venta.isDelivery ? 'domicilio' : 'local',
-    deliveryStatus: estadoEntrega,
-    estadoEntrega,
-    estadoEntregaTexto: ESTADOS_ENTREGA[estadoEntrega] ?? '',
-    direccion: direccionEntrega,
-    numeroCasa,
+    deliveryStatus: venta.deliveryStatus ?? null,
+    direccion: venta.deliveryAddress ?? '',
+    numeroCasa: '',
     telefono: venta.deliveryPhone ?? '',
     tiempoObjetivoMin: 15,
     prioridad: 'normal',
@@ -133,9 +116,8 @@ export function OrderProvider({ children }) {
   const [sucursalId, setSucursalId] = useState(user?.branchId ?? null);
   const [cargandoDatos, setCargandoDatos] = useState(true);
   const [errorDatos, setErrorDatos] = useState('');
-  const [versionStock, setVersionStock] = useState(0);
 
-  // Cargar sucursales cuando la sesión esté disponible.
+  // Cargar sucursales cuando la sesiÃ³n estÃ© disponible.
   useEffect(() => {
     if (loading) return undefined;
 
@@ -214,38 +196,55 @@ export function OrderProvider({ children }) {
   }, [isAuthenticated, esAdministrador, user?.branchId, sucursalId]);
 
   // Recargar ventas, sesiones y cajas de una sucursal.
-  const recargarDatos = useCallback(
-    async (branchId = sucursalId) => {
-      if (!branchId) return;
+const recargarDatos = useCallback(
+  async (branchId = sucursalId) => {
+    if (!branchId) return;
 
-      setCargandoDatos(true);
-      setErrorDatos('');
+    setCargandoDatos(true);
+    setErrorDatos('');
 
-      try {
-        const [ventas, sesiones, registros] = await Promise.all([
-          getSales(branchId, { limit: 100 }),
-          getActiveCashSessions(branchId),
-          getCashRegisters(branchId)
-        ]);
+    try {
+      const [ventas, sesiones, registros] = await Promise.allSettled([
+        getSales(branchId),
+        getActiveCashSessions(),
+        getCashRegisters(branchId)
+      ]);
 
-        setOrdenes(extraerLista(ventas).map(mapearVenta));
-        setSesionesActivas(extraerLista(sesiones));
-        setRegistrosCaja(extraerLista(registros));
-      } catch (caughtError) {
+      if (ventas.status === 'fulfilled') {
+        setOrdenes(extraerLista(ventas.value).map(mapearVenta));
+      } else {
+        console.error('Error al cargar ventas:', ventas.reason);
         setOrdenes([]);
-        setSesionesActivas([]);
-        setRegistrosCaja([]);
-        setErrorDatos(
-          caughtError?.message ?? 'No se pudieron cargar los datos de la sucursal.'
-        );
-      } finally {
-        setCargandoDatos(false);
       }
-    },
-    [sucursalId]
-  );
 
-  // Consultar datos cuando exista sesión y sucursal.
+      if (sesiones.status === 'fulfilled') {
+        setSesionesActivas(extraerLista(sesiones.value));
+      } else {
+        console.error('Error al cargar sesiones:', sesiones.reason);
+        setSesionesActivas([]);
+        setErrorDatos('No se pudieron cargar las sesiones.');
+      }
+
+      if (registros.status === 'fulfilled') {
+        setRegistrosCaja(extraerLista(registros.value));
+      } else {
+        console.error('Error al cargar cajas:', registros.reason);
+        setRegistrosCaja([]);
+        setErrorDatos('No se pudieron cargar las cajas.');
+      }
+
+    } catch (caughtError) {
+      setErrorDatos(
+        caughtError?.message ??
+        'No se pudieron cargar los datos de la sucursal.'
+      );
+    } finally {
+      setCargandoDatos(false);
+    }
+  },
+  [sucursalId]
+);
+  // Consultar datos cuando exista sesiÃ³n y sucursal.
   useEffect(() => {
     if (loading) return;
 
@@ -305,31 +304,34 @@ export function OrderProvider({ children }) {
 
   const cajaAbierta = caja.abierta;
 
-  const abrirCaja = async (id = sucursalId, montoInicial = 0, cashRegisterId = null) => {
-    const registro = cashRegisterId
-      ? registrosCaja.find(
-          (item) => Number(item.cashRegisterId) === Number(cashRegisterId)
-        )
-      : registrosCaja[0];
+  const abrirCaja = async (id = sucursalId, montoInicial = 0) => {
+    const registro = registrosCaja[0];
+
+    console.log('Registro de caja:', registro);
+    console.log('SesiÃ³n activa:', sesionActiva);
+    console.log('Empleado:', user?.employeeId);
+    console.log('Monto inicial:', montoInicial);
 
     if (!registro) {
       throw new Error('No hay una caja configurada para esta sucursal.');
     }
 
-    if (!sesionActiva) {
-      await openCashSession({
-        cashRegisterId: registro.cashRegisterId,
-        employeeId: user?.employeeId,
-        initialAmount: Number(montoInicial).toFixed(2)
-      });
-
-      await recargarDatos(id);
+    if (sesionActiva) {
+      throw new Error('Ya existe una sesiÃ³n de caja activa.');
     }
+
+    await openCashSession({
+      cashRegisterId: registro.cashRegisterId,
+      employeeId: user?.employeeId,
+      initialAmount: Number(montoInicial)
+    });
+
+    await recargarDatos(id);
   };
 
   const cerrarCaja = async (id = sucursalId, montoFinal = 0) => {
     if (!sesionActiva) {
-      throw new Error('No hay una sesión de caja abierta.');
+      throw new Error('No hay una sesiÃ³n de caja abierta.');
     }
 
     const resultado = await closeCashSession(sesionActiva.id, {
@@ -345,14 +347,14 @@ export function OrderProvider({ children }) {
       pedido.isDelivery === true || pedido.tipoEntrega === 'domicilio';
     const numeroCasa = String(pedido.numeroCasa ?? '').trim();
     const direccionEntrega = esDomicilio
-      ? numeroCasa
-        ? `${pedido.direccion ?? ''}, casa ${numeroCasa}`
-        : pedido.direccion ?? ''
+      ? [pedido.direccion, numeroCasa ? `Casa ${numeroCasa}` : '']
+          .filter(Boolean)
+          .join(', ')
       : null;
 
     if (!sesionActiva) {
       throw new Error(
-        'La caja está cerrada. Manager debe abrirla para vender.'
+        'La caja estÃ¡ cerrada. Manager debe abrirla para vender.'
       );
     }
 
@@ -376,7 +378,6 @@ export function OrderProvider({ children }) {
     });
 
     await recargarDatos(pedido.sucursalId ?? sucursalId);
-    setVersionStock((actual) => actual + 1);
 
     return respuesta;
   };
@@ -460,7 +461,6 @@ export function OrderProvider({ children }) {
       registrosCaja,
       cargandoDatos,
       errorDatos,
-      versionStock,
       recargarDatos,
       caja,
       cajaAbierta,
@@ -481,11 +481,9 @@ export function OrderProvider({ children }) {
       registrosCaja,
       cargandoDatos,
       errorDatos,
-      versionStock,
       recargarDatos,
       caja,
-      cajaAbierta,
-      cambiarEstado
+      cajaAbierta
     ]
   );
 

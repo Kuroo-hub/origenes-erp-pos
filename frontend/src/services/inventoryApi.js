@@ -7,28 +7,48 @@ export const getBranchStockAlerts = async (branchId) =>
   apiGet(`/inventory/branches/${branchId}/alerts`);
 
 export const createInventoryAdjustment = async (payload) => {
-  const branchId = payload.branch_id ?? payload.branchId;
-  const ingredientId = payload.ingredient_id ?? payload.ingredientId;
-  const movementType = payload.movement_type ?? payload.movementType;
-  const body = {
-    ingredientId,
-    quantity: payload.quantity,
-    reason: payload.reason,
-  };
+  const branchId = Number(payload.branch_id ?? payload.branchId);
+  const ingredientId = Number(payload.ingredient_id ?? payload.ingredientId);
+  const rawType = String(payload.movement_type ?? payload.movementType ?? '').toUpperCase();
+  const rawQty = Number(payload.quantity ?? payload.amount ?? 0);
 
   if (!branchId || !ingredientId) {
-    throw new Error('El ajuste requiere sucursal e ingrediente.');
+    throw new Error('El ajuste requiere una sucursal y un ingrediente válidos.');
   }
 
-  if (movementType === 'IN') {
+  if (!rawQty || Number.isNaN(rawQty)) {
+    throw new Error('La cantidad del ajuste debe ser distinta de cero.');
+  }
+
+  // Normalizar dirección del movimiento ('IN' para entradas, 'OUT' para salidas/mermas)
+  let direction = null;
+  if (['IN', 'ADD', 'ENTRADA', 'INCREMENT'].includes(rawType)) {
+    direction = 'IN';
+  } else if (['OUT', 'SUBTRACT', 'REMOVE', 'SALIDA', 'MERMA', 'DECREMENT'].includes(rawType)) {
+    direction = 'OUT';
+  } else if (rawType === 'ADJUSTMENT' || rawType === 'AJUSTE') {
+    direction = rawQty >= 0 ? 'IN' : 'OUT';
+  }
+
+  const quantity = Math.abs(rawQty);
+  const reason = (payload.reason ?? payload.notes ?? 'Ajuste manual de inventario').trim();
+
+  const body = {
+    ingredientId,
+    ingredient_id: ingredientId,
+    quantity,
+    reason,
+  };
+
+  if (direction === 'IN') {
     return apiPost(`/inventory/branches/${branchId}/movements`, body);
   }
 
-  if (movementType === 'OUT') {
+  if (direction === 'OUT') {
     return apiPost(`/inventory/branches/${branchId}/movements/out`, body);
   }
 
-  throw new Error('Tipo de movimiento no soportado.');
+  throw new Error(`Tipo de movimiento no soportado: ${rawType || 'vacío'}`);
 };
 
 export const getBranchPurchases = async (branchId) =>

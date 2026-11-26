@@ -17,7 +17,7 @@ const InventoryStock = ({ branchId, inventory = [], setInventory, onRefresh }) =
   const [onlyAlerts, setOnlyAlerts] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState(null);
-  const [adjustmentType, setAdjustmentType] = useState('OUT');
+  const [adjustmentType, setAdjustmentType] = useState('ADJUSTMENT');
   const [adjustmentQty, setAdjustmentQty] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -57,7 +57,7 @@ const InventoryStock = ({ branchId, inventory = [], setInventory, onRefresh }) =
 
   const handleOpenAdjustment = (item) => {
     setSelectedItem(item);
-    setAdjustmentType('OUT');
+    setAdjustmentType('ADJUSTMENT');
     setAdjustmentQty('');
     setAdjustmentReason('');
     setFeedback(null);
@@ -83,23 +83,42 @@ const InventoryStock = ({ branchId, inventory = [], setInventory, onRefresh }) =
       return;
     }
 
+    const currentStock = Number(selectedItem.quantity ?? 0);
+    if (adjustmentType !== 'IN' && numericQty > currentStock) {
+      setFeedback({
+        type: 'error',
+        text: `No puedes descontar ${numericQty} ${selectedItem.unit ?? ''} porque la existencia actual es ${currentStock}.`,
+      });
+      return;
+    }
+
     setSubmitting(true);
     setFeedback(null);
 
     const payload = {
-      branch_id: branchId,
-      ingredient_id: selectedItem.ingredient_id,
-      movement_type: adjustmentType,
+      branch_id: Number(branchId),
+      ingredient_id: Number(selectedItem.ingredient_id),
+      movement_type: adjustmentType === 'IN' ? 'IN' : 'OUT',
       quantity: numericQty,
-      reason: adjustmentReason.trim(),
+      reason:
+        adjustmentType === 'ADJUSTMENT'
+          ? `Merma / vencimiento: ${adjustmentReason.trim()}`
+          : adjustmentReason.trim(),
     };
 
     try {
       await createInventoryAdjustment(payload);
       await onRefresh();
+      setFeedback({
+        type: 'success',
+        text: 'Ajuste registrado correctamente en el servidor y en la bitácora.',
+      });
       handleCloseAdjustment();
-    } catch (error) {
-      setFeedback({ type: 'error', text: error?.message ?? 'No se pudo registrar el ajuste.' });
+    } catch (err) {
+      setFeedback({
+        type: 'error',
+        text: err?.message ?? 'Error al registrar el ajuste en el servidor.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -319,7 +338,8 @@ const InventoryStock = ({ branchId, inventory = [], setInventory, onRefresh }) =
                   value={adjustmentType}
                   onChange={(e) => setAdjustmentType(e.target.value)}
                 >
-                  <option value="OUT">Salida por merma/vencimiento</option>
+                  <option value="ADJUSTMENT">Reducción por merma / vencimiento</option>
+                  <option value="OUT">Salida manual operativa</option>
                   <option value="IN">Entrada por corrección de conteo</option>
                 </select>
               </div>

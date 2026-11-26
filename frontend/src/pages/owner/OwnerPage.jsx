@@ -85,10 +85,7 @@ const OwnerPage = () => {
         : SUCURSALES_OFICIALES;
 
   const cajaAbiertaPorSucursal = (branchId) =>
-    dashboard.branches.some(
-      (sucursal) =>
-        Number(sucursal.branch_id) === Number(branchId) && Boolean(sucursal.cash_open)
-    );
+    sesionesActivas.some((sesion) => Number(sesion.branchId) === Number(branchId));
 
   const visibleBranches =
     selectedBranch === 'ALL'

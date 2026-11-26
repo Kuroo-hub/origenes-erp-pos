@@ -7,5 +7,10 @@ export const getSales = async (branchId, params = {}) => {
   return apiGet(`/sales?${search.toString()}`);
 };
 
-export const updateKitchenStatus = async (invoiceId, payload) =>
-  apiPatch(`/orders/${invoiceId}/kitchen-status`, payload);
+export const updateKitchenStatus = async (invoiceId, payloadOrStatus) => {
+  const payload =
+    typeof payloadOrStatus === 'string'
+      ? { kitchen_status: payloadOrStatus }
+      : payloadOrStatus;
+  return apiPatch(`/orders/${invoiceId}/kitchen-status`, payload);
+};

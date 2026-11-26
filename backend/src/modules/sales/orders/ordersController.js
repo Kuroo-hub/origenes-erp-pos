@@ -29,6 +29,7 @@ export async function patchDeliveryStatusController(req, res) {
     });
 }
 
+
 export async function patchKitchenStatusController(req, res) {
     const order = await updateKitchenStatusService(
         req.params.invoiceId ?? req.params.orderId,

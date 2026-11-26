@@ -1,6 +1,5 @@
 
 import { resolveBranchId } from "../../utils/branchAccess.js";
-import { parseBranchFilter } from "../../utils/validation.js";
 import {
   openCashSessionService,
   getCashRegistersByBranchService,
@@ -11,10 +10,6 @@ import {
   closeCashSessionService,
   getCashSessionHistoryService
 } from "./cashflowService.js";
-
-function scopedBranchId(req) {
-  return parseBranchFilter(resolveBranchId(req, req.query.branchId));
-}
 
 // 1. Abrir sesión de caja.
 export async function openCashSessionController(req, res) {
@@ -33,7 +28,8 @@ export async function openCashSessionController(req, res) {
 }
 
 export async function getCashRegistersByBranchController(req, res) {
-  const registers = await getCashRegistersByBranchService(scopedBranchId(req));
+  const branchId = resolveBranchId(req, req.query.branchId);
+  const registers = await getCashRegistersByBranchService(branchId);
 
   return res.status(200).json({
     success: true,
@@ -43,10 +39,7 @@ export async function getCashRegistersByBranchController(req, res) {
 
 // 2. Consultar sesiones abiertas.
 export async function activeCashSession(req, res) {
-  const sessions = await getActiveCashSessionsService({
-    user: req.user,
-    branchId: scopedBranchId(req)
-  });
+  const sessions = await getActiveCashSessionsService(req.user);
 
   return res.status(200).json({
     success: true,
@@ -57,10 +50,7 @@ export async function activeCashSession(req, res) {
 
 // 3. Consultar sesión por ID.
 export async function getCashSessionById(req, res) {
-  const session = await getCashSessionByIdService(req.params.id, {
-    user: req.user,
-    branchId: scopedBranchId(req)
-  });
+  const session = await getCashSessionByIdService(req.params.id, req.user);
 
   return res.status(200).json({
     success: true,
@@ -71,10 +61,7 @@ export async function getCashSessionById(req, res) {
 
 // 4. Consultar resumen financiero.
 export async function getCashSessionSummary(req, res) {
-  const summary = await getCashSessionSummaryService(req.params.id, {
-    user: req.user,
-    branchId: scopedBranchId(req)
-  });
+  const summary = await getCashSessionSummaryService(req.params.id, req.user);
 
   return res.status(200).json({
     success: true,
@@ -91,7 +78,6 @@ export async function addCashMovementController(req, res) {
     type: req.body.type,
     amount: req.body.amount,
     concept: req.body.concept,
-    branchId: scopedBranchId(req),
     user: req.user
   });
 
@@ -108,7 +94,6 @@ export async function closeCashSession(req, res) {
     sessionId: req.params.id,
     employeeId: req.user.employeeId,
     realAmount: req.body.realAmount,
-    branchId: scopedBranchId(req),
     user: req.user
   });
 
@@ -124,7 +109,6 @@ export async function getCashSessionHistory(req, res) {
   const sessions = await getCashSessionHistoryService({
     limit: req.query.limit,
     offset: req.query.offset,
-    branchId: scopedBranchId(req),
     user: req.user
   });
 

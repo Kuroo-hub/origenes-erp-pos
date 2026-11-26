@@ -12,36 +12,27 @@ const formatearHora = (timestamp) =>
       })
     : '—';
 
+const parseMonto = (value) => {
+  const text = String(value ?? '').trim().replace(',', '.');
+
+  if (!/^\d{1,10}(\.\d{1,2})?$/.test(text)) return null;
+
+  const amount = Number(text);
+  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+};
+
 export default function ManagerCashRegister({
   sucursal,
   caja,
-  registrosCaja = [],
   onAbrir,
   onCerrar,
 }) {
   const abierta = caja?.abierta ?? false;
   const [montoInicial, setMontoInicial] = useState('');
   const [montoFinal, setMontoFinal] = useState('');
-  const [cashRegisterId, setCashRegisterId] = useState('');
   const [error, setError] = useState('');
   const [resumen, setResumen] = useState(null);
   const [revision, setRevision] = useState(0);
-
-  const cajasDisponibles = useMemo(
-    () => registrosCaja.filter((registro) => registro.active !== false),
-    [registrosCaja]
-  );
-
-  useEffect(() => {
-    const seleccionActual = cajasDisponibles.find(
-      (registro) => Number(registro.cashRegisterId) === Number(cashRegisterId)
-    );
-
-    if (!seleccionActual) {
-      const primeraCaja = cajasDisponibles[0];
-      setCashRegisterId(primeraCaja ? String(primeraCaja.cashRegisterId) : '');
-    }
-  }, [cajasDisponibles, cashRegisterId]);
 
   useEffect(() => {
     setMontoInicial(
@@ -79,32 +70,36 @@ export default function ManagerCashRegister({
   }, [abierta, caja?.sessionId, revision]);
 
   const esperado = resumen ? Number(resumen.montoEfectivoEsperado) : null;
-  const diferencia =
-    esperado !== null && /^\d{1,10}(\.\d{1,2})?$/.test(montoFinal)
-      ? Math.round((Number(montoFinal) - esperado) * 100) / 100
-      : null;
+  const contado = parseMonto(montoFinal);
+  const diferencia = esperado !== null && contado !== null
+    ? Math.round((contado - esperado) * 100) / 100
+    : null;
 
   const handleAbrir = () => {
-    if (montoInicial === '' || Number(montoInicial) < 0) {
+    const monto = parseMonto(montoInicial);
+
+    if (monto === null) {
       setError('Ingresa un monto inicial válido para abrir la caja.');
       return;
     }
 
-    if (!cashRegisterId) {
-      setError('Selecciona una caja válida para abrirla.');
-      return;
-    }
-
-    onAbrir(Number(montoInicial), Number(cashRegisterId));
+    setError('');
+    onAbrir(monto);
   };
 
   const handleCerrar = () => {
-    if (montoFinal === '' || Number(montoFinal) < 0) {
+    if (contado === null) {
       setError('Ingresa un monto final válido para cerrar la caja.');
       return;
     }
 
-    onCerrar(Number(montoFinal));
+    if (esperado === null) {
+      setError('No se pudo consultar el efectivo esperado.');
+      return;
+    }
+
+    setError('');
+    onCerrar(contado);
   };
 
   return (
@@ -180,30 +175,6 @@ export default function ManagerCashRegister({
 
           </div>
 
-          <div className="cashier-cart__customer">
-            <label htmlFor="manager-caja-registro">Caja a abrir</label>
-            <select
-              id="manager-caja-registro"
-              value={cashRegisterId}
-              disabled={abierta}
-              onChange={(evento) => setCashRegisterId(evento.target.value)}
-            >
-              {cajasDisponibles.length === 0 && (
-                <option value="">No hay cajas configuradas</option>
-              )}
-
-              {cajasDisponibles.map((registro) => (
-                <option
-                  key={registro.cashRegisterId}
-                  value={registro.cashRegisterId}
-                >
-                  {registro.name}
-                  {registro.branchName ? ` · ${registro.branchName}` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className="manager-caja-amounts">
             <label>
               <span>Monto inicial</span>
@@ -215,7 +186,7 @@ export default function ManagerCashRegister({
                 value={montoInicial}
                 disabled={abierta}
                 placeholder="0.00"
-                onChange={(evento) => setMontoInicial(evento.target.value)}
+                onChange={(evento) => { setMontoInicial(evento.target.value); setError(''); }}
                 aria-label="Monto inicial de la caja"
               />
             </label>
@@ -230,7 +201,7 @@ export default function ManagerCashRegister({
                 value={montoFinal}
                 disabled={!abierta}
                 placeholder="0.00"
-                onChange={(evento) => setMontoFinal(evento.target.value)}
+                onChange={(evento) => { setMontoFinal(evento.target.value); setError(''); }}
                 aria-label="Monto final de la caja"
               />
             </label>
