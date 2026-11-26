@@ -14,10 +14,13 @@ const STATUS_LABELS = {
   CANCELLED: 'Anulada',
 };
 
+const getIngredientName = (item) =>
+  item?.name ?? item?.ingredient_name ?? item?.nombre ?? 'Insumo';
+
 const InventoryPurchases = ({
   branchId,
-  inventory,
-  purchases,
+  inventory = [],
+  purchases = [],
   setPurchases,
   setInventory,
   onRefresh,
@@ -71,10 +74,10 @@ const InventoryPurchases = ({
       .map((row) => {
         const qty = Number(row.quantity);
         const cost = Number(row.unit_cost);
-        const ing = inventory.find((i) => i.ingredient_id === Number(row.ingredient_id));
+        const ing = inventory.find((i) => Number(i.ingredient_id) === Number(row.ingredient_id));
         return {
           ingredient_id: Number(row.ingredient_id),
-          ingredient_name: ing ? ing.name : 'Insumo',
+          ingredient_name: getIngredientName(ing),
           quantity: qty,
           unit_cost: cost,
           subtotal: Number((qty * cost).toFixed(2)),
@@ -138,7 +141,9 @@ const InventoryPurchases = ({
       // Incrementar existencias en el estado de inventario
       setInventory((prev) =>
         prev.map((inv) => {
-          const match = validDetails.find((d) => d.ingredient_id === inv.ingredient_id);
+          const match = validDetails.find(
+            (d) => Number(d.ingredient_id) === Number(inv.ingredient_id)
+          );
           if (!match) return inv;
           return { ...inv, quantity: Number(inv.quantity) + match.quantity };
         })
@@ -314,7 +319,7 @@ const InventoryPurchases = ({
                   <option value="">Seleccionar insumo...</option>
                   {inventory.map((ing) => (
                     <option key={ing.ingredient_id} value={ing.ingredient_id}>
-                      {ing.name} ({ing.unit})
+                      {getIngredientName(ing)} ({ing.unit ?? ''})
                     </option>
                   ))}
                 </select>
@@ -410,12 +415,12 @@ const InventoryPurchases = ({
                 </td>
               </tr>
             ) : (
-              purchases.map((pur) => {
+              purchases.map((pur, idx) => {
                 const pending = Number(pur.outstanding_amount ?? 0);
                 const isPaid = pur.status === 'PAID' || pending === 0;
 
                 return (
-                  <tr key={pur.purchase_id}>
+                  <tr key={pur.purchase_id ?? idx}>
                     <td className="inv-table__name">{pur.invoice_number}</td>
                     <td>{pur.supplier_name}</td>
                     <td>{pur.purchase_date}</td>

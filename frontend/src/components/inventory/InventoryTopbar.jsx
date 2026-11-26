@@ -1,11 +1,10 @@
 import React from 'react';
 
-
 const TAB_META = {
   stock: {
     crumb: 'Control de stock',
     title: 'Control de Inventario',
-    subtitle: 'Existencias actuales, alertas de stock mínimo y ajustes de Origénes SV.',
+    subtitle: 'Existencias actuales, alertas de stock mínimo y ajustes de Orígenes SV.',
   },
   purchases: {
     crumb: 'Compras y proveedores',
@@ -19,8 +18,21 @@ const TAB_META = {
   },
 };
 
-const InventoryTopbar = ({ activeTab, selectedBranch, onChangeBranch, branches = [] }) => {
+const SUCURSALES_RESPALDO = [
+  { id: 1, branch_id: 1, name: 'San Salvador' },
+  { id: 2, branch_id: 2, name: 'Santa Ana' },
+  { id: 3, branch_id: 3, name: 'San Miguel' },
+];
+
+const InventoryTopbar = ({
+  activeTab,
+  selectedBranch,
+  onChangeBranch,
+  branches = [],
+}) => {
   const current = TAB_META[activeTab] || TAB_META.stock;
+  const opcionesSucursal =
+    Array.isArray(branches) && branches.length > 0 ? branches : SUCURSALES_RESPALDO;
 
   return (
     <header className="inv-header-wrapper">
@@ -41,14 +53,18 @@ const InventoryTopbar = ({ activeTab, selectedBranch, onChangeBranch, branches =
             <span className="inv-branch-box__label">SUCURSAL</span>
             <select
               id="branch-select"
-              value={selectedBranch}
+              value={selectedBranch ?? 1}
               onChange={(e) => onChangeBranch(Number(e.target.value))}
             >
-              {branches.map((branch) => (
-                <option key={branch.branch_id ?? branch.id} value={branch.branch_id ?? branch.id}>
-                  {branch.name ?? branch.nombre}
-                </option>
-              ))}
+              {opcionesSucursal.map((branch) => {
+                const id = Number(branch.branch_id ?? branch.id);
+                const nombre = branch.name ?? branch.nombre ?? `Sucursal ${id}`;
+                return (
+                  <option key={id} value={id}>
+                    {nombre}
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
