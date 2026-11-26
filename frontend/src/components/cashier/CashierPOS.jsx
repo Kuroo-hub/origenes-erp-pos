@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Alert } from 'reactstrap';
 import CashierCart from './CashierCart.jsx';
 import { getProductImage } from '../../utils/productImages.js';
+import { validarFacturaCajero } from '../../utils/cashierInvoiceValidation.js';
 
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
@@ -18,14 +19,16 @@ export default function CashierPOS({
   const [carrito, setCarrito] = useState([]);
   const [cliente, setCliente] = useState('');
   const [entrega, setEntrega] = useState({
-    tipo: 'local',
+    tipo: '',
     direccion: '',
     numeroCasa: '',
     telefono: '',
   });
-  const [tiempoPreparacion, setTiempoPreparacion] = useState(15);
-  const [metodoPago, setMetodoPago] = useState('efectivo');
+  const [tiempoPreparacion, setTiempoPreparacion] = useState('');
+  const [metodoPago, setMetodoPago] = useState('');
+  const [referenciaPago, setReferenciaPago] = useState('');
   const [notificacion, setNotificacion] = useState('');
+  const [errores, setErrores] = useState({});
 
   const alertasAgotadas = alertasStock.filter(
     (item) => Number(item.quantity) <= 0
@@ -43,8 +46,35 @@ export default function CashierPOS({
     ? ` y ${alertasStock.length - 3} más`
     : '';
 
+  const limpiarError = (campo) => {
+    setErrores((previo) => ({ ...previo, [campo]: undefined }));
+  };
+
   const cambiarEntrega = (campo, valor) => {
+    limpiarError(campo === 'tipo' ? 'tipoEntrega' : campo);
     setEntrega((previo) => ({ ...previo, [campo]: valor }));
+  };
+
+  const cambiarCliente = (valor) => {
+    limpiarError('cliente');
+    setCliente(valor);
+  };
+
+  const cambiarTiempo = (valor) => {
+    limpiarError('tiempoPreparacion');
+    setTiempoPreparacion(valor === '' ? '' : Number(valor));
+  };
+
+  const cambiarMetodo = (valor) => {
+    limpiarError('metodoPago');
+    limpiarError('referenciaPago');
+    setMetodoPago(valor);
+    setReferenciaPago('');
+  };
+
+  const cambiarReferencia = (valor) => {
+    limpiarError('referenciaPago');
+    setReferenciaPago(valor);
   };
 
   const categorias = useMemo(
@@ -143,17 +173,23 @@ export default function CashierPOS({
 
     if (carrito.length === 0) return;
 
-    if (
-      entrega.tipo === 'domicilio' &&
-      (!entrega.direccion.trim() ||
-        !entrega.numeroCasa.trim() ||
-        !entrega.telefono.trim())
-    ) {
+    const erroresFormulario = validarFacturaCajero({
+      cliente,
+      entrega,
+      tiempoPreparacion,
+      metodoPago,
+      referenciaPago,
+    });
+
+    if (Object.keys(erroresFormulario).length > 0) {
+      setErrores(erroresFormulario);
       setNotificacion(
-        'Completa dirección, número de casa y teléfono para la entrega.'
+        'Completa todos los campos de la factura con datos válidos antes de registrar la venta.'
       );
       return;
     }
+
+    setErrores({});
 
     if (typeof onRegistrarPedido !== 'function') {
       setNotificacion(
@@ -171,6 +207,7 @@ export default function CashierPOS({
       await onRegistrarPedido({
         cliente,
         metodoPago,
+        referenciaPago,
         tipoEntrega: entrega.tipo,
         direccion: entrega.direccion,
         numeroCasa: entrega.numeroCasa,
@@ -194,13 +231,15 @@ export default function CashierPOS({
       setCarrito([]);
       setCliente('');
       setEntrega({
-        tipo: 'local',
+        tipo: '',
         direccion: '',
         numeroCasa: '',
         telefono: '',
       });
-      setTiempoPreparacion(15);
-      setMetodoPago('efectivo');
+      setTiempoPreparacion('');
+      setMetodoPago('');
+      setReferenciaPago('');
+      setErrores({});
     } catch (error) {
       setNotificacion(error?.message ?? 'No se pudo registrar la venta.');
     }
@@ -220,7 +259,7 @@ export default function CashierPOS({
       {notificacion && (
         <Alert
           color={
-            /cerrada|no se pudo|error|obligatoria|inventario/i.test(notificacion)
+            /cerrada|no se pudo|error|obligatoria|inventario|campos/i.test(notificacion)
               ? 'warning'
               : 'success'
           }
@@ -392,13 +431,16 @@ export default function CashierPOS({
         <CashierCart
           items={carrito}
           cliente={cliente}
-          onCambiarCliente={setCliente}
+          onCambiarCliente={cambiarCliente}
           entrega={entrega}
           onCambiarEntrega={cambiarEntrega}
           tiempoPreparacion={tiempoPreparacion}
-          onCambiarTiempo={setTiempoPreparacion}
+          onCambiarTiempo={cambiarTiempo}
           metodoPago={metodoPago}
-          onCambiarMetodo={setMetodoPago}
+          onCambiarMetodo={cambiarMetodo}
+          referenciaPago={referenciaPago}
+          onCambiarReferencia={cambiarReferencia}
+          errores={errores}
           onCambiarCantidad={cambiarCantidad}
           onEliminar={eliminarProducto}
           onConfirmar={confirmarPedido}

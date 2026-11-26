@@ -187,8 +187,9 @@ export default function CashierPage() {
   const registrarVenta = async (datosPedido) => {
     const respuesta = await registrarPedido({
       id: `ORD-${Date.now()}`,
-      cliente: datosPedido.cliente.trim() || 'Cliente presencial',
-      tipoEntrega: datosPedido.tipoEntrega ?? 'local',
+      cliente: datosPedido.cliente.trim(),
+      tipoEntrega: datosPedido.tipoEntrega,
+      referenciaPago: datosPedido.referenciaPago ?? null,
       isDelivery: datosPedido.isDelivery === true ||
         datosPedido.tipoEntrega === 'domicilio',
 

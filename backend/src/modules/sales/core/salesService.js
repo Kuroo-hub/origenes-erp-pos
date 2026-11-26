@@ -71,6 +71,19 @@ export async function registerSaleService({
             }
             : null;
 
+    if (!validCustomerId) {
+        const nombreCliente = normalizedCustomerData?.fullName ?? "";
+        if (!nombreCliente) {
+            throw createError("El nombre del cliente es obligatorio para emitir la factura.");
+        }
+        if (
+            nombreCliente.length < 3 ||
+            !/^[\p{L}][\p{L}\p{M}\s.'-]*$/u.test(nombreCliente)
+        ) {
+            throw createError("El nombre del cliente no es válido.");
+        }
+    }
+
     if (documentType === "CREDIT_TAX" && !validCustomerId) {
         if (!normalizedCustomerData?.fullName || !normalizedCustomerData.taxId) {
             throw createError(
@@ -86,19 +99,36 @@ export async function registerSaleService({
     const normalizedDeliveryAddress = String(deliveryAddress ?? "").trim() || null;
     const normalizedDeliveryPhone = String(deliveryPhone ?? "").trim() || null;
 
-    if (normalizedIsDelivery && !normalizedDeliveryAddress) {
-        throw createError("La dirección de entrega es obligatoria para entregas a domicilio.");
-    }
+    if (normalizedIsDelivery) {
+        if (!normalizedDeliveryAddress || normalizedDeliveryAddress.length < 5) {
+            throw createError("La dirección de entrega es obligatoria y debe ser válida para entregas a domicilio.");
+        }
 
-    if (
-        normalizedIsDelivery &&
-        !["READY", "IN_TRANSIT", "DELIVERED"].includes(normalizedDeliveryStatus)
-    ) {
-        throw createError("El estado de entrega no es válido.");
+        const digitosTelefono = String(normalizedDeliveryPhone ?? "").replace(/\D/g, "");
+        if (
+            !normalizedDeliveryPhone ||
+            !/^[+()\d\s-]+$/.test(normalizedDeliveryPhone) ||
+            digitosTelefono.length < 7 ||
+            digitosTelefono.length > 15
+        ) {
+            throw createError("El teléfono de entrega es obligatorio y debe ser válido.");
+        }
+
+        if (!["READY", "IN_TRANSIT", "DELIVERED"].includes(normalizedDeliveryStatus)) {
+            throw createError("El estado de entrega no es válido.");
+        }
     }
 
     if (!["CASH", "CARD", "BITCOIN", "CHIVO"].includes(paymentMethod)) {
         throw createError("Método de pago no válido (CASH, CARD, BITCOIN o CHIVO).");
+    }
+
+    const normalizedPaymentReference = String(paymentReference ?? "").trim() || null;
+    if (paymentMethod !== "CASH" && !normalizedPaymentReference) {
+        throw createError("La referencia del pago es obligatoria para este método de pago.");
+    }
+    if (normalizedPaymentReference && normalizedPaymentReference.length < 3) {
+        throw createError("La referencia del pago debe tener al menos 3 caracteres.");
     }
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -253,7 +283,7 @@ export async function registerSaleService({
             shiftId: validShiftId,
             paymentMethod,
             amount: totalStr,
-            reference: paymentReference
+            reference: normalizedPaymentReference
         });
 
         // Descuenta las existencias de los productos vendidos.

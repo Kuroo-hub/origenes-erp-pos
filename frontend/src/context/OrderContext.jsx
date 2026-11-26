@@ -359,14 +359,13 @@ const recargarDatos = useCallback(
     }
 
     const respuesta = await registerSale({
-      customerData: pedido.cliente?.trim()
-        ? { fullName: pedido.cliente.trim() }
-        : null,
+      customerData: { fullName: String(pedido.cliente ?? '').trim() },
       branchId: pedido.sucursalId ?? sucursalId,
       shiftId: sesionActiva.id,
       documentType: 'FINAL_CONSUMER',
       paymentMethod:
         METODOS_FRONTEND_BACKEND[pedido.metodoPago] ?? 'CASH',
+      paymentReference: pedido.referenciaPago ?? null,
       isDelivery: esDomicilio,
       deliveryStatus: esDomicilio ? 'READY' : null,
       deliveryAddress: direccionEntrega,

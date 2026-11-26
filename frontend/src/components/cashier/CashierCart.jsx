@@ -1,6 +1,7 @@
 
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 import { METODOS_PAGO_CAJERO } from '../../constants/paymentMethods.js';
+import { TIEMPOS_PREPARACION } from '../../utils/cashierInvoiceValidation.js';
 
 const ICONOS_METODO = {
   efectivo: 'bi-cash-coin',
@@ -9,7 +10,11 @@ const ICONOS_METODO = {
   chivo: 'bi-wallet2',
 };
 
-const TIEMPOS_PREPARACION = [10, 15, 20, 30];
+const REFERENCIAS_PAGO = {
+  tarjeta: 'Ej. Autorización 482910',
+  bitcoin: 'Ej. ID de transacción bc1q...',
+  chivo: 'Ej. Número de transacción CHV-12345',
+};
 
 export default function CashierCart({
   items,
@@ -21,6 +26,9 @@ export default function CashierCart({
   onCambiarTiempo,
   metodoPago,
   onCambiarMetodo,
+  referenciaPago,
+  onCambiarReferencia,
+  errores = {},
   onCambiarCantidad,
   onEliminar,
   onConfirmar,
@@ -56,87 +64,128 @@ export default function CashierCart({
         </span>
       </header>
 
+      <p className="cashier-cart__required-note">
+        <i className="bi bi-exclamation-circle" aria-hidden="true" />
+        Todos los campos son obligatorios para emitir la factura.
+      </p>
+
       <div className="cashier-cart__customer">
         <label htmlFor="cashier-cliente">
-          Nombre del cliente (opcional)
+          Nombre del cliente *
         </label>
 
         <input
           id="cashier-cliente"
           type="text"
+          className={errores.cliente ? 'is-invalid' : ''}
           value={cliente}
           onChange={(evento) =>
             onCambiarCliente(evento.target.value)
           }
-          placeholder="Nombre del cliente"
+          placeholder="Nombre y apellido del cliente"
           maxLength={80}
+          aria-invalid={Boolean(errores.cliente)}
         />
+        {errores.cliente && (
+          <span className="cashier-cart__error" role="alert">
+            {errores.cliente}
+          </span>
+        )}
       </div>
 
       <div className="cashier-cart__customer">
         <label htmlFor="cashier-tipo-entrega">
-          Tipo de orden
+          Tipo de orden *
         </label>
 
         <select
           id="cashier-tipo-entrega"
+          className={errores.tipoEntrega ? 'is-invalid' : ''}
           value={entrega.tipo}
           onChange={(evento) =>
             onCambiarEntrega('tipo', evento.target.value)
           }
+          aria-invalid={Boolean(errores.tipoEntrega)}
         >
+          <option value="">Selecciona el tipo de orden</option>
           <option value="local">Dentro del local</option>
           <option value="domicilio">Entrega a domicilio</option>
         </select>
+        {errores.tipoEntrega && (
+          <span className="cashier-cart__error" role="alert">
+            {errores.tipoEntrega}
+          </span>
+        )}
       </div>
 
       {entrega.tipo === 'domicilio' && (
         <div className="cashier-cart__delivery">
           <label htmlFor="cashier-direccion">
-            Dirección de la casa
+            Dirección de la casa *
           </label>
           <input
             id="cashier-direccion"
             type="text"
+            className={errores.direccion ? 'is-invalid' : ''}
             value={entrega.direccion}
             onChange={(evento) =>
               onCambiarEntrega('direccion', evento.target.value)
             }
             placeholder="Ej. Colonia Escalón, Calle La Mascota"
             maxLength={120}
+            aria-invalid={Boolean(errores.direccion)}
           />
+          {errores.direccion && (
+            <span className="cashier-cart__error" role="alert">
+              {errores.direccion}
+            </span>
+          )}
 
           <div className="cashier-cart__delivery-row">
             <div>
               <label htmlFor="cashier-numero-casa">
-                Número de casa
+                Número de casa *
               </label>
               <input
                 id="cashier-numero-casa"
                 type="text"
+                className={errores.numeroCasa ? 'is-invalid' : ''}
                 value={entrega.numeroCasa}
                 onChange={(evento) =>
                   onCambiarEntrega('numeroCasa', evento.target.value)
                 }
                 placeholder="Ej. 412"
                 maxLength={20}
+                aria-invalid={Boolean(errores.numeroCasa)}
               />
+              {errores.numeroCasa && (
+                <span className="cashier-cart__error" role="alert">
+                  {errores.numeroCasa}
+                </span>
+              )}
             </div>
 
             <div>
               <label htmlFor="cashier-telefono">
-                Teléfono
+                Teléfono *
               </label>
               <input
                 id="cashier-telefono"
                 type="tel"
+                className={errores.telefono ? 'is-invalid' : ''}
                 value={entrega.telefono}
                 onChange={(evento) =>
                   onCambiarEntrega('telefono', evento.target.value)
                 }
                 placeholder="Ej. 7845-1290"
                 maxLength={20}
+                aria-invalid={Boolean(errores.telefono)}
               />
+              {errores.telefono && (
+                <span className="cashier-cart__error" role="alert">
+                  {errores.telefono}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -144,22 +193,30 @@ export default function CashierCart({
 
       <div className="cashier-cart__customer">
         <label htmlFor="cashier-tiempo">
-          Tiempo estimado de preparación
+          Tiempo estimado de preparación *
         </label>
 
         <select
           id="cashier-tiempo"
+          className={errores.tiempoPreparacion ? 'is-invalid' : ''}
           value={tiempoPreparacion}
           onChange={(evento) =>
-            onCambiarTiempo(Number(evento.target.value))
+            onCambiarTiempo(evento.target.value)
           }
+          aria-invalid={Boolean(errores.tiempoPreparacion)}
         >
+          <option value="">Selecciona el tiempo</option>
           {TIEMPOS_PREPARACION.map((minutos) => (
             <option key={minutos} value={minutos}>
               {minutos} min
             </option>
           ))}
         </select>
+        {errores.tiempoPreparacion && (
+          <span className="cashier-cart__error" role="alert">
+            {errores.tiempoPreparacion}
+          </span>
+        )}
 
         <small>Este tiempo se muestra en el panel de cocina.</small>
       </div>
@@ -232,7 +289,7 @@ export default function CashierCart({
       </div>
 
       <section className="cashier-cart__payment">
-        <h3>Método de pago</h3>
+        <h3>Método de pago *</h3>
 
         <div className="cashier-cart__payment-options">
           {METODOS_PAGO_CAJERO.map((metodo) => (
@@ -261,6 +318,39 @@ export default function CashierCart({
             </label>
           ))}
         </div>
+
+        {errores.metodoPago && (
+          <span className="cashier-cart__error" role="alert">
+            {errores.metodoPago}
+          </span>
+        )}
+
+        {metodoPago && metodoPago !== 'efectivo' && (
+          <div className="cashier-cart__reference">
+            <label htmlFor="cashier-referencia-pago">
+              Referencia de pago *
+            </label>
+            <input
+              id="cashier-referencia-pago"
+              type="text"
+              className={errores.referenciaPago ? 'is-invalid' : ''}
+              value={referenciaPago}
+              onChange={(evento) =>
+                onCambiarReferencia(evento.target.value)
+              }
+              placeholder={
+                REFERENCIAS_PAGO[metodoPago] ?? 'Referencia de pago'
+              }
+              maxLength={60}
+              aria-invalid={Boolean(errores.referenciaPago)}
+            />
+            {errores.referenciaPago && (
+              <span className="cashier-cart__error" role="alert">
+                {errores.referenciaPago}
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
       <div className="cashier-cart__totals">

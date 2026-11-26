@@ -98,8 +98,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 
 - Punto de venta con catálogo, búsqueda, carrito y control de stock.
 - Selección de sucursal compartida con Cocina, Inventario, Repartidor y Manager.
-- Registro de cliente, método de pago, tipo de entrega y tiempo de preparación.
-- Venta local o a domicilio con dirección, número de casa y teléfono.
+- Registro de cliente, método de pago, tipo de entrega y tiempo de preparación, todos obligatorios y validados.
+- Venta local o a domicilio con dirección, número de casa y teléfono; para pagos distintos de efectivo se exige referencia de pago.
 - Las ventas se registran en `OrderContext` y aparecen en Cocina.
 - La sección Órdenes permite cambiar el estado de pedidos locales. Los pedidos a domicilio se gestionan desde Repartidor.
 - Si la caja está cerrada, el POS queda bloqueado.
@@ -109,6 +109,9 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Caso | Resultado esperado |
 | --- | --- |
 | Intentar vender con la caja cerrada | Aparece el banner de caja cerrada y no se permite confirmar la venta. |
+| Dejar cliente, tipo de orden, tiempo de preparación o método de pago sin completar | No se emite la factura y se muestran los errores en cada campo. |
+| Elegir tarjeta, Bitcoin o Chivo sin referencia de pago | Se exige una referencia válida antes de registrar la venta. |
+| Ingresar un teléfono de domicilio inválido | Se muestra el error de formato y no se registra la venta. |
 | Superar el stock disponible | El carrito no permite agregar más unidades que el stock. |
 | Elegir entrega a domicilio sin dirección, casa o teléfono | Se muestra el mensaje de datos incompletos. |
 | Confirmar una venta local | El pedido aparece en Cocina y en la sección Órdenes del Cajero. |
