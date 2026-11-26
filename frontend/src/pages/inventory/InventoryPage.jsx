@@ -17,11 +17,40 @@ import '../../styles/inventory.css';
 const extraerLista = (respuesta) =>
   Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
 
+const SUCURSALES_OFICIALES = [
+  { id: 1, branch_id: 1, name: 'San Salvador' },
+  { id: 2, branch_id: 2, name: 'Santa Ana' },
+  { id: 3, branch_id: 3, name: 'San Miguel' },
+];
+
 const InventoryPage = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const { sucursalId, seleccionarSucursal, sucursales, versionStock } = useOrders();
+  const { sucursalId, seleccionarSucursal, sucursales } = useOrders();
+
   const [activeTab, setActiveTab] = useState('stock');
+  const [localBranchId, setLocalBranchId] = useState(null);
+
+  const listaSucursales =
+    Array.isArray(sucursales) && sucursales.length > 0
+      ? sucursales
+      : SUCURSALES_OFICIALES;
+
+  const branchActual = Number(
+    localBranchId ??
+      sucursalId ??
+      listaSucursales[0]?.branch_id ??
+      listaSucursales[0]?.id ??
+      1
+  );
+
+  const handleChangeBranch = (nuevoId) => {
+    const idNumerico = Number(nuevoId);
+    setLocalBranchId(idNumerico);
+    if (typeof seleccionarSucursal === 'function') {
+      seleccionarSucursal(idNumerico);
+    }
+  };
 
   const [inventory, setInventory] = useState([]);
   const [purchases, setPurchases] = useState([]);
@@ -30,6 +59,8 @@ const InventoryPage = () => {
   const [error, setError] = useState(null);
 
   const loadBranchData = useCallback(async (branchId) => {
+    if (!branchId) return;
+
     setLoading(true);
     setError(null);
 
@@ -51,15 +82,17 @@ const InventoryPage = () => {
   }, []);
 
   useEffect(() => {
-    loadBranchData(sucursalId);
-  }, [sucursalId, loadBranchData, versionStock]);
+    loadBranchData(branchActual);
+  }, [branchActual, loadBranchData]);
 
   const lowStockCount = inventory.filter(
     (item) => Number(item.quantity) <= Number(item.minimum_stock)
   ).length;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    if (typeof logout === 'function') {
+      await logout();
+    }
     navigate('/login');
   };
 
@@ -69,19 +102,22 @@ const InventoryPage = () => {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         alertCount={lowStockCount}
-        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 
       <div className="inv-main">
         <InventoryTopbar
           activeTab={activeTab}
-          selectedBranch={sucursalId}
-          onChangeBranch={seleccionarSucursal}
-          branches={sucursales}
+          selectedBranch={branchActual}
+          onChangeBranch={handleChangeBranch}
+          branches={listaSucursales}
         />
 
-        {error && <div className="inv-banner-offline">{error}</div>}
+        {error && (
+          <div className="inv-banner-offline">
+            {error}
+          </div>
+        )}
 
         <main className="inv-content">
           {loading ? (
@@ -90,21 +126,21 @@ const InventoryPage = () => {
             <>
               {activeTab === 'stock' && (
                 <InventoryStock
-                  branchId={sucursalId}
+                  branchId={branchActual}
                   inventory={inventory}
                   setInventory={setInventory}
-                  onRefresh={() => loadBranchData(sucursalId)}
+                  onRefresh={() => loadBranchData(branchActual)}
                 />
               )}
 
               {activeTab === 'purchases' && (
                 <InventoryPurchases
-                  branchId={sucursalId}
+                  branchId={branchActual}
                   inventory={inventory}
                   purchases={purchases}
                   setPurchases={setPurchases}
                   setInventory={setInventory}
-                  onRefresh={() => loadBranchData(sucursalId)}
+                  onRefresh={() => loadBranchData(branchActual)}
                 />
               )}
 

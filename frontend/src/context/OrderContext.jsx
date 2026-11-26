@@ -1,3 +1,4 @@
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import { getSales, registerSale, updateKitchenStatus } from '../services/salesApi.js';
@@ -27,30 +28,6 @@ const METODOS_FRONTEND_BACKEND = {
   chivo: 'CHIVO'
 };
 
-const ESTADOS_FACTURA = {
-  PAID: 'Pagada',
-  CANCELLED: 'Anulada',
-  PENDING: 'Pendiente'
-};
-
-const ESTADOS_ENTREGA = {
-  READY: 'Listo en sucursal',
-  IN_TRANSIT: 'En camino',
-  DELIVERED: 'Entregado'
-};
-
-const ESTADOS_COCINA = {
-  PENDING: 'Pendiente',
-  PREPARING: 'En preparación',
-  READY: 'Listo'
-};
-
-const ESTADOS_COCINA_BACKEND = {
-  Pendiente: 'PENDING',
-  'En preparación': 'PREPARING',
-  Listo: 'READY'
-};
-
 const extraerLista = (respuesta) =>
   Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
 
@@ -64,39 +41,28 @@ function formatearHora(fecha) {
   });
 }
 
-function extraerNumeroCasa(direccion) {
-  const coincidencia = /,?\s*casa\s*(?:#\s*)?([^,]+)/i.exec(direccion ?? '');
-  return coincidencia?.[1]?.trim() ?? '';
-}
-
 function mapearVenta(venta) {
   const paymentMethod = METODOS_BACKEND_FRONTEND[venta.paymentMethod] ?? 'efectivo';
   const prefijo = venta.documentType === 'CREDIT_TAX' ? 'CCF' : 'FAC';
 
-  const kitchenStatus = venta.kitchenStatus ?? 'PENDING';
-  const estadoEntrega = venta.deliveryStatus ?? null;
-  const direccionEntrega = venta.deliveryAddress ?? '';
-  const numeroCasa = extraerNumeroCasa(direccionEntrega);
-
   return {
     id: `${prefijo}-${venta.consecutiveNumber ?? venta.invoiceId}`,
-    invoiceId: Number(venta.invoiceId ?? 0) || null,
+    invoiceId: venta.invoiceId,
     cliente: venta.customerName || 'Cliente presencial',
     origen: 'Presencial',
     hora: formatearHora(venta.issueDate),
     created_at: venta.issueDate,
-    estadoFactura: venta.status ?? null,
-    estadoFacturaTexto: ESTADOS_FACTURA[venta.status] ?? venta.status ?? '',
-    estado: venta.status === 'CANCELLED' ? 'Anulada' : ESTADOS_COCINA[kitchenStatus] ?? 'Pendiente',
-    kitchenStatus,
+    estado: {
+      PENDING: 'Pendiente',
+      PREPARING: 'En preparación',
+      READY: 'Listo',
+    }[venta.kitchenStatus] ?? 'Pendiente',
     sucursalId: Number(venta.branchId),
     sucursal: venta.branchName,
     tipoEntrega: venta.isDelivery ? 'domicilio' : 'local',
-    deliveryStatus: estadoEntrega,
-    estadoEntrega,
-    estadoEntregaTexto: ESTADOS_ENTREGA[estadoEntrega] ?? '',
-    direccion: direccionEntrega,
-    numeroCasa,
+    deliveryStatus: venta.deliveryStatus ?? null,
+    direccion: venta.deliveryAddress ?? '',
+    numeroCasa: '',
     telefono: venta.deliveryPhone ?? '',
     tiempoObjetivoMin: 15,
     prioridad: 'normal',
@@ -108,25 +74,30 @@ function mapearVenta(venta) {
     })),
     total: Number(venta.total ?? 0),
     metodoPago: paymentMethod,
-    ventaTurno: true
+    ventaTurno: true,
   };
 }
 
 export function OrderProvider({ children }) {
-  const { user, token } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
+
   const esAdministrador = user?.role === 'ADMINISTRATOR';
+
   const [ordenes, setOrdenes] = useState([]);
   const [sesionesActivas, setSesionesActivas] = useState([]);
   const [registrosCaja, setRegistrosCaja] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [sucursalId, setSucursalId] = useState(user?.branchId ?? null);
-  const [cargandoDatos, setCargandoDatos] = useState(Boolean(token));
+  const [cargandoDatos, setCargandoDatos] = useState(true);
   const [errorDatos, setErrorDatos] = useState('');
-  const [versionStock, setVersionStock] = useState(0);
 
+  // Cargar sucursales cuando la sesión esté disponible.
   useEffect(() => {
-    if (!token) {
+    if (loading) return undefined;
+
+    if (!isAuthenticated) {
       setSucursales([]);
+      setSucursalId(null);
       setCargandoDatos(false);
       return undefined;
     }
@@ -137,10 +108,13 @@ export function OrderProvider({ children }) {
       .then((respuesta) => {
         if (!activo) return;
 
-        const filas = Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
+        const filas = Array.isArray(respuesta)
+          ? respuesta
+          : respuesta?.data ?? [];
+
         const normalizadas = filas.map((sucursal) => ({
-          id: sucursal.branch_id,
-          branch_id: sucursal.branch_id,
+          id: Number(sucursal.branch_id),
+          branch_id: Number(sucursal.branch_id),
           nombre: sucursal.name,
           name: sucursal.name,
           direccion: sucursal.address,
@@ -149,78 +123,128 @@ export function OrderProvider({ children }) {
 
         const sucursalesVisibles = esAdministrador
           ? normalizadas
-          : normalizadas.filter((sucursal) => Number(sucursal.id) === Number(user?.branchId));
+          : normalizadas.filter(
+            (sucursal) =>
+              Number(sucursal.id) === Number(user?.branchId)
+          );
 
         setSucursales(sucursalesVisibles);
 
         setSucursalId((actual) => {
-          if (!esAdministrador && user?.branchId) return Number(user.branchId);
-          if (actual) return actual;
-          if (user?.branchId) return user.branchId;
+          if (!esAdministrador && user?.branchId) {
+            return Number(user.branchId);
+          }
+
+          if (actual) return Number(actual);
+
+          if (user?.branchId) {
+            return Number(user.branchId);
+          }
+
           return sucursalesVisibles[0]?.id ?? null;
         });
       })
       .catch((caughtError) => {
         if (!activo) return;
+
         setSucursales([]);
-        setErrorDatos(caughtError?.message ?? 'No se pudieron cargar las sucursales.');
+        setErrorDatos(
+          caughtError?.message ?? 'No se pudieron cargar las sucursales.'
+        );
       });
 
     return () => {
       activo = false;
     };
-  }, [token, user?.branchId]);
+  }, [isAuthenticated, loading, user?.branchId, esAdministrador]);
 
+  // Mantener la sucursal asignada al usuario.
   useEffect(() => {
-    if (!esAdministrador && user?.branchId) {
+    if (!isAuthenticated || !user?.branchId) return;
+
+    if (!esAdministrador) {
       setSucursalId(Number(user.branchId));
-    } else if (user?.branchId) {
-      setSucursalId(user.branchId);
+    } else if (!sucursalId) {
+      setSucursalId(Number(user.branchId));
     }
-  }, [esAdministrador, user?.branchId]);
+  }, [isAuthenticated, esAdministrador, user?.branchId, sucursalId]);
 
-  const recargarDatos = useCallback(
-    async (branchId = sucursalId) => {
-      setCargandoDatos(true);
-      setErrorDatos('');
+  // Recargar ventas, sesiones y cajas de una sucursal.
+const recargarDatos = useCallback(
+  async (branchId = sucursalId) => {
+    if (!branchId) return;
 
-      try {
-        const [ventas, sesiones, registros] = await Promise.all([
-          getSales(branchId, { limit: 100 }),
-          getActiveCashSessions(branchId),
-          getCashRegisters(branchId)
-        ]);
+    setCargandoDatos(true);
+    setErrorDatos('');
 
-        setOrdenes(extraerLista(ventas).map(mapearVenta));
-        setSesionesActivas(extraerLista(sesiones));
-        setRegistrosCaja(extraerLista(registros));
-      } catch (caughtError) {
-        setErrorDatos(caughtError?.message ?? 'No se pudieron cargar los datos de la sucursal.');
-      } finally {
-        setCargandoDatos(false);
+    try {
+      const [ventas, sesiones, registros] = await Promise.allSettled([
+        getSales(branchId),
+        getActiveCashSessions(),
+        getCashRegisters(branchId)
+      ]);
+
+      if (ventas.status === 'fulfilled') {
+        setOrdenes(extraerLista(ventas.value).map(mapearVenta));
+      } else {
+        console.error('Error al cargar ventas:', ventas.reason);
+        setOrdenes([]);
       }
-    },
-    [sucursalId]
-  );
 
+      if (sesiones.status === 'fulfilled') {
+        setSesionesActivas(extraerLista(sesiones.value));
+      } else {
+        console.error('Error al cargar sesiones:', sesiones.reason);
+        setSesionesActivas([]);
+        setErrorDatos('No se pudieron cargar las sesiones.');
+      }
+
+      if (registros.status === 'fulfilled') {
+        setRegistrosCaja(extraerLista(registros.value));
+      } else {
+        console.error('Error al cargar cajas:', registros.reason);
+        setRegistrosCaja([]);
+        setErrorDatos('No se pudieron cargar las cajas.');
+      }
+
+    } catch (caughtError) {
+      setErrorDatos(
+        caughtError?.message ??
+        'No se pudieron cargar los datos de la sucursal.'
+      );
+    } finally {
+      setCargandoDatos(false);
+    }
+  },
+  [sucursalId]
+);
+  // Consultar datos cuando exista sesión y sucursal.
   useEffect(() => {
-    if (!token || !sucursalId) {
+    if (loading) return;
+
+    if (!isAuthenticated || !sucursalId) {
       setCargandoDatos(false);
       return;
     }
 
     recargarDatos(sucursalId);
-  }, [token, sucursalId, recargarDatos]);
+  }, [isAuthenticated, loading, sucursalId, recargarDatos]);
 
   const sucursal =
-    sucursales.find((item) => item.id === sucursalId)?.nombre ??
-    sesionesActivas.find((item) => Number(item.branchId) === Number(sucursalId))
-      ?.nombreSucursal ??
+    sucursales.find(
+      (item) => Number(item.id) === Number(sucursalId)
+    )?.nombre ??
+    sesionesActivas.find(
+      (item) => Number(item.branchId) === Number(sucursalId)
+    )?.nombreSucursal ??
     sucursales[0]?.nombre ??
     '';
 
   const ordenesSucursal = useMemo(
-    () => ordenes.filter((orden) => orden.sucursalId === sucursalId),
+    () =>
+      ordenes.filter(
+        (orden) => Number(orden.sucursalId) === Number(sucursalId)
+      ),
     [ordenes, sucursalId]
   );
 
@@ -234,45 +258,49 @@ export function OrderProvider({ children }) {
 
   const caja = sesionActiva
     ? {
-        abierta: true,
-        abiertaDesde: sesionActiva.fechaApertura,
-        cerradaDesde: null,
-        montoInicial: Number(sesionActiva.montoInicial ?? 0),
-        montoFinal: null,
-        sessionId: sesionActiva.id,
-        nombreCaja: sesionActiva.nombreCaja
-      }
+      abierta: true,
+      abiertaDesde: sesionActiva.fechaApertura,
+      cerradaDesde: null,
+      montoInicial: Number(sesionActiva.montoInicial ?? 0),
+      montoFinal: null,
+      sessionId: sesionActiva.id,
+      nombreCaja: sesionActiva.nombreCaja
+    }
     : {
-        abierta: false,
-        abiertaDesde: null,
-        cerradaDesde: null,
-        montoInicial: null,
-        montoFinal: null,
-        sessionId: null,
-        nombreCaja: registrosCaja[0]?.name ?? null
-      };
+      abierta: false,
+      abiertaDesde: null,
+      cerradaDesde: null,
+      montoInicial: null,
+      montoFinal: null,
+      sessionId: null,
+      nombreCaja: registrosCaja[0]?.name ?? null
+    };
 
   const cajaAbierta = caja.abierta;
 
-  const abrirCaja = async (id = sucursalId, montoInicial = 0, cashRegisterId = null) => {
-    const registro = cashRegisterId
-      ? registrosCaja.find(
-          (item) => Number(item.cashRegisterId) === Number(cashRegisterId)
-        )
-      : registrosCaja[0];
+  const abrirCaja = async (id = sucursalId, montoInicial = 0) => {
+    const registro = registrosCaja[0];
+
+    console.log('Registro de caja:', registro);
+    console.log('Sesión activa:', sesionActiva);
+    console.log('Empleado:', user?.employeeId);
+    console.log('Monto inicial:', montoInicial);
 
     if (!registro) {
       throw new Error('No hay una caja configurada para esta sucursal.');
     }
 
-    if (!sesionActiva) {
-      await openCashSession({
-        cashRegisterId: registro.cashRegisterId,
-        employeeId: user?.employeeId,
-        initialAmount: Number(montoInicial).toFixed(2)
-      });
-      await recargarDatos(id);
+    if (sesionActiva) {
+      throw new Error('Ya existe una sesión de caja activa.');
     }
+
+    await openCashSession({
+      cashRegisterId: registro.cashRegisterId,
+      employeeId: user?.employeeId,
+      initialAmount: Number(montoInicial)
+    });
+
+    await recargarDatos(id);
   };
 
   const cerrarCaja = async (id = sucursalId, montoFinal = 0) => {
@@ -280,23 +308,23 @@ export function OrderProvider({ children }) {
       throw new Error('No hay una sesión de caja abierta.');
     }
 
-    await closeCashSession(sesionActiva.id, {
+    const resultado = await closeCashSession(sesionActiva.id, {
       realAmount: Number(montoFinal).toFixed(2)
     });
+
     await recargarDatos(id);
+    return resultado.data;
   };
 
   const registrarPedido = async (pedido) => {
-    const esDomicilio = pedido.tipoEntrega === 'domicilio';
-    const numeroCasa = String(pedido.numeroCasa ?? '').trim();
-    const direccionEntrega = esDomicilio
-      ? numeroCasa
-        ? `${pedido.direccion ?? ''}, casa ${numeroCasa}`
-        : pedido.direccion ?? ''
-      : null;
+    const esDomicilio =
+      pedido.isDelivery === true ||
+      pedido.tipoEntrega === 'domicilio';
 
     if (!sesionActiva) {
-      throw new Error('La caja está cerrada. Manager debe abrirla para vender.');
+      throw new Error(
+        'La caja está cerrada. Manager debe abrirla para vender.'
+      );
     }
 
     const respuesta = await registerSale({
@@ -306,10 +334,15 @@ export function OrderProvider({ children }) {
       branchId: pedido.sucursalId ?? sucursalId,
       shiftId: sesionActiva.id,
       documentType: 'FINAL_CONSUMER',
-      paymentMethod: METODOS_FRONTEND_BACKEND[pedido.metodoPago] ?? 'CASH',
+      paymentMethod:
+        METODOS_FRONTEND_BACKEND[pedido.metodoPago] ?? 'CASH',
       isDelivery: esDomicilio,
       deliveryStatus: esDomicilio ? 'READY' : null,
-      deliveryAddress: direccionEntrega,
+      deliveryAddress: esDomicilio
+        ? [pedido.direccion, pedido.numeroCasa ? `Casa ${pedido.numeroCasa}` : '']
+          .filter(Boolean)
+          .join(', ')
+        : null,
       deliveryPhone: esDomicilio ? pedido.telefono : null,
       items: pedido.productos.map((producto) => ({
         productId: producto.id,
@@ -318,42 +351,52 @@ export function OrderProvider({ children }) {
     });
 
     await recargarDatos(pedido.sucursalId ?? sucursalId);
-    setVersionStock((actual) => actual + 1);
 
     return respuesta;
   };
 
-  const cambiarEstado = useCallback(
-    async (id, estado) => {
-      const orden = ordenes.find((item) => item.id === id);
+  const cambiarEstado = async (id, estado) => {
+    const orden = ordenes.find((item) => item.id === id);
 
-      if (!orden) {
-        throw new Error('No se encontró la orden solicitada.');
-      }
+    if (!orden?.invoiceId) {
+      throw new Error('No se encontró el identificador de la orden.');
+    }
 
-      const kitchenStatus = ESTADOS_COCINA_BACKEND[estado];
+    const estadosBackend = {
+      'En preparación': 'PREPARING',
+      Listo: 'READY'
+    };
 
-      if (!orden.invoiceId || !kitchenStatus) {
-        throw new Error('No se pudo actualizar el estado de la orden.');
-      }
+    const nuevoEstado = estadosBackend[estado];
 
-      const respuesta = await updateKitchenStatus(orden.invoiceId, {
-        kitchen_status: kitchenStatus
-      });
-      const actualizado = respuesta?.data?.kitchen_status ?? kitchenStatus;
+    if (!nuevoEstado) {
+      throw new Error('Estado de cocina no válido.');
+    }
 
-      setOrdenes((actuales) =>
-        actuales.map((item) =>
-          item.id === id
-            ? { ...item, kitchenStatus: actualizado, estado: ESTADOS_COCINA[actualizado] ?? estado }
-            : item
-        )
-      );
+    const respuesta = await updateKitchenStatus(
+      orden.invoiceId,
+      nuevoEstado
+    );
 
-      return respuesta;
-    },
-    [ordenes]
-  );
+    const estadoBackendGuardado =
+      respuesta?.data?.kitchen_status ??
+      respuesta?.data?.kitchenStatus ??
+      nuevoEstado;
+
+    const estadoGuardado = {
+      PENDING: 'Pendiente',
+      PREPARING: 'En preparación',
+      READY: 'Listo'
+    }[estadoBackendGuardado] ?? estado;
+
+    setOrdenes((actuales) =>
+      actuales.map((item) =>
+        item.id === id
+          ? { ...item, estado: estadoGuardado }
+          : item
+      )
+    );
+  };
 
   const valor = useMemo(
     () => ({
@@ -362,18 +405,20 @@ export function OrderProvider({ children }) {
       sucursalId,
       sucursal,
       sucursales,
+
       seleccionarSucursal: (branchId) => {
         if (!esAdministrador && user?.branchId) {
           setSucursalId(Number(user.branchId));
           return;
         }
+
         setSucursalId(Number(branchId));
       },
+
       sesionesActivas,
       registrosCaja,
       cargandoDatos,
       errorDatos,
-      versionStock,
       recargarDatos,
       caja,
       cajaAbierta,
@@ -387,19 +432,24 @@ export function OrderProvider({ children }) {
       ordenesSucursal,
       sucursalId,
       sucursal,
+      sucursales,
+      esAdministrador,
+      user?.branchId,
       sesionesActivas,
       registrosCaja,
       cargandoDatos,
       errorDatos,
-      versionStock,
       recargarDatos,
       caja,
-      cajaAbierta,
-      cambiarEstado
+      cajaAbierta
     ]
   );
 
-  return <OrderContext.Provider value={valor}>{children}</OrderContext.Provider>;
+  return (
+    <OrderContext.Provider value={valor}>
+      {children}
+    </OrderContext.Provider>
+  );
 }
 
 export function useOrders() {

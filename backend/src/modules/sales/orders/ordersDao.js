@@ -66,22 +66,6 @@ export async function findDeliveryInvoiceForUpdate(invoiceId) {
     return result.rows[0] ?? null;
 }
 
-export async function findKitchenInvoiceForUpdate(invoiceId) {
-    const result = await pool.query(
-        `SELECT
-             i.invoice_id,
-             i.branch_id,
-             i.kitchen_status,
-             i.status
-         FROM invoice i
-         WHERE i.invoice_id = $1
-         FOR UPDATE OF i`,
-        [invoiceId]
-    );
-
-    return result.rows[0] ?? null;
-}
-
 export async function updateDeliveryStatus(invoiceId, currentStatus, nextStatus) {
     const result = await pool.query(
         `UPDATE invoice i
@@ -99,18 +83,25 @@ export async function updateDeliveryStatus(invoiceId, currentStatus, nextStatus)
 
     return result.rows[0] ?? null;
 }
+export async function findKitchenInvoiceForUpdate(invoiceId) {
+    const result = await pool.query(
+        `SELECT invoice_id, branch_id, kitchen_status
+         FROM invoice
+         WHERE invoice_id = $1
+         FOR UPDATE`,
+        [invoiceId]
+    );
+
+    return result.rows[0] ?? null;
+}
 
 export async function updateKitchenStatus(invoiceId, currentStatus, nextStatus) {
     const result = await pool.query(
-        `UPDATE invoice i
+        `UPDATE invoice
          SET kitchen_status = $3
-         WHERE i.invoice_id = $1
-           AND i.kitchen_status = $2
-         RETURNING
-             i.invoice_id,
-             i.branch_id,
-             i.kitchen_status,
-             i.status`,
+         WHERE invoice_id = $1
+           AND kitchen_status = $2
+         RETURNING invoice_id, branch_id, kitchen_status`,
         [invoiceId, currentStatus, nextStatus]
     );
 

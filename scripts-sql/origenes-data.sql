@@ -1,3 +1,9 @@
+-- ORIGENES SV - DATOS DE PRUEBA
+-- Ejecutar DESPUES de origenes-ddl.sql, conectado a la BD origenessv.
+-- Ejecutar una sola vez sobre una base recien creada y vacia.
+-- Contraseña demo de los usuarios: Prueba123!
+-- No ejecutar nuevamente sobre una BD que ya tenga estos registros.
+
 -- =====================================================
 -- PRODUCT CATALOG
 -- 15 PREPARED PRODUCTS
@@ -377,6 +383,22 @@ CROSS JOIN (
     SELECT crypt('Prueba123!', gen_salt('bf')) AS password_hash
 ) AS p;
 
+-- Usuarios adicionales para probar RRHH e Inventario.
+-- Contraseña demo para ambos: Prueba123!
+INSERT INTO employee (
+    branch_id, email, password_hash, role, active,
+    full_name, job_title, hire_date, base_salary
+)
+SELECT
+    1, v.email, crypt('Prueba123!', gen_salt('bf')), v.role, TRUE,
+    v.full_name, v.job_title, DATE '2024-01-01', v.base_salary
+FROM (
+    VALUES
+      ('rrhh@origenessv.com', 'HR', 'Encargado de Recursos Humanos', 'RRHH', 900.00),
+      ('inventario@origenessv.com', 'INVENTORY_MANAGER', 'Encargado de Inventario', 'Inventario', 900.00)
+) AS v(email, role, full_name, job_title, base_salary);
+
+
 -- =====================================================
 -- CUSTOMER
 -- =====================================================
@@ -615,8 +637,8 @@ INSERT INTO purchase (
 )
 VALUES
 (1, 1, (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'), 'FAC-001', '2026-11-15 09:00', 150.00, 19.50, 169.50, 'PAID'),
-(2, 1, (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
-(3, 2, (SELECT employee_id FROM employee WHERE email = 'gerente.santaana@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
+(2, 2, (SELECT employee_id FROM employee WHERE email = 'gerente.santaana@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
+(3, 3, (SELECT employee_id FROM employee WHERE email = 'gerente.sanmiguel@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
 
 INSERT INTO purchase_detail (purchase_id, ingredient_id, quantity, unit_cost, subtotal)
 SELECT
@@ -691,8 +713,8 @@ INSERT INTO invoice (
     status
 )
 VALUES
-(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'CANCELLED'),
-(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'CANCELLED');
+(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'PAID'),
+(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'PAID');
 
 INSERT INTO invoice (
     customer_id,
@@ -771,6 +793,7 @@ VALUES
 
 INSERT INTO cash_movement (shift_id, movement_type, description, amount, created_at)
 VALUES
+(1, 'INCOME', 'Pago con tarjeta de factura DTE-01-0001', 10.74, '2026-11-17 12:35'),
 (1, 'INCOME', 'Pago de factura contado', 14.97, '2026-11-17 13:15'),
 (1, 'EXPENSE', 'Compra de hielo', 3.50, '2026-11-17 10:00'),
 (1, 'EXPENSE', 'Propina repartidor', 2.00, '2026-11-17 15:30'),
@@ -827,34 +850,165 @@ JOIN ingredient i
 CROSS JOIN employee e
 WHERE e.email = 'gerente@origenessv.com';
 
--- CONSUMO DE LA FACTURA 3 (2026-11-25)
-UPDATE branch_inventory bi
-SET quantity = bi.quantity - v.quantity
+-- =====================================================
+-- ORIGENES SV - DATOS OPERATIVOS SUCURSAL SAN MIGUEL (branch_id = 3)
+-- Ejecutar DESPUÉS del script de datos de prueba principal.
+-- =====================================================
+
+-- 1. TURNOS DE CAJA EN SAN MIGUEL (cash_register_id = 4 corresponde a Caja Principal de San Miguel)
+INSERT INTO cash_shift (
+    cash_register_id,
+    employee_id,
+    opening_date,
+    closing_date,
+    opening_amount,
+    closing_amount,
+    status
+)
+VALUES
+(4, (SELECT employee_id FROM employee WHERE email = 'cajero.sanmiguel@origenessv.com'), '2026-11-24 08:00', '2026-11-24 17:00', 100.00, 146.51, 'CLOSED'),
+(4, (SELECT employee_id FROM employee WHERE email = 'cajero2.sanmiguel@origenessv.com'), '2026-11-25 08:00', NULL, 100.00, NULL, 'OPEN');
+
+-- 2. COMPRA DE INSUMOS CRUDOS PARA SAN MIGUEL (Siguiente purchase_id = 4)
+INSERT INTO purchase (
+    supplier_id,
+    branch_id,
+    employee_id,
+    invoice_number,
+    purchase_date,
+    subtotal,
+    vat,
+    total,
+    status
+)
+VALUES
+(1, 3, (SELECT employee_id FROM employee WHERE email = 'gerente.sanmiguel@origenessv.com'), 'FAC-SM-001', '2026-11-23 09:30', 180.00, 23.40, 203.40, 'PAID');
+
+INSERT INTO purchase_detail (purchase_id, ingredient_id, quantity, unit_cost, subtotal)
+SELECT
+    p.purchase_id,
+    i.ingredient_id,
+    v.quantity,
+    v.unit_cost,
+    v.subtotal
 FROM (
     VALUES
-    ('Chicken', 200),
-    ('Rice', 100),
-    ('Broccoli', 50),
-    ('Carrot', 50),
-    ('Oil', 15),
-    ('Salt and pepper', 3),
-    ('Large flat plate', 1),
-    ('Fork', 1),
-    ('Knife', 1),
-    ('Napkin', 2),
-    ('Lemons', 3),
-    ('Water', 300),
-    ('Sugar', 30),
-    ('Ice', 100),
-    ('Large glass 16 oz', 1),
-    ('Straw', 1),
-    ('Coaster', 1)
-) AS v(ingredient_name, quantity)
-JOIN ingredient i
-    ON i.name = v.ingredient_name
-WHERE bi.branch_id = 1
-  AND bi.ingredient_id = i.ingredient_id;
+    ('FAC-SM-001', 'Chicken', 15000, 0.0060, 90.00),
+    ('FAC-SM-001', 'Shrimp', 5000, 0.0120, 60.00),
+    ('FAC-SM-001', 'Rice', 20000, 0.0015, 30.00)
+) AS v(inv_num, ingredient_name, quantity, unit_cost, subtotal)
+JOIN purchase p ON p.invoice_number = v.inv_num
+JOIN ingredient i ON i.name = v.ingredient_name;
 
+INSERT INTO accounts_payable (purchase_id, outstanding_amount, due_date, status)
+SELECT purchase_id, 0.00, '2026-12-23', 'PAID'
+FROM purchase
+WHERE invoice_number = 'FAC-SM-001';
+
+INSERT INTO supplier_payment (payable_id, amount, payment_date, payment_method, reference)
+SELECT ap.payable_id, 203.40, '2026-11-23 14:00', 'TRANSFER', 'TRX-SM-2001'
+FROM accounts_payable ap
+JOIN purchase p ON p.purchase_id = ap.purchase_id
+WHERE p.invoice_number = 'FAC-SM-001';
+
+-- 3. FACTURAS DE VENTA EN SAN MIGUEL (En establecimiento y a domicilio)
+INSERT INTO invoice (
+    customer_id,
+    branch_id,
+    employee_id,
+    document_type,
+    consecutive_number,
+    control_number,
+    generation_code,
+    reception_stamp,
+    issue_date,
+    subtotal,
+    vat,
+    total,
+    status,
+    is_delivery,
+    delivery_status,
+    kitchen_status,
+    delivery_address,
+    delivery_phone
+)
+VALUES
+-- Venta 1: Crédito Fiscal en establecimiento
+(2, 3, (SELECT employee_id FROM employee WHERE email = 'cajero.sanmiguel@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-03-0001', '33333333-3333-3333-3333-333333333333', 'REC-2026-0301', '2026-11-24 12:15', 19.00, 2.47, 21.47, 'PAID', FALSE, NULL, 'READY', NULL, NULL),
+-- Venta 2: Consumidor Final en establecimiento
+(NULL, 3, (SELECT employee_id FROM employee WHERE email = 'cajero.sanmiguel@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0301', '44444444-4444-4444-4444-444444444444', 'REC-2026-0302', '2026-11-24 14:20', 14.00, 1.82, 15.82, 'PAID', FALSE, NULL, 'READY', NULL, NULL),
+-- Venta 3: Consumidor Final a domicilio (Entregada)
+(5, 3, (SELECT employee_id FROM employee WHERE email = 'cajero.sanmiguel@origenessv.com'), 'FINAL_CONSUMER', 2, 'DTE-FC-0302', '55555555-5555-5555-5555-555555555555', 'REC-2026-0303', '2026-11-24 15:45', 13.50, 1.76, 15.26, 'PAID', TRUE, 'DELIVERED', 'READY', 'Colonia Ciudad Jardín, Calle Principal #14, San Miguel', '7890-1122'),
+-- Venta 4: Turno abierto actual a domicilio (En tránsito)
+(8, 3, (SELECT employee_id FROM employee WHERE email = 'cajero2.sanmiguel@origenessv.com'), 'FINAL_CONSUMER', 3, 'DTE-FC-0303', '66666666-6666-6666-6666-666666666666', 'REC-2026-0304', '2026-11-25 11:30', 11.25, 1.46, 12.71, 'PAID', TRUE, 'IN_TRANSIT', 'READY', 'Residencial El Molino, Polígono B #7, San Miguel', '7654-3344');
+
+INSERT INTO invoice_detail (invoice_id, product_id, quantity, unit_price, subtotal)
+SELECT
+    inv.invoice_id,
+    p.product_id,
+    v.quantity,
+    v.unit_price,
+    v.subtotal
+FROM (
+    VALUES
+    ('DTE-03-0001', 'Camaron al ajillo', 2, 9.50, 19.00),
+    ('DTE-FC-0301', 'Carne asada con papas', 1, 8.50, 8.50),
+    ('DTE-FC-0301', 'Hamburguesa clasica', 1, 5.50, 5.50),
+    ('DTE-FC-0302', 'Pollo a la plancha', 1, 7.50, 7.50),
+    ('DTE-FC-0302', 'Desayuno tipico salvadoreño', 1, 6.00, 6.00),
+    ('DTE-FC-0303', 'Lomo de cerdo', 1, 8.00, 8.00),
+    ('DTE-FC-0303', 'Batido de fresa', 1, 3.25, 3.25)
+) AS v(control_number, product_name, quantity, unit_price, subtotal)
+JOIN invoice inv ON inv.control_number = v.control_number
+JOIN product p ON p.name = v.product_name;
+
+-- 4. PAGOS DE VENTAS EN SAN MIGUEL (Incluye CARD, CASH, CHIVO y BITCOIN)
+INSERT INTO sale_payment (invoice_id, shift_id, payment_method, amount, reference, payment_date)
+SELECT
+    inv.invoice_id,
+    cs.shift_id,
+    v.payment_method,
+    inv.total,
+    v.reference,
+    inv.issue_date
+FROM (
+    VALUES
+    ('DTE-03-0001', 'CARD', 'TRX-CARD-0301'),
+    ('DTE-FC-0301', 'CASH', NULL),
+    ('DTE-FC-0302', 'CHIVO', 'CHIVO-SM-8821'),
+    ('DTE-FC-0303', 'BITCOIN', 'LNBC-SM-9910')
+) AS v(control_number, payment_method, reference)
+JOIN invoice inv ON inv.control_number = v.control_number
+JOIN cash_shift cs ON cs.cash_register_id = 4 AND CAST(cs.opening_date AS DATE) = CAST(inv.issue_date AS DATE);
+
+-- 5. MOVIMIENTOS DE CAJA EN SAN MIGUEL
+INSERT INTO cash_movement (shift_id, movement_type, description, amount, created_at)
+SELECT
+    cs.shift_id,
+    v.movement_type,
+    v.description,
+    v.amount,
+    CAST(v.created_at AS TIMESTAMP)
+FROM (
+    VALUES
+    ('2026-11-24', 'INCOME', 'Pago con tarjeta factura DTE-03-0001', 21.47, '2026-11-24 12:15'),
+    ('2026-11-24', 'INCOME', 'Pago efectivo factura DTE-FC-0301', 15.82, '2026-11-24 14:20'),
+    ('2026-11-24', 'INCOME', 'Pago Chivo Wallet delivery DTE-FC-0302', 15.26, '2026-11-24 15:45'),
+    ('2026-11-24', 'EXPENSE', 'Compra de bolsas térmicas para delivery', 6.04, '2026-11-24 11:00'),
+    ('2026-11-25', 'INCOME', 'Pago Bitcoin delivery DTE-FC-0303', 12.71, '2026-11-25 11:30')
+) AS v(shift_date, movement_type, description, amount, created_at)
+JOIN cash_shift cs ON cs.cash_register_id = 4 AND CAST(cs.opening_date AS DATE) = CAST(v.shift_date AS DATE);
+
+-- Actualizar correlativos de facturación para San Miguel (branch_id = 3)
+UPDATE document_sequence
+SET last_number = 3
+WHERE branch_id = 3 AND document_type = 'FINAL_CONSUMER';
+
+UPDATE document_sequence
+SET last_number = 1
+WHERE branch_id = 3 AND document_type = 'CREDIT_TAX';
+
+-- 6. MOVIMIENTOS DE INVENTARIO EN SAN MIGUEL (branch_id = 3)
 INSERT INTO inventory_movement (
     branch_id,
     ingredient_id,
@@ -865,34 +1019,26 @@ INSERT INTO inventory_movement (
     created_at
 )
 SELECT
-    1,
+    3,
     i.ingredient_id,
     e.employee_id,
-    'CONSUMPTION',
+    v.movement_type,
     v.quantity,
-    'Consumo por venta factura 3',
-    CAST('2026-11-25 12:35' AS TIMESTAMP)
+    v.reason,
+    CAST(v.created_at AS TIMESTAMP)
 FROM (
     VALUES
-    ('Chicken', 200),
-    ('Rice', 100),
-    ('Broccoli', 50),
-    ('Carrot', 50),
-    ('Oil', 15),
-    ('Salt and pepper', 3),
-    ('Large flat plate', 1),
-    ('Fork', 1),
-    ('Knife', 1),
-    ('Napkin', 2),
-    ('Lemons', 3),
-    ('Water', 300),
-    ('Sugar', 30),
-    ('Ice', 100),
-    ('Large glass 16 oz', 1),
-    ('Straw', 1),
-    ('Coaster', 1)
-) AS v(ingredient_name, quantity)
-JOIN ingredient i
-    ON i.name = v.ingredient_name
+    ('Chicken', 'IN', 15000, 'Compra factura FAC-SM-001', '2026-11-23 09:30'),
+    ('Shrimp', 'IN', 5000, 'Compra factura FAC-SM-001', '2026-11-23 09:30'),
+    ('Rice', 'IN', 20000, 'Compra factura FAC-SM-001', '2026-11-23 09:30'),
+    ('Napkin', 'IN', 2000, 'Compra factura FAC-003', '2026-11-17 11:15'),
+    ('Large flat plate', 'IN', 300, 'Compra factura FAC-003', '2026-11-17 11:15'),
+    ('Fork', 'IN', 600, 'Compra factura FAC-003', '2026-11-17 11:15'),
+    ('Shrimp', 'CONSUMPTION', 360, 'Consumo por venta DTE-03-0001 (2 Camarones al ajillo)', '2026-11-24 12:15'),
+    ('Beef', 'CONSUMPTION', 220, 'Consumo por venta DTE-FC-0301 (Carne asada)', '2026-11-24 14:20'),
+    ('Chicken', 'CONSUMPTION', 200, 'Consumo por venta delivery DTE-FC-0302', '2026-11-24 15:45'),
+    ('Tomato', 'ADJUSTMENT', 250, 'Merma por maduración en bodega San Miguel', '2026-11-24 18:00')
+) AS v(ingredient_name, movement_type, quantity, reason, created_at)
+JOIN ingredient i ON i.name = v.ingredient_name
 CROSS JOIN employee e
-WHERE e.email = 'gerente@origenessv.com';
+WHERE e.email = 'gerente.sanmiguel@origenessv.com';

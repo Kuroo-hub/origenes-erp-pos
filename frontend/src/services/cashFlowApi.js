@@ -1,6 +1,6 @@
 import { apiGet, apiPost } from './apiClient.js';
 
-export const getActiveCashSessions = async (branchId) => apiGet(`/cash-flow/sessions/active?branchId=${branchId}`);
+export const getActiveCashSessions = async () => apiGet('/cash-flow/sessions/active');
 
 export const openCashSession = async (payload) =>
   apiPost('/cash-flow/sessions/open', payload);
@@ -13,3 +13,6 @@ export const getCashSessionSummary = async (sessionId) =>
 
 export const addCashMovement = async (sessionId, payload) =>
   apiPost(`/cash-flow/sessions/${sessionId}/movements`, payload);
+
+export const getCashSessionHistory = async () =>
+  apiGet('/cash-flow/sessions/history');

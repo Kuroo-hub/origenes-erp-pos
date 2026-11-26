@@ -10,23 +10,15 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest(path, options = {}) {
-  const {
-    method = 'GET',
-    body,
-    headers = {},
-    withAuth = true,
-  } = options;
-
-  const token = localStorage.getItem('token');
-  const requestHeaders = {
-    'Content-Type': 'application/json',
-    ...(withAuth && token ? { Authorization: `Bearer ${token}` } : {}),
-    ...headers,
-  };
+  const { method = 'GET', body, headers = {} } = options;
 
   const config = {
     method,
-    headers: requestHeaders,
+    credentials: 'include',
+    headers: {
+      'Content-type': 'application/json',
+      ...headers,
+    },
   };
 
   if (body !== undefined) {
@@ -44,9 +36,9 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    if (response.status === 401 && path !== '/auth/login') {
+      // localStorage.removeItem('token');
+      // localStorage.removeItem('user');
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
 

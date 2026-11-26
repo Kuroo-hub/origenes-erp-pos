@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Alert } from 'reactstrap';
 import CashierCart from './CashierCart.jsx';
+import { getProductImage } from '../../utils/productImages.js';
 
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
@@ -10,7 +11,6 @@ export default function CashierPOS({
   productos,
   alertasStock = [],
   cajaAbierta = true,
-  bloqueadoPorError = false,
   onRegistrarPedido,
 }) {
   const [busqueda, setBusqueda] = useState('');
@@ -75,9 +75,7 @@ export default function CashierPOS({
     const stock = producto.stock;
 
     if (
-      bloqueadoPorError ||
       !producto.disponible ||
-      (producto.tipoProducto === 'PREPARED' && stock == null) ||
       (stock != null && cantidadActual >= Number(stock))
     ) {
       return;
@@ -143,11 +141,6 @@ export default function CashierPOS({
       return;
     }
 
-    if (bloqueadoPorError) {
-      setNotificacion('No se puede vender: faltan datos de productos o inventario.');
-      return;
-    }
-
     if (carrito.length === 0) return;
 
     if (
@@ -179,6 +172,7 @@ export default function CashierPOS({
         cliente,
         metodoPago,
         tipoEntrega: entrega.tipo,
+          isDelivery: entrega.tipo === 'domicilio',
         direccion: entrega.direccion,
         numeroCasa: entrega.numeroCasa,
         telefono: entrega.telefono,
@@ -296,11 +290,7 @@ export default function CashierPOS({
 
           <div className="cashier-pos__products">
             {productosFiltrados.map((producto) => {
-              const sinDatosStock =
-                bloqueadoPorError ||
-                (producto.tipoProducto === 'PREPARED' && producto.stock == null);
               const sinStock = producto.stock != null && producto.stock <= 0;
-              const noDisponible = sinDatosStock || sinStock;
 
               const limiteAlcanzado =
                 producto.stock != null &&
@@ -312,10 +302,21 @@ export default function CashierPOS({
                   key={producto.id}
                 >
                   <div className="cashier-product__image">
-                    <i
-                      className={`bi ${producto.imagen}`}
-                      aria-hidden="true"
-                    />
+                    {getProductImage(producto.nombre) ? (
+                      <img
+                        src={getProductImage(producto.nombre)}
+                        alt={producto.nombre}
+                        loading="lazy"
+                        onError={(evento) => {
+                          evento.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <i
+                        className={`bi ${producto.imagen}`}
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
 
                   <div className="cashier-product__content">
@@ -351,32 +352,28 @@ export default function CashierPOS({
                         {formatearMonedaCajero(producto.precio)}
                       </strong>
 
-                        <span>
-                          {sinDatosStock
-                            ? 'Sin datos de stock'
-                            : producto.stock == null
-                              ? 'Disponible'
-                              : `Stock: ${producto.stock}`}
-                        </span>
+                      <span>
+                        {producto.stock == null
+                          ? 'Disponible'
+                          : `Stock: ${producto.stock}`}
+                      </span>
 
-                       <button
-                         type="button"
-                         onClick={() => agregarProducto(producto)}
-                         disabled={
-                           !cajaAbierta || noDisponible || limiteAlcanzado
-                         }
-                         aria-label={`Agregar ${producto.nombre}`}
-                       >
-                         <i className="bi bi-plus-lg" />
-                       </button>
-                     </div>
-                   </div>
+                      <button
+                        type="button"
+                        onClick={() => agregarProducto(producto)}
+                        disabled={!cajaAbierta || sinStock || limiteAlcanzado}
+                        aria-label={`Agregar ${producto.nombre}`}
+                      >
+                        <i className="bi bi-plus-lg" />
+                      </button>
+                    </div>
+                  </div>
 
-                   {noDisponible && (
-                     <span className="cashier-product__unavailable">
-                       {sinDatosStock ? 'Sin datos de stock' : 'Sin existencias'}
-                     </span>
-                   )}
+                  {sinStock && (
+                    <span className="cashier-product__unavailable">
+                      Sin existencias
+                    </span>
+                  )}
                 </article>
               );
             })}

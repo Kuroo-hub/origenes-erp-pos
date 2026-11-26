@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import CashMovementTable from '../shared/CashMovementTable.jsx';
+import { useEffect, useState } from 'react';
+import { getCashSessionSummary } from '../../services/cashFlowApi.js';
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
 const formatearHora = (timestamp) =>
@@ -10,34 +12,26 @@ const formatearHora = (timestamp) =>
       })
     : '—';
 
+const parseMonto = (value) => {
+  const text = String(value ?? '').trim().replace(',', '.');
+
+  if (!/^\d{1,10}(\.\d{1,2})?$/.test(text)) return null;
+
+  const amount = Number(text);
+  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+};
+
 export default function ManagerCashRegister({
   sucursal,
   caja,
-  registrosCaja = [],
   onAbrir,
   onCerrar,
 }) {
   const abierta = caja?.abierta ?? false;
   const [montoInicial, setMontoInicial] = useState('');
   const [montoFinal, setMontoFinal] = useState('');
-  const [cashRegisterId, setCashRegisterId] = useState('');
   const [error, setError] = useState('');
-
-  const cajasDisponibles = useMemo(
-    () => registrosCaja.filter((registro) => registro.active !== false),
-    [registrosCaja]
-  );
-
-  useEffect(() => {
-    const seleccionActual = cajasDisponibles.find(
-      (registro) => Number(registro.cashRegisterId) === Number(cashRegisterId)
-    );
-
-    if (!seleccionActual) {
-      const primeraCaja = cajasDisponibles[0];
-      setCashRegisterId(primeraCaja ? String(primeraCaja.cashRegisterId) : '');
-    }
-  }, [cajasDisponibles, cashRegisterId]);
+  const [resumen, setResumen] = useState(null);
 
   useEffect(() => {
     setMontoInicial(
@@ -55,27 +49,47 @@ export default function ManagerCashRegister({
     caja?.montoFinal,
   ]);
 
-  const handleAbrir = () => {
-    if (montoInicial === '' || Number(montoInicial) < 0) {
-      setError('Ingresa un monto inicial válido para abrir la caja.');
-      return;
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    let activo = true;
+    setResumen(null);
+    if (abierta && caja?.sessionId) {
+      getCashSessionSummary(caja.sessionId).then(r => { if (activo) setResumen(r.data); })
+        .catch(e => { if (activo) setError(e.message); });
     }
+    return () => { activo = false; };
+  }, [abierta, caja?.sessionId, revision]);
 
-    if (!cashRegisterId) {
-      setError('Selecciona una caja válida para abrirla.');
-      return;
-    }
+  const esperado = resumen ? Number(resumen.montoEfectivoEsperado) : null;
+  const contado = parseMonto(montoFinal);
+  const diferencia = esperado !== null && contado !== null
+    ? Math.round((contado - esperado) * 100) / 100 : null;
 
-    onAbrir(Number(montoInicial), Number(cashRegisterId));
-  };
+const handleAbrir = () => {
+  const monto = parseMonto(montoInicial);
+
+  console.log('Monto inicial:', montoInicial);
+  console.log('Monto convertido:', monto);
+
+  if (monto === null) {
+    setError('Ingresa un monto inicial válido para abrir la caja.');
+    return;
+  }
+
+  setError('');
+  console.log('Ejecutando onAbrir:', monto);
+  onAbrir(monto);
+};
 
   const handleCerrar = () => {
-    if (montoFinal === '' || Number(montoFinal) < 0) {
+    if (contado === null) {
       setError('Ingresa un monto final válido para cerrar la caja.');
       return;
     }
 
-    onCerrar(Number(montoFinal));
+    if (esperado === null) { setError('No se pudo consultar el efectivo esperado.'); return; }
+    setError('');
+    onCerrar(contado);
   };
 
   return (
@@ -149,34 +163,7 @@ export default function ManagerCashRegister({
               <strong>{formatearHora(caja?.cerradaDesde)}</strong>
             </div>
 
-            <div>
-              <span>Modo</span>
-              <strong>Demostración</strong>
-            </div>
-          </div>
 
-          <div className="cashier-cart__customer">
-            <label htmlFor="manager-caja-registro">Caja a abrir</label>
-            <select
-              id="manager-caja-registro"
-              value={cashRegisterId}
-              disabled={abierta}
-              onChange={(evento) => setCashRegisterId(evento.target.value)}
-            >
-              {cajasDisponibles.length === 0 && (
-                <option value="">No hay cajas configuradas</option>
-              )}
-
-              {cajasDisponibles.map((registro) => (
-                <option
-                  key={registro.cashRegisterId}
-                  value={registro.cashRegisterId}
-                >
-                  {registro.name}
-                  {registro.branchName ? ` · ${registro.branchName}` : ''}
-                </option>
-              ))}
-            </select>
           </div>
 
           <div className="manager-caja-amounts">
@@ -190,7 +177,7 @@ export default function ManagerCashRegister({
                 value={montoInicial}
                 disabled={abierta}
                 placeholder="0.00"
-                onChange={(evento) => setMontoInicial(evento.target.value)}
+                onChange={(evento) => { setMontoInicial(evento.target.value); setError(''); }}
                 aria-label="Monto inicial de la caja"
               />
             </label>
@@ -205,12 +192,19 @@ export default function ManagerCashRegister({
                 value={montoFinal}
                 disabled={!abierta}
                 placeholder="0.00"
-                onChange={(evento) => setMontoFinal(evento.target.value)}
+                onChange={(evento) => { setMontoFinal(evento.target.value); setError(''); }}
                 aria-label="Monto final de la caja"
               />
             </label>
           </div>
 
+          {abierta && <div className="cashflow-reconciliation">
+            <div>Efectivo esperado: <span>{esperado === null ? 'Cargando...' : formatearMonedaCajero(esperado)}</span></div>
+            <div>Ventas en efectivo: {resumen ? formatearMonedaCajero((resumen.payments ?? []).filter(p => p.metodo === "CASH").reduce((sum, p) => sum + Number(p.total), 0)) : "—"}</div>
+            <div>Ingresos: {formatearMonedaCajero(Number(resumen?.movements?.total_ingresos ?? 0))} | Egresos: {formatearMonedaCajero(Number(resumen?.movements?.total_egresos ?? 0))}</div>
+            <div>Diferencia: <span>{diferencia === null ? 'Ingresá el monto contado' : `${formatearMonedaCajero(Math.abs(diferencia))} (${diferencia === 0 ? 'Cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'})`}</span></div>
+            <button type="button" className="cashflow-button is-secondary" onClick={() => setRevision(v => v + 1)}>Actualizar resumen</button>
+          </div>}
           {error && (
             <p className="manager-caja-error" role="alert">
               <i className="bi bi-exclamation-circle" aria-hidden="true" />
@@ -233,7 +227,7 @@ export default function ManagerCashRegister({
               type="button"
               className="manager-caja-button is-closed"
               onClick={handleCerrar}
-              disabled={!abierta}
+              disabled={!abierta || esperado === null}
             >
               <i className="bi bi-lock-fill" aria-hidden="true" />
               Cerrar caja
@@ -270,6 +264,7 @@ export default function ManagerCashRegister({
           </ul>
         </article>
       </div>
+      {abierta && resumen && <CashMovementTable movements={resumen.movementDetails} />}
     </section>
   );
 }

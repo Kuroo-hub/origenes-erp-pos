@@ -7,75 +7,6 @@ import {
   runPayroll,
 } from '../../services/hrApi.js';
 
-const ISSS_RATE = 0.03;
-const ISSS_CAP = 30;
-const AFP_RATE = 0.0725;
-
-function roundMoney(value) {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
-function calculateIncomeTax(taxableBase) {
-  if (taxableBase <= 176) return 0;
-
-  if (taxableBase <= 447.24) {
-    return (taxableBase - 176) * 0.10 + 8.80;
-  }
-
-  if (taxableBase <= 1019.05) {
-    return (taxableBase - 447.24) * 0.20 + 35.92;
-  }
-
-  return (taxableBase - 1019.05) * 0.30 + 150.28;
-}
-
-function calculateBiweeklyPayroll(
-  baseSalary,
-  otherDeductions = 0,
-  bonus = 0
-) {
-  const monthlySalary = Number(baseSalary);
-  const additionalDeductions = Number(otherDeductions);
-  const employeeBonus = Number(bonus);
-
-  const baseBiweeklySalary = roundMoney(monthlySalary / 2);
-  const bonusAmount = roundMoney(employeeBonus);
-  const grossSalary = roundMoney(baseBiweeklySalary + bonusAmount);
-
-  const isssDeduction = roundMoney(
-    Math.min(grossSalary * ISSS_RATE, ISSS_CAP)
-  );
-
-  const afpDeduction = roundMoney(grossSalary * AFP_RATE);
-
-  const taxableBase = roundMoney(
-    grossSalary - isssDeduction - afpDeduction
-  );
-
-  const incomeTax = roundMoney(
-    calculateIncomeTax(taxableBase)
-  );
-
-  const netSalary = roundMoney(
-    grossSalary -
-    isssDeduction -
-    afpDeduction -
-    incomeTax -
-    additionalDeductions
-  );
-
-  return {
-    baseBiweeklySalary,
-    bonusAmount,
-    grossSalary,
-    isssDeduction,
-    afpDeduction,
-    incomeTax,
-    otherDeductions: roundMoney(additionalDeductions),
-    netSalary,
-  };
-}
-
 function formatCurrency(value) {
   return new Intl.NumberFormat('es-SV', {
     style: 'currency',
@@ -86,7 +17,12 @@ function formatCurrency(value) {
 function formatDate(value) {
   if (!value) return 'No especificada';
 
-  return new Date(`${value}T00:00:00`).toLocaleDateString('es-SV', {
+  const dateValue = String(value).slice(0, 10);
+  const date = new Date(`${dateValue}T00:00:00`);
+
+  if (Number.isNaN(date.getTime())) return 'No especificada';
+
+  return date.toLocaleDateString('es-SV', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -105,7 +41,6 @@ export default function HrPayroll({ empleados = [] }) {
   const [bonuses, setBonuses] = useState({});
   const [deductions, setDeductions] = useState({});
   const [resultado, setResultado] = useState(null);
-  const [periodosProcesados, setPeriodosProcesados] = useState([]);
   const [error, setError] = useState('');
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState('');
@@ -118,10 +53,12 @@ export default function HrPayroll({ empleados = [] }) {
 
     setResultado(null);
     setError('');
+    setMensaje('');
   };
 
   const procesarPlanilla = async (event) => {
     event.preventDefault();
+
     setError('');
     setResultado(null);
     setMensaje('');
@@ -146,13 +83,6 @@ export default function HrPayroll({ empleados = [] }) {
       return;
     }
 
-    const periodo = `${startDate}_${endDate}`;
-
-    if (periodosProcesados.includes(periodo)) {
-      setError('Ya procesaste una planilla para este período en esta sesión.');
-      return;
-    }
-
     for (const empleado of empleadosActivos) {
       const bonusValue = bonuses[empleado.employeeId] ?? '';
       const deductionValue = deductions[empleado.employeeId] ?? '';
@@ -167,19 +97,8 @@ export default function HrPayroll({ empleados = [] }) {
         !Number.isFinite(otherDeductions) ||
         otherDeductions < 0
       ) {
-        setError('Los bonos y deducciones deben ser montos válidos y no negativos.');
-        return;
-      }
-
-      const calculo = calculateBiweeklyPayroll(
-        empleado.baseSalary,
-        otherDeductions,
-        bonus
-      );
-
-      if (calculo.netSalary < 0) {
         setError(
-          `Las deducciones superan el salario neto de ${empleado.fullName}.`
+          'Los bonos y deducciones deben ser montos válidos y no negativos.'
         );
         return;
       }
@@ -199,17 +118,26 @@ export default function HrPayroll({ empleados = [] }) {
     try {
       const response = await runPayroll(payload);
 
-      setResultado(
-        mapPayrollResponseToResult(response, empleados, etiquetaRolRRHH)
+      const resultadoProcesado = mapPayrollResponseToResult(
+        response,
+        empleados,
+        etiquetaRolRRHH
       );
-      setMensaje(response.message ?? 'La planilla fue procesada correctamente.');
-      setPeriodosProcesados((actuales) => [...actuales, periodo]);
-    } catch (caughtError) {
-      if (caughtError.status === 409) {
-        setPeriodosProcesados((actuales) => [...actuales, periodo]);
+
+      if (!resultadoProcesado.details.length) {
+        throw new Error(
+          'El servidor procesó la solicitud, pero no devolvió el detalle de empleados.'
+        );
       }
 
-      setError(caughtError.message ?? 'No se pudo procesar la planilla.');
+      setResultado(resultadoProcesado);
+      setMensaje(
+        response.message ?? 'La planilla fue procesada correctamente.'
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError.message ?? 'No se pudo procesar la planilla.'
+      );
     } finally {
       setProcesando(false);
     }
@@ -307,7 +235,11 @@ export default function HrPayroll({ empleados = [] }) {
                   >
                     <div className="hr-payroll__employee-info">
                       <strong>{empleado.fullName}</strong>
-                      <span>{etiquetaRolRRHH(empleado.role ?? empleado.jobTitle)}</span>
+                      <span>
+                        {etiquetaRolRRHH(
+                          empleado.role ?? empleado.jobTitle
+                        )}
+                      </span>
                       <small>
                         Salario mensual: {formatCurrency(empleado.baseSalary)}
                       </small>

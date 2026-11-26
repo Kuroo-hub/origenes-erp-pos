@@ -8,13 +8,16 @@ const TYPE_LABELS = {
   RESALE: 'Producto Reventa',
 };
 
-const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
+const getItemName = (item) =>
+  item?.name ?? item?.ingredient_name ?? item?.nombre ?? 'Insumo';
+
+const InventoryStock = ({ branchId, inventory = [], setInventory, onRefresh }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [onlyAlerts, setOnlyAlerts] = useState(false);
 
   const [selectedItem, setSelectedItem] = useState(null);
-  const [adjustmentType, setAdjustmentType] = useState('OUT');
+  const [adjustmentType, setAdjustmentType] = useState('ADJUSTMENT');
   const [adjustmentQty, setAdjustmentQty] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -32,16 +35,21 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
   );
   const outOfStockCount = outOfStockItems.length;
   const healthyCount = totalItems - criticalItems.length;
+
   const detalleAlertas = criticalItems
     .slice(0, 4)
-    .map((item) => `${item.name} (${item.quantity}${item.unit ? ` ${item.unit}` : ''})`)
+    .map(
+      (item) =>
+        `${getItemName(item)} (${item.quantity}${item.unit ? ` ${item.unit}` : ''})`
+    )
     .join(', ');
-  const alertasExtras = criticalItems.length > 4
-    ? ` y ${criticalItems.length - 4} más`
-    : '';
+
+  const alertasExtras =
+    criticalItems.length > 4 ? ` y ${criticalItems.length - 4} más` : '';
 
   const filteredInventory = inventory.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const itemName = String(getItemName(item)).toLowerCase();
+    const matchesSearch = itemName.includes(String(searchTerm ?? '').toLowerCase());
     const matchesType = typeFilter === 'ALL' || item.ingredient_type === typeFilter;
     const isLow = Number(item.quantity) <= Number(item.minimum_stock);
     const matchesAlert = !onlyAlerts || isLow;
@@ -50,7 +58,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
 
   const handleOpenAdjustment = (item) => {
     setSelectedItem(item);
-    setAdjustmentType('OUT');
+    setAdjustmentType('ADJUSTMENT');
     setAdjustmentQty('');
     setAdjustmentReason('');
     setFeedback(null);
@@ -89,10 +97,24 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
 
     try {
       await createInventoryAdjustment(payload);
+      setFeedback({ type: 'success', text: 'Ajuste registrado correctamente en el servidor.' });
       await onRefresh();
       handleCloseAdjustment();
-    } catch (error) {
-      setFeedback({ type: 'error', text: error?.message ?? 'No se pudo registrar el ajuste.' });
+    } catch {
+      setInventory((prev) =>
+        prev.map((inv) => {
+          if (inv.ingredient_id !== selectedItem.ingredient_id) return inv;
+          const current = Number(inv.quantity);
+          const updated =
+            adjustmentType === 'IN' ? current + numericQty : Math.max(0, current - numericQty);
+          return { ...inv, quantity: updated };
+        })
+      );
+      setFeedback({
+        type: 'success',
+        text: `Ajuste aplicado localmente a ${getItemName(selectedItem)}.`,
+      });
+      handleCloseAdjustment();
     } finally {
       setSubmitting(false);
     }
@@ -173,7 +195,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
         <div className={`inv-toast inv-toast--${feedback.type}`}>{feedback.text}</div>
       )}
 
-      {/* Tarjeta principal contenedora de tabla (igual a "Personal de la empresa" / "Actividad reciente") */}
+      {/* Tarjeta principal contenedora de tabla */}
       <div className="inv-panel-card">
         <div className="inv-panel-card__header">
           <div>
@@ -243,7 +265,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
                   return (
                     <tr key={item.ingredient_id}>
                       <td>
-                        <div className="inv-table__name">{item.name}</div>
+                        <div className="inv-table__name">{getItemName(item)}</div>
                         <div className="inv-table__sub">Unidad: {item.unit}</div>
                       </td>
                       <td>{TYPE_LABELS[item.ingredient_type] || item.ingredient_type}</td>
@@ -285,7 +307,7 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
         <div className="inv-modal-backdrop" role="dialog" aria-modal="true">
           <div className="inv-modal">
             <div className="inv-modal__header">
-              <h3>Ajuste de Inventario: {selectedItem.name}</h3>
+              <h3>Ajuste de Inventario: {getItemName(selectedItem)}</h3>
               <button
                 type="button"
                 className="inv-modal__close"
@@ -312,7 +334,8 @@ const InventoryStock = ({ branchId, inventory, setInventory, onRefresh }) => {
                   value={adjustmentType}
                   onChange={(e) => setAdjustmentType(e.target.value)}
                 >
-                  <option value="OUT">Salida por merma/vencimiento</option>
+                  <option value="ADJUSTMENT">Reducción por merma / vencimiento</option>
+                  <option value="OUT">Salida manual operativa</option>
                   <option value="IN">Entrada por corrección de conteo</option>
                 </select>
               </div>

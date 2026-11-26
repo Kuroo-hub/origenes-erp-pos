@@ -110,7 +110,7 @@ export async function findCashRegistersByBranch(branchId) {
          FROM cash_register cr
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-          WHERE ($1::INTEGER IS NULL OR cr.branch_id = $1)
+         WHERE cr.branch_id = $1
          ORDER BY cr.cash_register_id`,
         [branchId]
     );
@@ -139,9 +139,9 @@ export async function findAllActiveCashSessions(branchId = null) {
             ON b.branch_id = cr.branch_id
          INNER JOIN employee e
              ON e.employee_id = cs.employee_id
-          WHERE cs.status = 'OPEN'
-            AND ($1::INTEGER IS NULL OR b.branch_id = $1)
-          ORDER BY cs.opening_date DESC`,
+         WHERE cs.status = 'OPEN'
+           AND ($1::integer IS NULL OR cr.branch_id = $1)
+         ORDER BY cs.opening_date DESC`,
         [branchId]
     );
 
@@ -170,12 +170,11 @@ const CASH_SESSION_DETAILS_QUERY = `SELECT
     ON b.branch_id = cr.branch_id
  INNER JOIN employee e
      ON e.employee_id = cs.employee_id
-  WHERE cs.shift_id = $1
-    AND ($2::INTEGER IS NULL OR cr.branch_id = $2)`;
+ WHERE cs.shift_id = $1`;
 
 // Obtiene una sesión por su ID.
-export async function findCashSessionById(sessionId, client = pool, branchId = null) {
-    const result = await client.query(CASH_SESSION_DETAILS_QUERY, [sessionId, branchId]);
+export async function findCashSessionById(sessionId, client = pool) {
+    const result = await client.query(CASH_SESSION_DETAILS_QUERY, [sessionId]);
 
     return result.rows[0] ?? null;
 }
@@ -184,18 +183,15 @@ export async function findCashSessionById(sessionId, client = pool, branchId = n
 export async function findCashSessionForUpdate(client, sessionId) {
     const result = await client.query(
         `SELECT
-            cs.*,
-            cs.shift_id AS id,
-            cr.branch_id AS "branchId",
+            *,
+            shift_id AS id,
             CASE
-                WHEN cs.status = 'OPEN' THEN 'ABIERTA'
+                WHEN status = 'OPEN' THEN 'ABIERTA'
                 ELSE 'CERRADA'
             END AS estado
-         FROM cash_shift cs
-         INNER JOIN cash_register cr
-             ON cr.cash_register_id = cs.cash_register_id
-         WHERE cs.shift_id = $1
-         FOR UPDATE OF cs`,
+         FROM cash_shift
+         WHERE shift_id = $1
+         FOR UPDATE`,
         [sessionId]
     );
 
@@ -341,6 +337,27 @@ export async function findCashSessionHistory(limit, offset, branchId = null) {
             cs.closing_date AS "fechaCierre",
             cs.opening_amount AS "montoInicial",
             cs.closing_amount AS "montoFinalReal",
+            (cs.opening_amount
+              + COALESCE((SELECT SUM(sp.amount) FROM sale_payment sp
+                  JOIN invoice i ON i.invoice_id = sp.invoice_id
+                  WHERE sp.shift_id = cs.shift_id AND i.status = 'PAID'
+                    AND sp.payment_method = 'CASH'), 0)
+              + COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                  WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'INCOME'), 0)
+              - COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                  WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'EXPENSE'), 0)
+            ) AS "efectivoEsperado",
+            CASE WHEN cs.status = 'CLOSED' THEN
+              cs.closing_amount - (cs.opening_amount
+                + COALESCE((SELECT SUM(sp.amount) FROM sale_payment sp
+                    JOIN invoice i ON i.invoice_id = sp.invoice_id
+                    WHERE sp.shift_id = cs.shift_id AND i.status = 'PAID'
+                      AND sp.payment_method = 'CASH'), 0)
+                + COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                    WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'INCOME'), 0)
+                - COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                    WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'EXPENSE'), 0))
+              ELSE NULL END AS diferencia,
             CASE
                 WHEN cs.status = 'OPEN' THEN 'ABIERTA'
                 ELSE 'CERRADA'
@@ -353,13 +370,24 @@ export async function findCashSessionHistory(limit, offset, branchId = null) {
             ON cr.cash_register_id = cs.cash_register_id
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-          INNER JOIN employee e
-              ON e.employee_id = cs.employee_id
-          WHERE ($3::INTEGER IS NULL OR b.branch_id = $3)
-          ORDER BY cs.opening_date DESC
-          LIMIT $1 OFFSET $2`,
+         INNER JOIN employee e
+             ON e.employee_id = cs.employee_id
+         WHERE ($3::integer IS NULL OR cr.branch_id = $3)
+         ORDER BY cs.opening_date DESC
+         LIMIT $1 OFFSET $2`,
         [limit, offset, branchId]
     );
 
+    return result.rows;
+}
+
+// Detalle de movimientos registrados en la sesión.
+export async function findSessionMovements(client, sessionId) {
+    const result = await client.query(
+        `SELECT cash_movement_id, movement_type, description, amount, created_at
+         FROM cash_movement WHERE shift_id = $1
+         ORDER BY created_at DESC, cash_movement_id DESC`,
+        [sessionId]
+    );
     return result.rows;
 }

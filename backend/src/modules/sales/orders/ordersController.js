@@ -28,17 +28,15 @@ export async function patchDeliveryStatusController(req, res) {
         data: order
     });
 }
-
 export async function patchKitchenStatusController(req, res) {
     const order = await updateKitchenStatusService(
-        req.params.invoiceId,
+        req.params.orderId,
         req.body,
         req.user
     );
 
     return res.status(200).json({
         success: true,
-        message: "Estado de cocina actualizado.",
         data: order
     });
 }

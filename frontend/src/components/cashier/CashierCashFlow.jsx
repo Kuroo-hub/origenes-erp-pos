@@ -1,346 +1,91 @@
 import { useCallback, useEffect, useState } from 'react';
+import CashMovementTable from '../shared/CashMovementTable.jsx';
 import { useOrders } from '../../context/OrderContext.jsx';
-import { addCashMovement, getCashSessionSummary } from '../../services/cashFlowApi.js';
-import { formatearMonedaCajero } from '../../utils/formatters.js';
+import { getCashSessionSummary, addCashMovement, getCashSessionHistory } from '../../services/cashFlowApi.js';
+import { formatearMonedaCajero as dinero } from '../../utils/formatters.js';
 
-const METODOS_PAGO = {
-  CASH: {
-    titulo: 'Ingresos en efectivo',
-    icono: 'bi-cash-coin',
-    etiqueta: 'Efectivo',
-  },
-  CARD: {
-    titulo: 'Ingresos con tarjeta',
-    icono: 'bi-credit-card',
-    etiqueta: 'Tarjeta',
-  },
-  BITCOIN: {
-    titulo: 'Ingresos con Bitcoin',
-    icono: 'bi-currency-bitcoin',
-    etiqueta: 'Bitcoin',
-  },
-  CHIVO: {
-    titulo: 'Ingresos con Chivo Wallet',
-    icono: 'bi-wallet2',
-    etiqueta: 'Chivo Wallet',
-  },
-};
-
-const METODOS = Object.keys(METODOS_PAGO);
+const amount = (value) => Number(value ?? 0);
+const validMoney = (value, allowZero = false) => /^\d{1,10}(\.\d{1,2})?$/.test(value) && (allowZero || amount(value) > 0);
 
 export default function CashierCashFlow({ sucursal }) {
-  const { caja } = useOrders();
-  const sessionId = caja?.sessionId;
-
+  const { caja, recargarDatos, sucursalId } = useOrders();
   const [resumen, setResumen] = useState(null);
-  const [cargando, setCargando] = useState(Boolean(sessionId));
-  const [error, setError] = useState('');
+  const [historial, setHistorial] = useState([]);
   const [tipo, setTipo] = useState('INGRESO');
   const [monto, setMonto] = useState('');
   const [concepto, setConcepto] = useState('');
-  const [guardando, setGuardando] = useState(false);
-  const [feedback, setFeedback] = useState(null);
-
-  const cargarResumen = useCallback(async () => {
-    if (!sessionId) {
-      setResumen(null);
-      setError('');
-      setCargando(false);
-      return;
-    }
-
+  const [contado, setContado] = useState('');
+  const [error, setError] = useState('');
+  const [ocupado, setOcupado] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const cargar = useCallback(async () => {
     setCargando(true);
     setError('');
-
     try {
-      const respuesta = await getCashSessionSummary(sessionId);
-      setResumen(respuesta?.data ?? respuesta ?? null);
-    } catch (caughtError) {
-      setResumen(null);
-      setError(caughtError?.message ?? 'No se pudo cargar el resumen de la caja.');
-    } finally {
-      setCargando(false);
-    }
-  }, [sessionId]);
+      const [r, h] = await Promise.all([
+        caja.sessionId ? getCashSessionSummary(caja.sessionId) : Promise.resolve(null),
+        getCashSessionHistory()
+      ]);
+      setResumen(r?.data ?? null);
+      setHistorial(h?.data ?? []);
+    } catch (e) { setError(e.message); setResumen(null); }
+    finally { setCargando(false); }
+  }, [caja.sessionId]);
+  useEffect(() => { cargar(); }, [cargar]);
 
-  useEffect(() => {
-    cargarResumen();
-  }, [cargarResumen]);
-
-  useEffect(() => {
-    setMonto('');
-    setConcepto('');
-    setFeedback(null);
-  }, [sessionId]);
-
-  const handleRegistrar = async (evento) => {
-    evento.preventDefault();
-
-    if (!sessionId) return;
-
-    const montoNormalizado = monto.trim();
-
-    if (!/^\d+(\.\d{1,2})?$/.test(montoNormalizado)) {
-      setFeedback({
-        type: 'error',
-        text: 'Ingresa un monto válido con hasta dos decimales.',
-      });
-      return;
-    }
-
-    const montoNumerico = Number(montoNormalizado);
-
-    if (!Number.isFinite(montoNumerico) || montoNumerico <= 0) {
-      setFeedback({
-        type: 'error',
-        text: 'El monto del movimiento debe ser mayor a cero.',
-      });
-      return;
-    }
-
-    const conceptoNormalizado = concepto.trim();
-
-    if (!conceptoNormalizado || conceptoNormalizado.length > 150) {
-      setFeedback({
-        type: 'error',
-        text: 'El concepto es obligatorio y no puede superar 150 caracteres.',
-      });
-      return;
-    }
-
-    setGuardando(true);
-    setFeedback(null);
-
+  const registrar = async (event) => {
+    event.preventDefault();
+    if (!validMoney(monto) || !concepto.trim()) { setError('Ingresá un monto positivo y un concepto.'); return; }
+    setOcupado(true); setError('');
     try {
-      await addCashMovement(sessionId, {
-        type: tipo,
-        amount: montoNumerico.toFixed(2),
-        concept: conceptoNormalizado,
-      });
-      setMonto('');
-      setConcepto('');
-      await cargarResumen();
-      setFeedback({
-        type: 'success',
-        text: 'Movimiento registrado correctamente.',
-      });
-    } catch (caughtError) {
-      setFeedback({
-        type: 'error',
-        text: caughtError?.message ?? 'No se pudo registrar el movimiento.',
-      });
-    } finally {
-      setGuardando(false);
-    }
+      await addCashMovement(caja.sessionId, { type: tipo, amount: monto, concept: concepto.trim() });
+      setMonto(''); setConcepto('');
+      await cargar(); await recargarDatos(sucursalId);
+    } catch (e) { setError(e.message); }
+    finally { setOcupado(false); }
   };
-
-  const pagos = Array.isArray(resumen?.payments) ? resumen.payments : [];
-  const totalVentas = pagos.reduce(
-    (total, pago) => total + Number(pago.total ?? 0),
-    0
-  );
-  const pagosPorMetodo = Object.fromEntries(
-    pagos.map((pago) => [pago.metodo, Number(pago.total ?? 0)])
-  );
-  const ingresosManuales = Number(resumen?.movements?.total_ingresos ?? 0);
-  const egresosManuales = Number(resumen?.movements?.total_egresos ?? 0);
-  const efectivoEsperado = Number(resumen?.montoEfectivoEsperado ?? 0);
-  const montoInicial = Number(resumen?.session?.monto_inicial ?? 0);
-
+  const pagos = resumen?.payments ?? [];
+  const efectivo = amount(resumen?.montoEfectivoEsperado);
+  const diferencia = validMoney(contado, true) ? Math.round((amount(contado) - efectivo) * 100) / 100 : null;
   return (
     <section className="cashier-cashflow">
-      <header className="cashier-section-header">
-        <div>
-          <h1>Flujo de caja</h1>
-          <p>
-            Consulta el resumen real de la sesión activa en {sucursal}.
-          </p>
+      <header className="cashier-section-header"><div><h1>Flujo y cuadre de caja</h1><p>Control de efectivo de {sucursal}.</p></div>
+        <button className="cashflow-button is-secondary" onClick={cargar} disabled={cargando}>Actualizar</button></header>
+      {error && <p className="alert alert-danger" role="alert">{error}</p>}
+      {cargando && <p>Consultando caja...</p>}
+      {resumen ? <>
+        <div className="cashier-cashflow__summary">
+          {[['Fondo inicial', resumen.session.monto_inicial], ['Ventas en efectivo', pagos.filter(p => p.metodo === 'CASH').reduce((sum, p) => sum + amount(p.total), 0)], ['Ingresos manuales', resumen.movements.total_ingresos], ['Egresos manuales', resumen.movements.total_egresos], ['Efectivo esperado', efectivo]].map(([nombre, valor]) => (
+            <article className="cashier-cashflow__card" key={nombre}><span>{nombre}</span><span className="cashflow-value">{dinero(amount(valor))}</span></article>
+          ))}
         </div>
-      </header>
-
-      {!sessionId ? (
-        <div className="cashier-pos__empty">
-          <i className="bi bi-cash-stack" aria-hidden="true" />
-          <strong>Sin sesión de caja abierta</strong>
-          <span>
-            No hay datos de caja para mostrar hasta que se abra una sesión.
-          </span>
-        </div>
-      ) : cargando ? (
-        <div className="cashier-pos__empty">
-          <strong>Cargando resumen de la caja...</strong>
-        </div>
-      ) : error ? (
-        <div className="cashier-caja-banner" role="alert">
-          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true" />
-          <div>
-            <strong>Error al consultar la caja</strong>
-            <span>{error}</span>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="cashier-cashflow__summary">
-            <article className="cashier-cashflow__card">
-              <span>Total de ventas</span>
-              <strong>{formatearMonedaCajero(totalVentas)}</strong>
-              <small>Pagos registrados en la sesión</small>
-            </article>
-
-            {METODOS.map((metodo) => (
-              <article
-                className="cashier-cashflow__card"
-                key={metodo}
-              >
-                <span>{METODOS_PAGO[metodo].titulo}</span>
-                <strong>
-                  {formatearMonedaCajero(pagosPorMetodo[metodo] ?? 0)}
-                </strong>
-                <small>
-                  <i
-                    className={`bi ${METODOS_PAGO[metodo].icono}`}
-                    aria-hidden="true"
-                  />{' '}
-                  {METODOS_PAGO[metodo].etiqueta}
-                </small>
-              </article>
-            ))}
-          </div>
-
-          {feedback && (
-            <div className="cashier-caja-banner" role="alert">
-              <i
-                className={`bi ${
-                  feedback.type === 'success'
-                    ? 'bi-check-circle-fill'
-                    : 'bi-exclamation-triangle-fill'
-                }`}
-                aria-hidden="true"
-              />
-              <div>
-                <strong>{feedback.text}</strong>
-              </div>
-            </div>
-          )}
-
-          <section className="cashier-cashflow__movements">
-            <div className="cashier-cashflow__heading">
-              <div>
-                <h2>Detalle de la sesión</h2>
-                <p>
-                  Montos reales reportados por el backend para esta caja.
-                </p>
-              </div>
-            </div>
-
-            <div className="table-responsive">
-              <table className="table align-middle">
-                <thead>
-                  <tr>
-                    <th>Tipo</th>
-                    <th className="text-end">Total</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  <tr>
-                    <td>Caja</td>
-                    <td className="text-end">
-                      <strong>{resumen?.session?.nombreCaja ?? '—'}</strong>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Monto inicial</td>
-                    <td className="text-end">
-                      <strong>{formatearMonedaCajero(montoInicial)}</strong>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Efectivo esperado</td>
-                    <td className="text-end">
-                      <strong>{formatearMonedaCajero(efectivoEsperado)}</strong>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Ingresos manuales</td>
-                    <td className="text-end">
-                      <strong>{formatearMonedaCajero(ingresosManuales)}</strong>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Egresos manuales</td>
-                    <td className="text-end">
-                      <strong>{formatearMonedaCajero(egresosManuales)}</strong>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="cashier-cashflow__movements">
-            <div className="cashier-cashflow__heading">
-              <div>
-                <h2>Registrar movimiento</h2>
-                <p>
-                  El movimiento se asocia a la sesión abierta de la caja.
-                </p>
-              </div>
-            </div>
-
-            <form
-              className="manager-caja-amounts cashier-cart__customer"
-              onSubmit={handleRegistrar}
-            >
-              <label>
-                <span>Tipo</span>
-                <select
-                  value={tipo}
-                  onChange={(evento) => setTipo(evento.target.value)}
-                  aria-label="Tipo de movimiento"
-                >
-                  <option value="INGRESO">Ingreso</option>
-                  <option value="EGRESO">Egreso</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Monto</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={monto}
-                  onChange={(evento) => setMonto(evento.target.value)}
-                  placeholder="0.00"
-                  maxLength={12}
-                  aria-label="Monto del movimiento"
-                />
-              </label>
-
-              <label>
-                <span>Concepto</span>
-                <input
-                  type="text"
-                  value={concepto}
-                  onChange={(evento) => setConcepto(evento.target.value)}
-                  placeholder="Concepto del movimiento"
-                  maxLength={150}
-                  aria-label="Concepto del movimiento"
-                />
-              </label>
-
-              <button
-                type="submit"
-                className="manager-caja-button is-open"
-                disabled={guardando}
-              >
-                <i className="bi bi-plus-circle" aria-hidden="true" />
-                {guardando ? 'Registrando...' : 'Registrar movimiento'}
-              </button>
-            </form>
-          </section>
-        </>
-      )}
+        <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Ventas por método de pago</h2></div>
+          <table className="cashier-activity__table"><thead><tr><th>Método</th><th>Total</th></tr></thead><tbody>
+            {pagos.map((p) => <tr key={p.metodo}><td>{({ CASH: 'Efectivo', CARD: 'Tarjeta', BITCOIN: 'Bitcoin', CHIVO: 'Chivo Wallet' })[p.metodo] ?? p.metodo}</td><td>{dinero(amount(p.total))}</td></tr>)}
+          </tbody></table>
+        </section>
+        <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Registrar movimiento</h2></div>
+          <form onSubmit={registrar} className="cashflow-form">
+            <label>Tipo<select  value={tipo} onChange={e => setTipo(e.target.value)}><option value="INGRESO">Ingreso</option><option value="EGRESO">Egreso</option></select></label>
+            <label>Monto ($)<input  type="number" min="0.01" step="0.01" required value={monto} onChange={e => setMonto(e.target.value)} /></label>
+            <label>Concepto<input  maxLength={150} required value={concepto} onChange={e => setConcepto(e.target.value)} /></label>
+            <button className="cashflow-button" disabled={ocupado}>Registrar movimiento</button>
+          </form>
+        </section>
+        <CashMovementTable movements={resumen.movementDetails} />
+        <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Arqueo de caja</h2></div>
+          <p className="cashflow-note">Efectivo esperado: {dinero(efectivo)}</p>
+          <div className="cashflow-form">
+          <label>Efectivo contado ($)<input  type="number" min="0" step="0.01" value={contado} onChange={e => setContado(e.target.value)} /></label>
+          <p className="cashflow-result">Diferencia: <span>{diferencia === null ? 'Ingresá el efectivo contado' : `${dinero(Math.abs(diferencia))} — ${diferencia === 0 ? 'Caja cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'}`}</span></p></div>
+          <p className="cashflow-note">El cierre definitivo se realiza en Apertura y cierre de caja.</p>
+        </section>
+      </> : !cargando && !error && <p>No hay sesión abierta. Abrí una caja para registrar movimientos y calcular el cuadre.</p>}
+      <section className="cashier-cashflow__movements"><div className="cashier-cashflow__heading"><h2>Historial de sesiones</h2></div>
+        <div className="table-responsive"><table className="cashier-activity__table"><thead><tr><th>Caja</th><th>Apertura</th><th>Estado</th><th>Inicial</th><th>Esperado</th><th>Contado al cierre</th><th>Diferencia</th></tr></thead><tbody>
+          {historial.map(h => <tr key={h.id}><td>{h.nombreCaja}</td><td>{new Date(h.fechaApertura).toLocaleString('es-SV')}</td><td>{h.estado}</td><td>{dinero(amount(h.montoInicial))}</td><td>{dinero(amount(h.efectivoEsperado))}</td><td>{h.montoFinalReal == null ? '—' : dinero(amount(h.montoFinalReal))}</td><td>{h.diferencia == null ? '—' : `${dinero(Math.abs(amount(h.diferencia)))} (${amount(h.diferencia) === 0 ? 'Cuadrada' : amount(h.diferencia) > 0 ? 'Sobrante' : 'Faltante'})`}</td></tr>)}
+        </tbody></table></div>
+      </section>
     </section>
   );
 }

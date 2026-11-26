@@ -13,17 +13,34 @@ import { useOrders } from '../../context/OrderContext.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import '../../styles/owner.css';
 
+const SUCURSALES_OFICIALES = [
+  { id: 1, branch_id: 1, name: 'Sucursal San Salvador' },
+  { id: 2, branch_id: 2, name: 'Sucursal Santa Ana' },
+  { id: 3, branch_id: 3, name: 'Sucursal San Miguel' },
+];
+
 const OwnerPage = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const esAdministrador = user?.role === 'ADMINISTRATOR';
+  const esAdministrador = user?.role === 'ADMINISTRATOR' || !user?.role;
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedBranch, setSelectedBranch] = useState(esAdministrador ? 'ALL' : String(user?.branchId ?? ''));
-  const { sucursales } = useOrders();
+  const [selectedBranch, setSelectedBranch] = useState(
+    esAdministrador ? 'ALL' : String(user?.branchId ?? 'ALL')
+  );
+  const { sesionesActivas = [], sucursales = [] } = useOrders();
 
+  const [allBranches, setAllBranches] = useState(SUCURSALES_OFICIALES);
   const [dashboard, setDashboard] = useState({ branches: [], top_products: [], payables: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (user?.role === 'ADMINISTRATOR') {
+      setSelectedBranch('ALL');
+    } else if (user?.branchId) {
+      setSelectedBranch(String(user.branchId));
+    }
+  }, [user?.role, user?.branchId]);
 
   const loadDashboard = useCallback(async (branchFilter) => {
     setLoading(true);
@@ -31,7 +48,24 @@ const OwnerPage = () => {
 
     try {
       const res = await getOwnerDashboard(branchFilter);
-      setDashboard(res.data || res);
+      const data = res?.data || res || {};
+      const fetchedBranches = Array.isArray(data.branches) ? data.branches : [];
+
+      setDashboard({
+        branches: fetchedBranches,
+        top_products: Array.isArray(data.top_products) ? data.top_products : [],
+        payables: Array.isArray(data.payables) ? data.payables : [],
+      });
+
+      if (branchFilter === 'ALL' && fetchedBranches.length > 0) {
+        setAllBranches(
+          fetchedBranches.map((b) => ({
+            id: b.branch_id,
+            branch_id: b.branch_id,
+            name: b.name,
+          }))
+        );
+      }
     } catch (err) {
       setError(err?.message ?? 'No se pudieron cargar los indicadores.');
     } finally {
@@ -43,13 +77,16 @@ const OwnerPage = () => {
     loadDashboard(selectedBranch);
   }, [selectedBranch, loadDashboard]);
 
-  const cajaAbiertaPorSucursal = (branchId) =>
-    dashboard.branches.some(
-      (sucursal) =>
-        Number(sucursal.branch_id) === Number(branchId) && Boolean(sucursal.cash_open)
-    );
+  const listaSucursales =
+    allBranches.length > 0
+      ? allBranches
+      : Array.isArray(sucursales) && sucursales.length > 0
+        ? sucursales
+        : SUCURSALES_OFICIALES;
 
-  // Filtrado por sucursal si el gerente selecciona una específica
+  const cajaAbiertaPorSucursal = (branchId) =>
+    sesionesActivas.some((sesion) => Number(sesion.branchId) === Number(branchId));
+
   const visibleBranches =
     selectedBranch === 'ALL'
       ? dashboard.branches
@@ -60,18 +97,19 @@ const OwnerPage = () => {
       ? dashboard.payables
       : dashboard.payables.filter((p) => String(p.branch_id) === String(selectedBranch));
 
-  // Agregación de KPIs
-  const totalRevenue = visibleBranches.reduce((sum, b) => sum + Number(b.monthly_revenue), 0);
-  const totalExpenses = visibleBranches.reduce((sum, b) => sum + Number(b.monthly_expenses), 0);
+  const totalRevenue = visibleBranches.reduce((sum, b) => sum + Number(b.monthly_revenue ?? 0), 0);
+  const totalExpenses = visibleBranches.reduce((sum, b) => sum + Number(b.monthly_expenses ?? 0), 0);
   const netProfit = totalRevenue - totalExpenses;
   const totalPendingDebt = visiblePayables.reduce(
-    (sum, p) => sum + Number(p.outstanding_amount),
+    (sum, p) => sum + Number(p.outstanding_amount ?? 0),
     0
   );
-  const totalAlerts = visibleBranches.reduce((sum, b) => sum + Number(b.low_stock_alerts), 0);
+  const totalAlerts = visibleBranches.reduce((sum, b) => sum + Number(b.low_stock_alerts ?? 0), 0);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    if (typeof logout === 'function') {
+      await logout();
+    }
     navigate('/login');
   };
 
@@ -85,13 +123,13 @@ const OwnerPage = () => {
       />
 
       <div className="own-main">
-         <OwnerTopbar
-           activeTab={activeTab}
-           selectedBranch={selectedBranch}
-           onChangeBranch={setSelectedBranch}
-           branches={sucursales}
-           allowAll={esAdministrador}
-         />
+        <OwnerTopbar
+          activeTab={activeTab}
+          selectedBranch={selectedBranch}
+          onChangeBranch={setSelectedBranch}
+          branches={listaSucursales}
+          allowAll={esAdministrador}
+        />
 
         {error && <div className="own-banner-offline">{error}</div>}
 
@@ -186,7 +224,7 @@ const OwnerPage = () => {
                         </thead>
                         <tbody>
                           {visibleBranches.map((b) => {
-                            const margin = Number(b.monthly_revenue) - Number(b.monthly_expenses);
+                            const margin = Number(b.monthly_revenue ?? 0) - Number(b.monthly_expenses ?? 0);
                             const cajaAbierta = cajaAbiertaPorSucursal(b.branch_id);
                             return (
                               <tr key={b.branch_id}>
@@ -196,9 +234,9 @@ const OwnerPage = () => {
                                 </td>
                                 <td>{b.orders_count} pedidos</td>
                                 <td className="own-table__name">
-                                  ${Number(b.monthly_revenue).toFixed(2)}
+                                  ${Number(b.monthly_revenue ?? 0).toFixed(2)}
                                 </td>
-                                <td>${Number(b.monthly_expenses).toFixed(2)}</td>
+                                <td>${Number(b.monthly_expenses ?? 0).toFixed(2)}</td>
                                 <td className="own-text-success">
                                   <strong>${margin.toFixed(2)}</strong>
                                 </td>
@@ -242,13 +280,13 @@ const OwnerPage = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {dashboard.top_products.map((prod) => (
-                            <tr key={prod.product_id}>
+                          {dashboard.top_products.map((prod, idx) => (
+                            <tr key={prod.product_id ?? idx}>
                               <td className="own-table__name">{prod.name}</td>
                               <td>{prod.category}</td>
                               <td>{prod.units_sold} uds.</td>
                               <td className="own-table__name">
-                                ${Number(prod.revenue).toFixed(2)}
+                                ${Number(prod.revenue ?? 0).toFixed(2)}
                               </td>
                             </tr>
                           ))}
@@ -297,15 +335,15 @@ const OwnerPage = () => {
                             </td>
                           </tr>
                         ) : (
-                          visiblePayables.map((pay) => (
-                            <tr key={pay.payable_id}>
+                          visiblePayables.map((pay, idx) => (
+                            <tr key={pay.payable_id ?? idx}>
                               <td className="own-table__name">{pay.invoice_number}</td>
                               <td>{pay.supplier_name}</td>
                               <td>{pay.branch_name}</td>
                               <td>{pay.due_date}</td>
-                              <td>${Number(pay.total).toFixed(2)}</td>
+                              <td>${Number(pay.total ?? 0).toFixed(2)}</td>
                               <td className="own-table__name">
-                                ${Number(pay.outstanding_amount).toFixed(2)}
+                                ${Number(pay.outstanding_amount ?? 0).toFixed(2)}
                               </td>
                               <td>
                                 <span
@@ -351,24 +389,24 @@ const OwnerPage = () => {
                           </span>
                         </div>
 
-                      <div className="own-branch-card__metrics">
-                        <div className="own-branch-metric">
-                          <span>Personal activo</span>
-                          <strong>{b.active_staff} empleados</strong>
+                        <div className="own-branch-card__metrics">
+                          <div className="own-branch-metric">
+                            <span>Personal activo</span>
+                            <strong>{b.active_staff} empleados</strong>
+                          </div>
+                          <div className="own-branch-metric">
+                            <span>Órdenes atendidas</span>
+                            <strong>{b.orders_count} pedidos</strong>
+                          </div>
+                          <div className="own-branch-metric">
+                            <span>Alertas de stock</span>
+                            <strong>{b.low_stock_alerts} insumos</strong>
+                          </div>
+                          <div className="own-branch-metric">
+                            <span>Facturación mensual</span>
+                            <strong>${Number(b.monthly_revenue ?? 0).toFixed(2)}</strong>
+                          </div>
                         </div>
-                        <div className="own-branch-metric">
-                          <span>Órdenes atendidas</span>
-                          <strong>{b.orders_count} pedidos</strong>
-                        </div>
-                        <div className="own-branch-metric">
-                          <span>Alertas de stock</span>
-                          <strong>{b.low_stock_alerts} insumos</strong>
-                        </div>
-                        <div className="own-branch-metric">
-                          <span>Facturación mensual</span>
-                          <strong>${Number(b.monthly_revenue).toFixed(2)}</strong>
-                        </div>
-                      </div>
                       </article>
                     );
                   })}

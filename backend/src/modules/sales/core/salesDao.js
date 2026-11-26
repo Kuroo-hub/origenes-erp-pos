@@ -246,6 +246,7 @@ export async function findInvoicesHistory(limit, offset, branchId = null) {
             i.kitchen_status AS "kitchenStatus",
             i.is_delivery AS "isDelivery",
             i.delivery_status AS "deliveryStatus",
+            i.kitchen_status AS "kitchenStatus",
             i.delivery_address AS "deliveryAddress",
             i.delivery_phone AS "deliveryPhone",
             b.name AS "branchName",

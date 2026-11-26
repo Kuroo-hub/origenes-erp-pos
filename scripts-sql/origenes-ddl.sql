@@ -3,10 +3,9 @@
 -- Commercial and Administrative Management System
 -- =====================================================
 
-CREATE DATABASE origenessv;
-
--- Connect to origenessv before executing the rest (psql meta-command).
-\c origenessv
+-- IMPORTANTE: primero crea la base de datos 'origenessv' desde pgAdmin.
+-- Luego selecciona/conéctate a esa base y ejecuta este archivo completo.
+-- No uses CREATE DATABASE ni \c dentro del Query Tool.
 
 -- Required for bcrypt password hashing (crypt/gen_salt).
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -283,6 +282,8 @@ CREATE TABLE invoice (
 
     is_delivery BOOLEAN NOT NULL DEFAULT FALSE,
     delivery_status VARCHAR(20),
+    kitchen_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (kitchen_status IN ('PENDING', 'PREPARING', 'READY')),
     delivery_address VARCHAR(255),
     delivery_phone VARCHAR(20),
 
@@ -297,6 +298,7 @@ CREATE TABLE invoice (
 
     UNIQUE (branch_id, document_type, consecutive_number)
 );
+
 
 CREATE TABLE invoice_detail (
     invoice_detail_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
