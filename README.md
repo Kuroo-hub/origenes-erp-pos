@@ -1,9 +1,4 @@
 
-# Project Title
-
-A brief description of what this project does and who it's for
-
-<div align="center">
 
 ![Descripción de la imagen](readme_images/logo.png)
 
