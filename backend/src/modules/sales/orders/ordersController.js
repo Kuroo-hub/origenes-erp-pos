@@ -1,7 +1,8 @@
 import { resolveBranchId } from "../../../utils/branchAccess.js";
 import {
     getDeliveryOrdersService,
-    updateDeliveryStatusService
+    updateDeliveryStatusService,
+    updateKitchenStatusService
 } from "./ordersService.js";
 
 export async function getDeliveryOrdersController(req, res) {
@@ -17,6 +18,18 @@ export async function getDeliveryOrdersController(req, res) {
 
 export async function patchDeliveryStatusController(req, res) {
     const order = await updateDeliveryStatusService(
+        req.params.orderId,
+        req.body,
+        req.user
+    );
+
+    return res.status(200).json({
+        success: true,
+        data: order
+    });
+}
+export async function patchKitchenStatusController(req, res) {
+    const order = await updateKitchenStatusService(
         req.params.orderId,
         req.body,
         req.user

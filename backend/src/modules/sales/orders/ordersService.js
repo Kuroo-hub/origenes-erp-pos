@@ -3,7 +3,9 @@ import { parseBranchFilter } from "../../../utils/validation.js";
 import {
     findDeliveryOrders,
     findDeliveryInvoiceForUpdate,
-    updateDeliveryStatus
+    updateDeliveryStatus,
+    findKitchenInvoiceForUpdate,
+updateKitchenStatus
 } from "./ordersDao.js";
 
 export const DELIVERY_STATUSES = ["READY", "IN_TRANSIT", "DELIVERED"];
@@ -136,4 +138,50 @@ export async function updateDeliveryStatusService(orderId, body = {}, user = nul
     }
 
     return mapDeliveryStatusUpdate(updated);
+}
+const KITCHEN_TRANSITIONS = {
+    PENDING: ["PREPARING"],
+    PREPARING: ["READY"]
+};
+
+export async function updateKitchenStatusService(orderId, body = {}, user = null) {
+    const invoiceId = parseOrderId(orderId);
+    const nextStatus = body?.kitchen_status;
+
+    if (!["PENDING", "PREPARING", "READY"].includes(nextStatus)) {
+        throw createError("Estado de cocina no válido.");
+    }
+
+    const invoice = await findKitchenInvoiceForUpdate(invoiceId);
+
+    if (!invoice) {
+        throw createError("No se encontró la orden.", 404);
+    }
+
+    if (
+        user?.role !== "ADMINISTRATOR" &&
+        Number(invoice.branch_id) !== Number(user?.branchId)
+    ) {
+        throw createError("No tiene permisos para acceder a otra sucursal.", 403);
+    }
+
+    if (!KITCHEN_TRANSITIONS[invoice.kitchen_status]?.includes(nextStatus)) {
+        throw createError("Transición de cocina no permitida.", 409);
+    }
+
+    const updated = await updateKitchenStatus(
+        invoiceId,
+        invoice.kitchen_status,
+        nextStatus
+    );
+
+    if (!updated) {
+        throw createError("La orden cambió de estado. Actualiza la información.", 409);
+    }
+
+    return {
+        invoice_id: Number(updated.invoice_id),
+        branch_id: Number(updated.branch_id),
+        kitchen_status: updated.kitchen_status
+    };
 }

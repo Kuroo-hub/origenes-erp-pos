@@ -1,6 +1,7 @@
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
-import { getSales, registerSale } from '../services/salesApi.js';
+import { getSales, registerSale, updateKitchenStatus } from '../services/salesApi.js';
 import {
   getActiveCashSessions,
   closeCashSession,
@@ -46,11 +47,16 @@ function mapearVenta(venta) {
 
   return {
     id: `${prefijo}-${venta.consecutiveNumber ?? venta.invoiceId}`,
+    invoiceId: venta.invoiceId,
     cliente: venta.customerName || 'Cliente presencial',
     origen: 'Presencial',
     hora: formatearHora(venta.issueDate),
     created_at: venta.issueDate,
-    estado: venta.status === 'CANCELLED' ? 'Entregado' : 'Pendiente',
+    estado: {
+      PENDING: 'Pendiente',
+      PREPARING: 'En preparación',
+      READY: 'Listo',
+    }[venta.kitchenStatus] ?? 'Pendiente',
     sucursalId: Number(venta.branchId),
     sucursal: venta.branchName,
     tipoEntrega: venta.isDelivery ? 'domicilio' : 'local',
@@ -68,24 +74,30 @@ function mapearVenta(venta) {
     })),
     total: Number(venta.total ?? 0),
     metodoPago: paymentMethod,
-    ventaTurno: true
+    ventaTurno: true,
   };
 }
 
 export function OrderProvider({ children }) {
-  const { user, token } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
+
   const esAdministrador = user?.role === 'ADMINISTRATOR';
+
   const [ordenes, setOrdenes] = useState([]);
   const [sesionesActivas, setSesionesActivas] = useState([]);
   const [registrosCaja, setRegistrosCaja] = useState([]);
   const [sucursales, setSucursales] = useState([]);
   const [sucursalId, setSucursalId] = useState(user?.branchId ?? null);
-  const [cargandoDatos, setCargandoDatos] = useState(Boolean(token));
+  const [cargandoDatos, setCargandoDatos] = useState(true);
   const [errorDatos, setErrorDatos] = useState('');
 
+  // Cargar sucursales cuando la sesión esté disponible.
   useEffect(() => {
-    if (!token) {
+    if (loading) return undefined;
+
+    if (!isAuthenticated) {
       setSucursales([]);
+      setSucursalId(null);
       setCargandoDatos(false);
       return undefined;
     }
@@ -96,10 +108,13 @@ export function OrderProvider({ children }) {
       .then((respuesta) => {
         if (!activo) return;
 
-        const filas = Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
+        const filas = Array.isArray(respuesta)
+          ? respuesta
+          : respuesta?.data ?? [];
+
         const normalizadas = filas.map((sucursal) => ({
-          id: sucursal.branch_id,
-          branch_id: sucursal.branch_id,
+          id: Number(sucursal.branch_id),
+          branch_id: Number(sucursal.branch_id),
           nombre: sucursal.name,
           name: sucursal.name,
           direccion: sucursal.address,
@@ -108,38 +123,57 @@ export function OrderProvider({ children }) {
 
         const sucursalesVisibles = esAdministrador
           ? normalizadas
-          : normalizadas.filter((sucursal) => Number(sucursal.id) === Number(user?.branchId));
+          : normalizadas.filter(
+              (sucursal) =>
+                Number(sucursal.id) === Number(user?.branchId)
+            );
 
         setSucursales(sucursalesVisibles);
 
         setSucursalId((actual) => {
-          if (!esAdministrador && user?.branchId) return Number(user.branchId);
-          if (actual) return actual;
-          if (user?.branchId) return user.branchId;
+          if (!esAdministrador && user?.branchId) {
+            return Number(user.branchId);
+          }
+
+          if (actual) return Number(actual);
+
+          if (user?.branchId) {
+            return Number(user.branchId);
+          }
+
           return sucursalesVisibles[0]?.id ?? null;
         });
       })
       .catch((caughtError) => {
         if (!activo) return;
+
         setSucursales([]);
-        setErrorDatos(caughtError?.message ?? 'No se pudieron cargar las sucursales.');
+        setErrorDatos(
+          caughtError?.message ?? 'No se pudieron cargar las sucursales.'
+        );
       });
 
     return () => {
       activo = false;
     };
-  }, [token, user?.branchId]);
+  }, [isAuthenticated, loading, user?.branchId, esAdministrador]);
 
+  // Mantener la sucursal asignada al usuario.
   useEffect(() => {
-    if (!esAdministrador && user?.branchId) {
-      setSucursalId(Number(user.branchId));
-    } else if (user?.branchId) {
-      setSucursalId(user.branchId);
-    }
-  }, [esAdministrador, user?.branchId]);
+    if (!isAuthenticated || !user?.branchId) return;
 
+    if (!esAdministrador) {
+      setSucursalId(Number(user.branchId));
+    } else if (!sucursalId) {
+      setSucursalId(Number(user.branchId));
+    }
+  }, [isAuthenticated, esAdministrador, user?.branchId, sucursalId]);
+
+  // Recargar ventas, sesiones y cajas de una sucursal.
   const recargarDatos = useCallback(
     async (branchId = sucursalId) => {
+      if (!branchId) return;
+
       setCargandoDatos(true);
       setErrorDatos('');
 
@@ -157,7 +191,11 @@ export function OrderProvider({ children }) {
         setOrdenes([]);
         setSesionesActivas([]);
         setRegistrosCaja([]);
-        setErrorDatos(caughtError?.message ?? 'No se pudieron cargar los datos de la sucursal.');
+
+        setErrorDatos(
+          caughtError?.message ??
+          'No se pudieron cargar los datos de la sucursal.'
+        );
       } finally {
         setCargandoDatos(false);
       }
@@ -165,24 +203,33 @@ export function OrderProvider({ children }) {
     [sucursalId]
   );
 
+  // Consultar datos cuando exista sesión y sucursal.
   useEffect(() => {
-    if (!token || !sucursalId) {
+    if (loading) return;
+
+    if (!isAuthenticated || !sucursalId) {
       setCargandoDatos(false);
       return;
     }
 
     recargarDatos(sucursalId);
-  }, [token, sucursalId, recargarDatos]);
+  }, [isAuthenticated, loading, sucursalId, recargarDatos]);
 
   const sucursal =
-    sucursales.find((item) => item.id === sucursalId)?.nombre ??
-    sesionesActivas.find((item) => Number(item.branchId) === Number(sucursalId))
-      ?.nombreSucursal ??
+    sucursales.find(
+      (item) => Number(item.id) === Number(sucursalId)
+    )?.nombre ??
+    sesionesActivas.find(
+      (item) => Number(item.branchId) === Number(sucursalId)
+    )?.nombreSucursal ??
     sucursales[0]?.nombre ??
     '';
 
   const ordenesSucursal = useMemo(
-    () => ordenes.filter((orden) => orden.sucursalId === sucursalId),
+    () =>
+      ordenes.filter(
+        (orden) => Number(orden.sucursalId) === Number(sucursalId)
+      ),
     [ordenes, sucursalId]
   );
 
@@ -229,6 +276,7 @@ export function OrderProvider({ children }) {
         employeeId: user?.employeeId,
         initialAmount: Number(montoInicial).toFixed(2)
       });
+
       await recargarDatos(id);
     }
   };
@@ -241,6 +289,7 @@ export function OrderProvider({ children }) {
     await closeCashSession(sesionActiva.id, {
       realAmount: Number(montoFinal).toFixed(2)
     });
+
     await recargarDatos(id);
   };
 
@@ -248,7 +297,9 @@ export function OrderProvider({ children }) {
     const esDomicilio = pedido.tipoEntrega === 'domicilio';
 
     if (!sesionActiva) {
-      throw new Error('La caja está cerrada. Manager debe abrirla para vender.');
+      throw new Error(
+        'La caja está cerrada. Manager debe abrirla para vender.'
+      );
     }
 
     const respuesta = await registerSale({
@@ -258,7 +309,8 @@ export function OrderProvider({ children }) {
       branchId: pedido.sucursalId ?? sucursalId,
       shiftId: sesionActiva.id,
       documentType: 'FINAL_CONSUMER',
-      paymentMethod: METODOS_FRONTEND_BACKEND[pedido.metodoPago] ?? 'CASH',
+      paymentMethod:
+        METODOS_FRONTEND_BACKEND[pedido.metodoPago] ?? 'CASH',
       isDelivery: esDomicilio,
       deliveryStatus: esDomicilio ? 'READY' : null,
       deliveryAddress: esDomicilio ? pedido.direccion : null,
@@ -274,9 +326,46 @@ export function OrderProvider({ children }) {
     return respuesta;
   };
 
-  const cambiarEstado = (id, estado) => {
+  const cambiarEstado = async (id, estado) => {
+    const orden = ordenes.find((item) => item.id === id);
+
+    if (!orden?.invoiceId) {
+      throw new Error('No se encontró el identificador de la orden.');
+    }
+
+    const estadosBackend = {
+      'En preparación': 'PREPARING',
+      Listo: 'READY'
+    };
+
+    const nuevoEstado = estadosBackend[estado];
+
+    if (!nuevoEstado) {
+      throw new Error('Estado de cocina no válido.');
+    }
+
+    const respuesta = await updateKitchenStatus(
+      orden.invoiceId,
+      nuevoEstado
+    );
+
+    const estadoBackendGuardado =
+      respuesta?.data?.kitchen_status ??
+      respuesta?.data?.kitchenStatus ??
+      nuevoEstado;
+
+    const estadoGuardado = {
+      PENDING: 'Pendiente',
+      PREPARING: 'En preparación',
+      READY: 'Listo'
+    }[estadoBackendGuardado] ?? estado;
+
     setOrdenes((actuales) =>
-      actuales.map((orden) => (orden.id === id ? { ...orden, estado } : orden))
+      actuales.map((item) =>
+        item.id === id
+          ? { ...item, estado: estadoGuardado }
+          : item
+      )
     );
   };
 
@@ -287,13 +376,16 @@ export function OrderProvider({ children }) {
       sucursalId,
       sucursal,
       sucursales,
+
       seleccionarSucursal: (branchId) => {
         if (!esAdministrador && user?.branchId) {
           setSucursalId(Number(user.branchId));
           return;
         }
+
         setSucursalId(Number(branchId));
       },
+
       sesionesActivas,
       registrosCaja,
       cargandoDatos,
@@ -311,6 +403,9 @@ export function OrderProvider({ children }) {
       ordenesSucursal,
       sucursalId,
       sucursal,
+      sucursales,
+      esAdministrador,
+      user?.branchId,
       sesionesActivas,
       registrosCaja,
       cargandoDatos,
@@ -321,7 +416,11 @@ export function OrderProvider({ children }) {
     ]
   );
 
-  return <OrderContext.Provider value={valor}>{children}</OrderContext.Provider>;
+  return (
+    <OrderContext.Provider value={valor}>
+      {children}
+    </OrderContext.Provider>
+  );
 }
 
 export function useOrders() {

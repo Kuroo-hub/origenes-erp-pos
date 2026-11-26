@@ -281,6 +281,8 @@ CREATE TABLE invoice (
 
     is_delivery BOOLEAN NOT NULL DEFAULT FALSE,
     delivery_status VARCHAR(20),
+    kitchen_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (kitchen_status IN ('PENDING', 'PREPARING', 'READY')),
     delivery_address VARCHAR(255),
     delivery_phone VARCHAR(20),
 
@@ -295,6 +297,7 @@ CREATE TABLE invoice (
 
     UNIQUE (branch_id, document_type, consecutive_number)
 );
+
 
 CREATE TABLE invoice_detail (
     invoice_detail_id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

@@ -1,6 +1,19 @@
+import { useState } from 'react';
 import { obtenerOrigenPedido } from '../../context/OrderContext.jsx';
 
 export default function ChefOrderCard({ orden, minutos, tiempo, urgencia, onCambiarEstado }) {
+  const [error, setError] = useState('');
+
+  const manejarCambio = async (estado) => {
+    setError('');
+
+    try {
+      await onCambiarEstado(orden.id, estado);
+    } catch (error) {
+      setError(error.message || 'No se pudo actualizar la orden.');
+    }
+  };
+
   const claseEstado = {
     Pendiente: 'pendiente',
     'En preparación': 'preparando',
@@ -68,7 +81,7 @@ export default function ChefOrderCard({ orden, minutos, tiempo, urgencia, onCamb
           <button
             type="button"
             className="chef-order__action"
-            onClick={() => onCambiarEstado(orden.id, 'En preparación')}
+            onClick={() => manejarCambio('En preparación')}
           >
             <i className="bi bi-play-circle" aria-hidden="true" />
             Iniciar preparación
@@ -78,13 +91,14 @@ export default function ChefOrderCard({ orden, minutos, tiempo, urgencia, onCamb
           <button
             type="button"
             className="chef-order__action chef-order__action--ready"
-            onClick={() => onCambiarEstado(orden.id, 'Listo')}
+            onClick={() => manejarCambio('Listo')}
           >
             <i className="bi bi-check2-circle" aria-hidden="true" />
             Marcar listo
           </button>
         )}
       </footer>
+      {error && <p role="alert" className="chef-order__error">{error}</p>}
     </article>
   );
 }
