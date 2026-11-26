@@ -39,7 +39,7 @@ export async function getCashRegistersByBranchController(req, res) {
 
 // 2. Consultar sesiones abiertas.
 export async function activeCashSession(req, res) {
-  const sessions = await getActiveCashSessionsService();
+  const sessions = await getActiveCashSessionsService(req.user);
 
   return res.status(200).json({
     success: true,
@@ -50,7 +50,7 @@ export async function activeCashSession(req, res) {
 
 // 3. Consultar sesión por ID.
 export async function getCashSessionById(req, res) {
-  const session = await getCashSessionByIdService(req.params.id);
+  const session = await getCashSessionByIdService(req.params.id, req.user);
 
   return res.status(200).json({
     success: true,
@@ -61,7 +61,7 @@ export async function getCashSessionById(req, res) {
 
 // 4. Consultar resumen financiero.
 export async function getCashSessionSummary(req, res) {
-  const summary = await getCashSessionSummaryService(req.params.id);
+  const summary = await getCashSessionSummaryService(req.params.id, req.user);
 
   return res.status(200).json({
     success: true,
@@ -77,7 +77,8 @@ export async function addCashMovementController(req, res) {
     employeeId: req.user.employeeId,
     type: req.body.type,
     amount: req.body.amount,
-    concept: req.body.concept
+    concept: req.body.concept,
+    user: req.user
   });
 
   return res.status(201).json({
@@ -92,7 +93,8 @@ export async function closeCashSession(req, res) {
   const result = await closeCashSessionService({
     sessionId: req.params.id,
     employeeId: req.user.employeeId,
-    realAmount: req.body.realAmount
+    realAmount: req.body.realAmount,
+    user: req.user
   });
 
   return res.status(200).json({
@@ -106,7 +108,8 @@ export async function closeCashSession(req, res) {
 export async function getCashSessionHistory(req, res) {
   const sessions = await getCashSessionHistoryService({
     limit: req.query.limit,
-    offset: req.query.offset
+    offset: req.query.offset,
+    user: req.user
   });
 
   return res.status(200).json({

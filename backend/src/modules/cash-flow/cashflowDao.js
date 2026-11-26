@@ -119,7 +119,7 @@ export async function findCashRegistersByBranch(branchId) {
 }
 
 // Obtiene todas las sesiones abiertas.
-export async function findAllActiveCashSessions() {
+export async function findAllActiveCashSessions(branchId = null) {
     const result = await pool.query(
         `SELECT
             cs.shift_id AS id,
@@ -140,7 +140,9 @@ export async function findAllActiveCashSessions() {
          INNER JOIN employee e
              ON e.employee_id = cs.employee_id
          WHERE cs.status = 'OPEN'
-         ORDER BY cs.opening_date DESC`
+           AND ($1::integer IS NULL OR cr.branch_id = $1)
+         ORDER BY cs.opening_date DESC`,
+        [branchId]
     );
 
     return result.rows;
@@ -327,7 +329,7 @@ export async function updateCashSessionClose(
 }
 
 // Obtiene el historial de sesiones con paginación.
-export async function findCashSessionHistory(limit, offset) {
+export async function findCashSessionHistory(limit, offset, branchId = null) {
     const result = await pool.query(
         `SELECT
             cs.shift_id AS id,
@@ -335,6 +337,27 @@ export async function findCashSessionHistory(limit, offset) {
             cs.closing_date AS "fechaCierre",
             cs.opening_amount AS "montoInicial",
             cs.closing_amount AS "montoFinalReal",
+            (cs.opening_amount
+              + COALESCE((SELECT SUM(sp.amount) FROM sale_payment sp
+                  JOIN invoice i ON i.invoice_id = sp.invoice_id
+                  WHERE sp.shift_id = cs.shift_id AND i.status = 'PAID'
+                    AND sp.payment_method = 'CASH'), 0)
+              + COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                  WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'INCOME'), 0)
+              - COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                  WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'EXPENSE'), 0)
+            ) AS "efectivoEsperado",
+            CASE WHEN cs.status = 'CLOSED' THEN
+              cs.closing_amount - (cs.opening_amount
+                + COALESCE((SELECT SUM(sp.amount) FROM sale_payment sp
+                    JOIN invoice i ON i.invoice_id = sp.invoice_id
+                    WHERE sp.shift_id = cs.shift_id AND i.status = 'PAID'
+                      AND sp.payment_method = 'CASH'), 0)
+                + COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                    WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'INCOME'), 0)
+                - COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
+                    WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'EXPENSE'), 0))
+              ELSE NULL END AS diferencia,
             CASE
                 WHEN cs.status = 'OPEN' THEN 'ABIERTA'
                 ELSE 'CERRADA'
@@ -349,10 +372,22 @@ export async function findCashSessionHistory(limit, offset) {
             ON b.branch_id = cr.branch_id
          INNER JOIN employee e
              ON e.employee_id = cs.employee_id
+         WHERE ($3::integer IS NULL OR cr.branch_id = $3)
          ORDER BY cs.opening_date DESC
          LIMIT $1 OFFSET $2`,
-        [limit, offset]
+        [limit, offset, branchId]
     );
 
+    return result.rows;
+}
+
+// Detalle de movimientos registrados en la sesión.
+export async function findSessionMovements(client, sessionId) {
+    const result = await client.query(
+        `SELECT cash_movement_id, movement_type, description, amount, created_at
+         FROM cash_movement WHERE shift_id = $1
+         ORDER BY created_at DESC, cash_movement_id DESC`,
+        [sessionId]
+    );
     return result.rows;
 }

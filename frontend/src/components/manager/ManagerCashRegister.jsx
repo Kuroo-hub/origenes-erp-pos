@@ -1,4 +1,6 @@
+import CashMovementTable from '../shared/CashMovementTable.jsx';
 import { useEffect, useState } from 'react';
+import { getCashSessionSummary } from '../../services/cashFlowApi.js';
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
 const formatearHora = (timestamp) =>
@@ -20,6 +22,7 @@ export default function ManagerCashRegister({
   const [montoInicial, setMontoInicial] = useState('');
   const [montoFinal, setMontoFinal] = useState('');
   const [error, setError] = useState('');
+  const [resumen, setResumen] = useState(null);
 
   useEffect(() => {
     setMontoInicial(
@@ -37,8 +40,23 @@ export default function ManagerCashRegister({
     caja?.montoFinal,
   ]);
 
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    let activo = true;
+    setResumen(null);
+    if (abierta && caja?.sessionId) {
+      getCashSessionSummary(caja.sessionId).then(r => { if (activo) setResumen(r.data); })
+        .catch(e => { if (activo) setError(e.message); });
+    }
+    return () => { activo = false; };
+  }, [abierta, caja?.sessionId, revision]);
+
+  const esperado = resumen ? Number(resumen.montoEfectivoEsperado) : null;
+  const diferencia = esperado !== null && /^\d{1,10}(\.\d{1,2})?$/.test(montoFinal)
+    ? Math.round((Number(montoFinal) - esperado) * 100) / 100 : null;
+
   const handleAbrir = () => {
-    if (montoInicial === '' || Number(montoInicial) < 0) {
+    if (!/^\d{1,10}(\.\d{1,2})?$/.test(montoInicial)) {
       setError('Ingresa un monto inicial válido para abrir la caja.');
       return;
     }
@@ -47,11 +65,12 @@ export default function ManagerCashRegister({
   };
 
   const handleCerrar = () => {
-    if (montoFinal === '' || Number(montoFinal) < 0) {
+    if (!/^\d{1,10}(\.\d{1,2})?$/.test(montoFinal)) {
       setError('Ingresa un monto final válido para cerrar la caja.');
       return;
     }
 
+    if (esperado === null) { setError('No se pudo consultar el efectivo esperado.'); return; }
     onCerrar(Number(montoFinal));
   };
 
@@ -126,10 +145,7 @@ export default function ManagerCashRegister({
               <strong>{formatearHora(caja?.cerradaDesde)}</strong>
             </div>
 
-            <div>
-              <span>Modo</span>
-              <strong>Demostración</strong>
-            </div>
+
           </div>
 
           <div className="manager-caja-amounts">
@@ -164,6 +180,13 @@ export default function ManagerCashRegister({
             </label>
           </div>
 
+          {abierta && <div className="cashflow-reconciliation">
+            <div>Efectivo esperado: <span>{esperado === null ? 'Cargando...' : formatearMonedaCajero(esperado)}</span></div>
+            <div>Ventas en efectivo: {resumen ? formatearMonedaCajero((resumen.payments ?? []).filter(p => p.metodo === "CASH").reduce((sum, p) => sum + Number(p.total), 0)) : "—"}</div>
+            <div>Ingresos: {formatearMonedaCajero(Number(resumen?.movements?.total_ingresos ?? 0))} | Egresos: {formatearMonedaCajero(Number(resumen?.movements?.total_egresos ?? 0))}</div>
+            <div>Diferencia: <span>{diferencia === null ? 'Ingresá el monto contado' : `${formatearMonedaCajero(Math.abs(diferencia))} (${diferencia === 0 ? 'Cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'})`}</span></div>
+            <button type="button" className="cashflow-button is-secondary" onClick={() => setRevision(v => v + 1)}>Actualizar resumen</button>
+          </div>}
           {error && (
             <p className="manager-caja-error" role="alert">
               <i className="bi bi-exclamation-circle" aria-hidden="true" />
@@ -186,7 +209,7 @@ export default function ManagerCashRegister({
               type="button"
               className="manager-caja-button is-closed"
               onClick={handleCerrar}
-              disabled={!abierta}
+              disabled={!abierta || esperado === null}
             >
               <i className="bi bi-lock-fill" aria-hidden="true" />
               Cerrar caja
@@ -223,6 +246,7 @@ export default function ManagerCashRegister({
           </ul>
         </article>
       </div>
+      {abierta && resumen && <CashMovementTable movements={resumen.movementDetails} />}
     </section>
   );
 }
