@@ -170,39 +170,54 @@ export function OrderProvider({ children }) {
   }, [isAuthenticated, esAdministrador, user?.branchId, sucursalId]);
 
   // Recargar ventas, sesiones y cajas de una sucursal.
-  const recargarDatos = useCallback(
-    async (branchId = sucursalId) => {
-      if (!branchId) return;
+const recargarDatos = useCallback(
+  async (branchId = sucursalId) => {
+    if (!branchId) return;
 
-      setCargandoDatos(true);
-      setErrorDatos('');
+    setCargandoDatos(true);
+    setErrorDatos('');
 
-      try {
-        const [ventas, sesiones, registros] = await Promise.all([
-          getSales(branchId),
-          getActiveCashSessions(),
-          getCashRegisters(branchId)
-        ]);
+    try {
+      const [ventas, sesiones, registros] = await Promise.allSettled([
+        getSales(branchId),
+        getActiveCashSessions(),
+        getCashRegisters(branchId)
+      ]);
 
-        setOrdenes(extraerLista(ventas).map(mapearVenta));
-        setSesionesActivas(extraerLista(sesiones));
-        setRegistrosCaja(extraerLista(registros));
-      } catch (caughtError) {
+      if (ventas.status === 'fulfilled') {
+        setOrdenes(extraerLista(ventas.value).map(mapearVenta));
+      } else {
+        console.error('Error al cargar ventas:', ventas.reason);
         setOrdenes([]);
-        setSesionesActivas([]);
-        setRegistrosCaja([]);
-
-        setErrorDatos(
-          caughtError?.message ??
-          'No se pudieron cargar los datos de la sucursal.'
-        );
-      } finally {
-        setCargandoDatos(false);
       }
-    },
-    [sucursalId]
-  );
 
+      if (sesiones.status === 'fulfilled') {
+        setSesionesActivas(extraerLista(sesiones.value));
+      } else {
+        console.error('Error al cargar sesiones:', sesiones.reason);
+        setSesionesActivas([]);
+        setErrorDatos('No se pudieron cargar las sesiones.');
+      }
+
+      if (registros.status === 'fulfilled') {
+        setRegistrosCaja(extraerLista(registros.value));
+      } else {
+        console.error('Error al cargar cajas:', registros.reason);
+        setRegistrosCaja([]);
+        setErrorDatos('No se pudieron cargar las cajas.');
+      }
+
+    } catch (caughtError) {
+      setErrorDatos(
+        caughtError?.message ??
+        'No se pudieron cargar los datos de la sucursal.'
+      );
+    } finally {
+      setCargandoDatos(false);
+    }
+  },
+  [sucursalId]
+);
   // Consultar datos cuando exista sesión y sucursal.
   useEffect(() => {
     if (loading) return;
@@ -266,19 +281,26 @@ export function OrderProvider({ children }) {
   const abrirCaja = async (id = sucursalId, montoInicial = 0) => {
     const registro = registrosCaja[0];
 
+    console.log('Registro de caja:', registro);
+    console.log('Sesión activa:', sesionActiva);
+    console.log('Empleado:', user?.employeeId);
+    console.log('Monto inicial:', montoInicial);
+
     if (!registro) {
       throw new Error('No hay una caja configurada para esta sucursal.');
     }
 
-    if (!sesionActiva) {
-      await openCashSession({
-        cashRegisterId: registro.cashRegisterId,
-        employeeId: user?.employeeId,
-        initialAmount: Number(montoInicial).toFixed(2)
-      });
-
-      await recargarDatos(id);
+    if (sesionActiva) {
+      throw new Error('Ya existe una sesión de caja activa.');
     }
+
+    await openCashSession({
+      cashRegisterId: registro.cashRegisterId,
+      employeeId: user?.employeeId,
+      initialAmount: Number(montoInicial)
+    });
+
+    await recargarDatos(id);
   };
 
   const cerrarCaja = async (id = sucursalId, montoFinal = 0) => {
