@@ -184,10 +184,6 @@ export default function CashierPage() {
     [productos, inventarioSucursal]
   );
 
-  const estadoConexion = errorProductos || errorRecetas || errorStock
-    ? 'Error de datos'
-    : 'Conectado a API';
-
   const registrarVenta = async (datosPedido) => {
     const respuesta = await registrarPedido({
       id: `ORD-${Date.now()}`,
@@ -229,7 +225,6 @@ export default function CashierPage() {
         seccion={seccion}
         onSeleccionar={setSeccion}
         onLogout={handleLogout}
-        estadoConexion={estadoConexion}
       />
 
       <div className="cashier-workspace">

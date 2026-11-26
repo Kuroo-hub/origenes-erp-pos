@@ -101,7 +101,6 @@ const InventoryPage = () => {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         alertCount={lowStockCount}
-        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 

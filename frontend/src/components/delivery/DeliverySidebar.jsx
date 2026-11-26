@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { id: 'history', label: 'Historial de entregas', Icon: IconCheckCircle },
 ];
 
-const DeliverySidebar = ({ activeTab, onSelectTab, pendingCount = 0, isOffline = false, onLogout }) => {
+const DeliverySidebar = ({ activeTab, onSelectTab, pendingCount = 0, onLogout }) => {
   return (
     <aside className="del-sidebar">
       <div className="del-sidebar__brand">
@@ -44,9 +44,6 @@ const DeliverySidebar = ({ activeTab, onSelectTab, pendingCount = 0, isOffline =
       </nav>
 
       <div className="del-sidebar__footer">
-        <span className="del-sidebar__status-text">
-          {isOffline ? 'Sin conexión' : 'Conectado a API'}
-        </span>
         <button type="button" className="del-sidebar__logout" onClick={onLogout}>
           Cerrar sesión
         </button>
