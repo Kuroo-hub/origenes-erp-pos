@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import { Alert } from 'reactstrap';
 import CashierCart from './CashierCart.jsx';
+import { getProductImage } from '../../utils/productImages.js';
 
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
@@ -300,10 +301,21 @@ export default function CashierPOS({
                   key={producto.id}
                 >
                   <div className="cashier-product__image">
-                    <i
-                      className={`bi ${producto.imagen}`}
-                      aria-hidden="true"
-                    />
+                    {getProductImage(producto.nombre) ? (
+                      <img
+                        src={getProductImage(producto.nombre)}
+                        alt={producto.nombre}
+                        loading="lazy"
+                        onError={(evento) => {
+                          evento.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <i
+                        className={`bi ${producto.imagen}`}
+                        aria-hidden="true"
+                      />
+                    )}
                   </div>
 
                   <div className="cashier-product__content">

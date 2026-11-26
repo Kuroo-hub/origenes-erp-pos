@@ -39,17 +39,17 @@ const ESTADOS_FACTURA = {
 
 const ESTADOS_COCINA = {
   PENDING: 'Pendiente',
-  PREPARING: 'En preparaciÃ³n',
+  PREPARING: 'En preparación',
   READY: 'Listo'
 };
 
 const ESTADOS_COCINA_BACKEND = {
-  'En preparaciÃ³n': 'PREPARING',
+  'En preparación': 'PREPARING',
   'Listo': 'READY'
 };
 
 function formatearHora(fecha) {
-  if (!fecha) return 'â€”';
+  if (!fecha) return '—';
 
   return new Date(fecha).toLocaleTimeString('es-SV', {
     hour: '2-digit',
@@ -117,7 +117,7 @@ export function OrderProvider({ children }) {
   const [cargandoDatos, setCargandoDatos] = useState(true);
   const [errorDatos, setErrorDatos] = useState('');
 
-  // Cargar sucursales cuando la sesiÃ³n estÃ© disponible.
+  // Cargar sucursales cuando la sesión esté disponible.
   useEffect(() => {
     if (loading) return undefined;
 
@@ -244,7 +244,7 @@ const recargarDatos = useCallback(
   },
   [sucursalId]
 );
-  // Consultar datos cuando exista sesiÃ³n y sucursal.
+  // Consultar datos cuando exista sesión y sucursal.
   useEffect(() => {
     if (loading) return;
 
@@ -308,7 +308,7 @@ const recargarDatos = useCallback(
     const registro = registrosCaja[0];
 
     console.log('Registro de caja:', registro);
-    console.log('SesiÃ³n activa:', sesionActiva);
+    console.log('Sesión activa:', sesionActiva);
     console.log('Empleado:', user?.employeeId);
     console.log('Monto inicial:', montoInicial);
 
@@ -317,7 +317,7 @@ const recargarDatos = useCallback(
     }
 
     if (sesionActiva) {
-      throw new Error('Ya existe una sesiÃ³n de caja activa.');
+      throw new Error('Ya existe una sesión de caja activa.');
     }
 
     await openCashSession({
@@ -331,7 +331,7 @@ const recargarDatos = useCallback(
 
   const cerrarCaja = async (id = sucursalId, montoFinal = 0) => {
     if (!sesionActiva) {
-      throw new Error('No hay una sesiÃ³n de caja abierta.');
+      throw new Error('No hay una sesión de caja abierta.');
     }
 
     const resultado = await closeCashSession(sesionActiva.id, {
@@ -354,7 +354,7 @@ const recargarDatos = useCallback(
 
     if (!sesionActiva) {
       throw new Error(
-        'La caja estÃ¡ cerrada. Manager debe abrirla para vender.'
+        'La caja está cerrada. Manager debe abrirla para vender.'
       );
     }
 
