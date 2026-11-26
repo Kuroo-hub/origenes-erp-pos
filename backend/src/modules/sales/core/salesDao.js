@@ -289,6 +289,7 @@ export async function findInvoiceHeaderById(invoiceId) {
     const result = await pool.query(
         `SELECT
             i.*,
+            i.branch_id AS "branchId",
             b.name AS "branchName",
             b.address AS "branchAddress",
             c.full_name AS "customerName",

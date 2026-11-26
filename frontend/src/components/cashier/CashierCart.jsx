@@ -37,6 +37,9 @@ export default function CashierCart({
     0
   );
 
+  const iva = Number((subtotal * 0.13).toFixed(2));
+  const totalCalculado = Number((subtotal + iva).toFixed(2));
+
   return (
     <aside className="cashier-cart">
       <header className="cashier-cart__header">
@@ -266,9 +269,14 @@ export default function CashierCart({
           <strong>{formatearMonedaCajero(subtotal)}</strong>
         </div>
 
+        <div>
+          <span>IVA 13%</span>
+          <strong>{formatearMonedaCajero(iva)}</strong>
+        </div>
+
         <div className="cashier-cart__total">
-          <span>Total</span>
-          <strong>{formatearMonedaCajero(subtotal)}</strong>
+          <span>Total Calculado</span>
+          <strong>{formatearMonedaCajero(totalCalculado)}</strong>
         </div>
       </div>
 

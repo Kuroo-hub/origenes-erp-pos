@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { createError } from "../../../utils/errors.js";
 import { formatCents, toCents } from "../../../utils/money.js";
 import { withTransaction } from "../../../utils/transaction.js";
-import { validateId } from "../../../utils/validation.js";
+import { parseBranchFilter, validateId } from "../../../utils/validation.js";
 import { consumeSaleProduct } from "../../inventory/inventoryService.js";
 import {
     findActiveBranchById,
@@ -287,7 +287,7 @@ export async function getSalesHistoryService({ limit = 20, offset = 0, branchId 
         throw createError("El desplazamiento debe ser un entero mayor o igual a cero.");
     }
 
-    const validBranchId = branchId ? validateId(branchId, "ID de sucursal") : null;
+    const validBranchId = parseBranchFilter(branchId);
     return findInvoicesHistory(parsedLimit, parsedOffset, validBranchId);
 }
 

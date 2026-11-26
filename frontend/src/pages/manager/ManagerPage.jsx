@@ -23,6 +23,7 @@ export default function ManagerPage() {
     seleccionarSucursal,
     caja,
     cajaAbierta,
+    registrosCaja,
     abrirCaja,
     cerrarCaja,
   } = useOrders();
@@ -35,10 +36,10 @@ export default function ManagerPage() {
     [ordenesSucursal]
   );
 
-  const handleAbrir = async (monto) => {
+  const handleAbrir = async (monto, cashRegisterId) => {
     setFeedback(null);
     try {
-      await abrirCaja(sucursalId, monto);
+      await abrirCaja(sucursalId, monto, cashRegisterId);
       setFeedback({ type: 'success', text: 'Caja abierta correctamente.' });
     } catch (error) {
       setFeedback({ type: 'error', text: error?.message ?? 'No se pudo abrir la caja.' });
@@ -102,13 +103,14 @@ export default function ManagerPage() {
           )}
 
           {seccion === 'flujo' && (
-            <CashierCashFlow ordenes={ordenesSucursal} sucursal={sucursal} />
+            <CashierCashFlow sucursal={sucursal} />
           )}
 
           {seccion === 'caja' && (
             <ManagerCashRegister
               sucursal={sucursal}
               caja={caja}
+              registrosCaja={registrosCaja}
               onAbrir={handleAbrir}
               onCerrar={handleCerrar}
             />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatearMonedaCajero } from '../../utils/formatters.js';
 
 const formatearHora = (timestamp) =>
@@ -13,13 +13,31 @@ const formatearHora = (timestamp) =>
 export default function ManagerCashRegister({
   sucursal,
   caja,
+  registrosCaja = [],
   onAbrir,
   onCerrar,
 }) {
   const abierta = caja?.abierta ?? false;
   const [montoInicial, setMontoInicial] = useState('');
   const [montoFinal, setMontoFinal] = useState('');
+  const [cashRegisterId, setCashRegisterId] = useState('');
   const [error, setError] = useState('');
+
+  const cajasDisponibles = useMemo(
+    () => registrosCaja.filter((registro) => registro.active !== false),
+    [registrosCaja]
+  );
+
+  useEffect(() => {
+    const seleccionActual = cajasDisponibles.find(
+      (registro) => Number(registro.cashRegisterId) === Number(cashRegisterId)
+    );
+
+    if (!seleccionActual) {
+      const primeraCaja = cajasDisponibles[0];
+      setCashRegisterId(primeraCaja ? String(primeraCaja.cashRegisterId) : '');
+    }
+  }, [cajasDisponibles, cashRegisterId]);
 
   useEffect(() => {
     setMontoInicial(
@@ -43,7 +61,12 @@ export default function ManagerCashRegister({
       return;
     }
 
-    onAbrir(Number(montoInicial));
+    if (!cashRegisterId) {
+      setError('Selecciona una caja válida para abrirla.');
+      return;
+    }
+
+    onAbrir(Number(montoInicial), Number(cashRegisterId));
   };
 
   const handleCerrar = () => {
@@ -130,6 +153,30 @@ export default function ManagerCashRegister({
               <span>Modo</span>
               <strong>Demostración</strong>
             </div>
+          </div>
+
+          <div className="cashier-cart__customer">
+            <label htmlFor="manager-caja-registro">Caja a abrir</label>
+            <select
+              id="manager-caja-registro"
+              value={cashRegisterId}
+              disabled={abierta}
+              onChange={(evento) => setCashRegisterId(evento.target.value)}
+            >
+              {cajasDisponibles.length === 0 && (
+                <option value="">No hay cajas configuradas</option>
+              )}
+
+              {cajasDisponibles.map((registro) => (
+                <option
+                  key={registro.cashRegisterId}
+                  value={registro.cashRegisterId}
+                >
+                  {registro.name}
+                  {registro.branchName ? ` · ${registro.branchName}` : ''}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="manager-caja-amounts">

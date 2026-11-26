@@ -64,12 +64,19 @@ function formatearHora(fecha) {
   });
 }
 
+function extraerNumeroCasa(direccion) {
+  const coincidencia = /,?\s*casa\s*(?:#\s*)?([^,]+)/i.exec(direccion ?? '');
+  return coincidencia?.[1]?.trim() ?? '';
+}
+
 function mapearVenta(venta) {
   const paymentMethod = METODOS_BACKEND_FRONTEND[venta.paymentMethod] ?? 'efectivo';
   const prefijo = venta.documentType === 'CREDIT_TAX' ? 'CCF' : 'FAC';
 
   const kitchenStatus = venta.kitchenStatus ?? 'PENDING';
   const estadoEntrega = venta.deliveryStatus ?? null;
+  const direccionEntrega = venta.deliveryAddress ?? '';
+  const numeroCasa = extraerNumeroCasa(direccionEntrega);
 
   return {
     id: `${prefijo}-${venta.consecutiveNumber ?? venta.invoiceId}`,
@@ -88,8 +95,8 @@ function mapearVenta(venta) {
     deliveryStatus: estadoEntrega,
     estadoEntrega,
     estadoEntregaTexto: ESTADOS_ENTREGA[estadoEntrega] ?? '',
-    direccion: venta.deliveryAddress ?? '',
-    numeroCasa: '',
+    direccion: direccionEntrega,
+    numeroCasa,
     telefono: venta.deliveryPhone ?? '',
     tiempoObjetivoMin: 15,
     prioridad: 'normal',
@@ -179,7 +186,7 @@ export function OrderProvider({ children }) {
 
       try {
         const [ventas, sesiones, registros] = await Promise.all([
-          getSales(branchId),
+          getSales(branchId, { limit: 100 }),
           getActiveCashSessions(branchId),
           getCashRegisters(branchId)
         ]);
@@ -247,8 +254,12 @@ export function OrderProvider({ children }) {
 
   const cajaAbierta = caja.abierta;
 
-  const abrirCaja = async (id = sucursalId, montoInicial = 0) => {
-    const registro = registrosCaja[0];
+  const abrirCaja = async (id = sucursalId, montoInicial = 0, cashRegisterId = null) => {
+    const registro = cashRegisterId
+      ? registrosCaja.find(
+          (item) => Number(item.cashRegisterId) === Number(cashRegisterId)
+        )
+      : registrosCaja[0];
 
     if (!registro) {
       throw new Error('No hay una caja configurada para esta sucursal.');
@@ -277,6 +288,12 @@ export function OrderProvider({ children }) {
 
   const registrarPedido = async (pedido) => {
     const esDomicilio = pedido.tipoEntrega === 'domicilio';
+    const numeroCasa = String(pedido.numeroCasa ?? '').trim();
+    const direccionEntrega = esDomicilio
+      ? numeroCasa
+        ? `${pedido.direccion ?? ''}, casa ${numeroCasa}`
+        : pedido.direccion ?? ''
+      : null;
 
     if (!sesionActiva) {
       throw new Error('La caja está cerrada. Manager debe abrirla para vender.');
@@ -292,7 +309,7 @@ export function OrderProvider({ children }) {
       paymentMethod: METODOS_FRONTEND_BACKEND[pedido.metodoPago] ?? 'CASH',
       isDelivery: esDomicilio,
       deliveryStatus: esDomicilio ? 'READY' : null,
-      deliveryAddress: esDomicilio ? pedido.direccion : null,
+      deliveryAddress: direccionEntrega,
       deliveryPhone: esDomicilio ? pedido.telefono : null,
       items: pedido.productos.map((producto) => ({
         productId: producto.id,

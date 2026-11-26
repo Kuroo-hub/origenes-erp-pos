@@ -42,3 +42,5 @@ export const registerSupplierPayment = async (payableId, paymentData) =>
 
 export const getInventoryMovements = async (branchId) =>
   apiGet(`/inventory/branches/${branchId}/movements`);
+
+export const getSuppliers = async () => apiGet('/inventory/suppliers');

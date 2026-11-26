@@ -1,3 +1,5 @@
+import { AppError } from "../../utils/AppError.js";
+
 const ISSS_RATE = 0.03;
 const ISSS_CAP = 30;
 const AFP_RATE = 0.0725;
@@ -49,6 +51,10 @@ export function calculateBiweeklyPayroll(baseSalary, otherDeductions = 0, bonus 
     const netSalary = roundMoney(
         grossSalary - isssDeduction - afpDeduction - incomeTax - additionalDeductions
     );
+
+    if (netSalary < 0) {
+        throw new AppError("Las deducciones superan el salario neto del empleado.", 400);
+    }
 
     return {
         baseBiweeklySalary,

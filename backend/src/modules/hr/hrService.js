@@ -45,7 +45,7 @@ function normalizeEmployee(employee) {
 }
 
 export async function getEmployees(branchId = null) {
-    const employees = await findAllEmployees(branchId);
+    const employees = await findAllEmployees(parseBranchFilter(branchId));
     return employees.map(normalizeEmployee);
 }
 

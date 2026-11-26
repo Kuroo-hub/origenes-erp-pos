@@ -1,7 +1,7 @@
 import { createError } from "../../../utils/errors.js";
 import { formatCents, toScaledBigInt } from "../../../utils/money.js";
 import { withTransaction } from "../../../utils/transaction.js";
-import { validatePositiveInteger } from "../../../utils/validation.js";
+import { parseBranchFilter, validatePositiveInteger } from "../../../utils/validation.js";
 import { increaseStock, insertInventoryMovement } from "../../inventory/inventoryDao.js";
 import { insertSupplierPayment } from "../payables/payablesDao.js";
 import {
@@ -16,7 +16,7 @@ import {
 } from "./purchasesDao.js";
 
 export function validateBranchId(value) {
-    return validatePositiveInteger(value, "ID de sucursal");
+    return parseBranchFilter(value);
 }
 
 export function validateSupplierId(value) {
@@ -171,8 +171,8 @@ export async function listPurchasesService({ branchId } = {}) {
 export async function createPurchaseService(input = {}, authenticatedEmployeeId = null) {
     const payload = normalizePurchasePayload(input);
     const supplierId = validateSupplierId(payload.supplierId);
-    const branchId = validateBranchId(payload.branchId);
-    const employeeId = validateEmployeeId(input.employeeId ?? authenticatedEmployeeId);
+    const branchId = validatePositiveInteger(payload.branchId, "ID de sucursal");
+    const employeeId = validateEmployeeId(authenticatedEmployeeId);
     const invoiceNumber = validateInvoiceNumber(payload.invoiceNumber);
     const status = validatePurchaseStatus(payload.status);
     const dueDate = validateDueDate(payload.dueDate);

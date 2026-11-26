@@ -123,9 +123,7 @@ export async function openCashSessionService({
 }
 
 export async function getCashRegistersByBranchService(branchId) {
-    const id = validateId(branchId, "ID de sucursal");
-
-    return findCashRegistersByBranch(id);
+    return findCashRegistersByBranch(parseBranchFilter(branchId));
 }
 
 // 2. Consulta todas las sesiones abiertas.

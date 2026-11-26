@@ -1,5 +1,5 @@
 import { resolveBranchId } from "../../utils/branchAccess.js";
-import {getAllBranches, getAllIngredients, getAllProducts, registerIngredient, getStockByBranch, registerStockEntry,
+import {getAllBranches, getAllIngredients, getAllProducts, getAllSuppliers, registerIngredient, getStockByBranch, registerStockEntry,
     registerStockExit, getMovementsByBranch, getLowStockByBranch, getProductRecipe,
     saveProductRecipe, checkProductAvailability
 } from './inventoryService.js';
@@ -31,6 +31,16 @@ export async function getProductsController(req, res)
     return res.status(200).json({
         success: true,
         data: products
+    });
+}
+
+export async function getSuppliersController(req, res)
+{
+    const suppliers = await getAllSuppliers();
+
+    return res.status(200).json({
+        success: true,
+        data: suppliers
     });
 }
 

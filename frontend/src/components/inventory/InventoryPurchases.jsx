@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { createSupplierPurchase, registerSupplierPayment } from '../../services/inventoryApi';
-
-const SUPPLIERS = [
-  { supplier_id: 1, name: 'Distribuidora La Cosecha' },
-  { supplier_id: 2, name: 'Carnes El Buen Corte' },
-  { supplier_id: 3, name: 'Empaques y Servicio SV' },
-];
+import React, { useEffect, useState } from 'react';
+import {
+  createSupplierPurchase,
+  getSuppliers,
+  registerSupplierPayment,
+} from '../../services/inventoryApi';
 
 const STATUS_LABELS = {
   PAID: 'Pagada',
@@ -23,13 +21,44 @@ const InventoryPurchases = ({
   onRefresh,
 }) => {
   const [showNewForm, setShowNewForm] = useState(false);
-  const [supplierId, setSupplierId] = useState(1);
+  const [suppliers, setSuppliers] = useState([]);
+  const [supplierError, setSupplierError] = useState('');
+  const [supplierId, setSupplierId] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('PENDING');
   const [dueDate, setDueDate] = useState('');
   const [items, setItems] = useState([{ ingredient_id: '', quantity: '', unit_cost: '' }]);
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+
+  useEffect(() => {
+    let activo = true;
+
+    getSuppliers()
+      .then((respuesta) => {
+        if (!activo) return;
+
+        const filas = Array.isArray(respuesta) ? respuesta : respuesta?.data ?? [];
+        setSuppliers(filas);
+        setSupplierId((actual) => {
+          const existe = filas.some(
+            (proveedor) =>
+              Number(proveedor.supplierId ?? proveedor.supplier_id) === Number(actual)
+          );
+          return existe ? actual : String(filas[0]?.supplierId ?? filas[0]?.supplier_id ?? '');
+        });
+        setSupplierError('');
+      })
+      .catch((caughtError) => {
+        if (activo) {
+          setSupplierError(caughtError?.message ?? 'No se pudieron cargar los proveedores.');
+        }
+      });
+
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   // Estado para registrar abono a factura pendiente
   const [payingPurchase, setPayingPurchase] = useState(null);
@@ -81,6 +110,11 @@ const InventoryPurchases = ({
         };
       });
 
+    if (!supplierId) {
+      setFeedback({ type: 'error', text: 'Selecciona un proveedor válido.' });
+      return;
+    }
+
     if (!invoiceNumber.trim()) {
       setFeedback({ type: 'error', text: 'Ingresa el número de factura del proveedor.' });
       return;
@@ -96,7 +130,6 @@ const InventoryPurchases = ({
 
     setSubmitting(true);
 
-    const supplierObj = SUPPLIERS.find((s) => s.supplier_id === Number(supplierId));
     const payload = {
       supplier_id: Number(supplierId),
       branch_id: branchId,
@@ -186,6 +219,10 @@ const InventoryPurchases = ({
         <div className={`inv-toast inv-toast--${feedback.type}`}>{feedback.text}</div>
       )}
 
+      {supplierError && (
+        <div className="inv-toast inv-toast--error">{supplierError}</div>
+      )}
+
       {/* Formulario de Nueva Compra a Proveedor */}
       {showNewForm && (
         <form onSubmit={handleCreatePurchase} className="inv-card inv-purchase-form">
@@ -198,13 +235,20 @@ const InventoryPurchases = ({
                 id="pur-supplier"
                 className="inv-select"
                 value={supplierId}
-                onChange={(e) => setSupplierId(Number(e.target.value))}
+                onChange={(e) => setSupplierId(e.target.value)}
               >
-                {SUPPLIERS.map((s) => (
-                  <option key={s.supplier_id} value={s.supplier_id}>
-                    {s.name}
-                  </option>
-                ))}
+                {suppliers.length === 0 && (
+                  <option value="">No hay proveedores disponibles</option>
+                )}
+
+                {suppliers.map((proveedor) => {
+                  const id = proveedor.supplierId ?? proveedor.supplier_id;
+                  return (
+                    <option key={id} value={id}>
+                      {proveedor.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

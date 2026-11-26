@@ -2,7 +2,7 @@ import { pool } from "../../../config/database.js";
 
 export async function findPurchasesByBranch(branchId) {
     const result = await pool.query(
-        `SELECT p.purchase_id, ap.payable_id, p.supplier_id, s.name AS supplier_name, p.branch_id, p.invoice_number, TO_CHAR(p.purchase_date,'YYYY-MM-DD HH24:MI') AS purchase_date, p.subtotal, p.vat, p.total, ap.outstanding_amount, ap.status, p.status AS purchase_status, ap.due_date, (SELECT COUNT(*)::int FROM purchase_detail pd WHERE pd.purchase_id=p.purchase_id) AS items_count FROM purchase p JOIN supplier s ON s.supplier_id=p.supplier_id JOIN accounts_payable ap ON ap.purchase_id=p.purchase_id WHERE p.branch_id=$1 ORDER BY p.purchase_date DESC, p.purchase_id DESC`,
+        `SELECT p.purchase_id, ap.payable_id, p.supplier_id, s.name AS supplier_name, p.branch_id, p.invoice_number, TO_CHAR(p.purchase_date,'YYYY-MM-DD HH24:MI') AS purchase_date, p.subtotal, p.vat, p.total, ap.outstanding_amount, ap.status, p.status AS purchase_status, ap.due_date, (SELECT COUNT(*)::int FROM purchase_detail pd WHERE pd.purchase_id=p.purchase_id) AS items_count FROM purchase p JOIN supplier s ON s.supplier_id=p.supplier_id JOIN accounts_payable ap ON ap.purchase_id=p.purchase_id WHERE ($1::INTEGER IS NULL OR p.branch_id=$1) ORDER BY p.purchase_date DESC, p.purchase_id DESC`,
         [branchId]
     );
 
