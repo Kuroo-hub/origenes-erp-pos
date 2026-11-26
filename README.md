@@ -53,8 +53,6 @@ npm run dev
 | `npm run build` | Genera el build de producción |
 | `npm run preview` | Previsualiza el build generado |
 
-> Las credenciales, contraseñas temporales y movimientos son demostrativos. No existe autenticación real.
-
 ---
 
 ## Mapa de rutas
@@ -370,9 +368,6 @@ origenes-erp-pos/
 | Validación manual en navegador | Pendiente de ejecutar con `npm run dev` |
 | Pruebas automatizadas | No hay framework de tests configurado |
 
-## Límites actuales
+## Persistencia de datos
 
-- Los datos viven en memoria: recargar reinicia pedidos, caja y cambios de stock.
-- No existe autenticación ni backend real.
-- El stock inicial del Cajero se copia para las tres sucursales como dato de demostración.
-- Delivery e Inventario intentan consumir servicios y caen a mocks si no hay backend disponible.
+Todos los pedidos, caja, cambios de stock y todo lo demas se guarda en la base de datos dedicada a la pagina web del producto para eliminar la limitante de los mocks.
