@@ -304,8 +304,10 @@ export default function CashierOrders({ ordenes = [], onCambiarEstado }) {
                 <div className="cashier-orders__detail-delivery">
                   <span>Entrega a domicilio</span>
                   <strong>
-                    {ordenSeleccionada.direccion}, Casa #
-                    {ordenSeleccionada.numeroCasa} · {ordenSeleccionada.telefono}
+                    {ordenSeleccionada.direccion}
+                    {ordenSeleccionada.numeroCasa ? `, Casa #${ordenSeleccionada.numeroCasa}` : ''}
+                    {' · '}
+                    {ordenSeleccionada.telefono}
                   </strong>
                 </div>
               )}

@@ -3,7 +3,7 @@ findBranchById, findIngredientById, increaseStock, insertInventoryMovement, decr
 findInventoryByBranchAndIngredient, insertStockOutMovement, findMovementsByBranch,
 findLowStockByBranch, findProductById, findRecipeByProduct, findProductForRecipeUpdate,
 findExistingIngredientIds, replaceRecipeIngredients, findRecipeAvailability, findProductForConsumption,
-findRecipeRequirements, insertConsumptionMovement
+findRecipeRequirements, insertConsumptionMovement, findAllSuppliers
 } from './inventoryDao.js';
 
 import { pool } from '../../config/database.js';
@@ -86,6 +86,11 @@ export async function getAllProducts()
         ...product,
         category: product.product_type === 'PREPARED' ? 'PREPARADOS' : 'REVENTA'
     }));
+}
+
+export async function getAllSuppliers()
+{
+    return findAllSuppliers();
 }
 
 export async function getStockByBranch(branchId)

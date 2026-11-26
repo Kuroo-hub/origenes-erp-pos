@@ -110,7 +110,7 @@ export async function findCashRegistersByBranch(branchId) {
          FROM cash_register cr
          INNER JOIN branch b
             ON b.branch_id = cr.branch_id
-         WHERE cr.branch_id = $1
+          WHERE ($1::INTEGER IS NULL OR cr.branch_id = $1)
          ORDER BY cr.cash_register_id`,
         [branchId]
     );

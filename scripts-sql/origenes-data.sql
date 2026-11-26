@@ -310,7 +310,7 @@ VALUES
 -- =====================================================
 -- EMPLOYEES AND LOGINS
 -- Password for every demo employee: Prueba123!
--- 1 admin general + 1 manager por sucursal + 26 empleados = 30 logins
+-- 1 admin general + 1 manager por sucursal + 26 empleados + HR e INVENTORY_MANAGER = 32 logins
 -- =====================================================
 
 INSERT INTO employee (
@@ -367,7 +367,11 @@ FROM (
         (3, 'repartidor2.sanmiguel@origenessv.com', 'EMPLOYEE', 'Beatriz Santos', 'Repartidora', '2024-04-01', 480.00),
         (3, 'cajero3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Lorena Flores', 'Cajera', '2024-05-13', 520.00),
         (3, 'cocina3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Iván Cabrera', 'Cocina', '2024-06-24', 580.00),
-        (3, 'repartidor3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Rodrigo Aguilar', 'Repartidor', '2024-08-05', 480.00)
+        (3, 'repartidor3.sanmiguel@origenessv.com', 'EMPLOYEE', 'Rodrigo Aguilar', 'Repartidor', '2024-08-05', 480.00),
+
+        -- ROLES DE SOPORTE
+        (1, 'rrhh@origenessv.com', 'HR', 'Rocío Menéndez', 'Analista de Recursos Humanos', '2023-02-06', 900.00),
+        (1, 'inventario@origenessv.com', 'INVENTORY_MANAGER', 'Andrés Solís', 'Encargado de Inventarios', '2023-04-17', 850.00)
 ) AS v(branch_id, email, role, full_name, job_title, hire_date, base_salary)
 CROSS JOIN (
     SELECT crypt('Prueba123!', gen_salt('bf')) AS password_hash
@@ -611,8 +615,8 @@ INSERT INTO purchase (
 )
 VALUES
 (1, 1, (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'), 'FAC-001', '2026-11-15 09:00', 150.00, 19.50, 169.50, 'PAID'),
-(2, 1, (SELECT employee_id FROM employee WHERE email = 'gerente.santaana@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
-(3, 2, (SELECT employee_id FROM employee WHERE email = 'gerente.sanmiguel@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
+(2, 1, (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
+(3, 2, (SELECT employee_id FROM employee WHERE email = 'gerente.santaana@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
 
 INSERT INTO purchase_detail (purchase_id, ingredient_id, quantity, unit_cost, subtotal)
 SELECT
@@ -663,7 +667,8 @@ INSERT INTO cash_shift (
 )
 VALUES
 (1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-17 08:00', '2026-11-17 17:00', 100.00, 426.47, 'CLOSED'),
-(1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-18 08:00', '2026-11-18 17:00', 100.00, 100.00, 'CLOSED');
+(1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), '2026-11-18 08:00', '2026-11-18 17:00', 100.00, 100.00, 'CLOSED'),
+(1, (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'), '2026-11-25 08:00', NULL, 100.00, NULL, 'OPEN');
 
 
 -- =====================================================
@@ -689,6 +694,40 @@ VALUES
 (1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'CANCELLED'),
 (NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'CANCELLED');
 
+INSERT INTO invoice (
+    customer_id,
+    branch_id,
+    employee_id,
+    document_type,
+    consecutive_number,
+    control_number,
+    generation_code,
+    reception_stamp,
+    issue_date,
+    subtotal,
+    vat,
+    total,
+    status,
+    is_delivery
+)
+VALUES
+(
+    NULL,
+    1,
+    (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'),
+    'FINAL_CONSUMER',
+    2,
+    'DTE-01-M001P001-000000000000002',
+    '33333333-3333-3333-3333-333333333333',
+    '3B4C5D6E7F8091A2B3C4D5E6F708192A3',
+    '2026-11-25 12:30',
+    9.50,
+    1.24,
+    10.74,
+    'PAID',
+    FALSE
+);
+
 INSERT INTO invoice_detail (invoice_id, product_id, quantity, unit_price, subtotal)
 SELECT
     v.invoice_id,
@@ -706,10 +745,29 @@ FROM (
 JOIN product p
     ON p.name = v.product_name;
 
+INSERT INTO invoice_detail (invoice_id, product_id, quantity, unit_price, subtotal)
+SELECT
+    3,
+    p.product_id,
+    v.quantity,
+    v.unit_price,
+    v.subtotal
+FROM (
+    VALUES
+    ('Pollo a la plancha', 1, 7.50, 7.50),
+    ('Limonada', 1, 2.00, 2.00)
+) AS v(product_name, quantity, unit_price, subtotal)
+JOIN product p
+    ON p.name = v.product_name;
+
 INSERT INTO sale_payment (invoice_id, shift_id, payment_method, amount, reference, payment_date)
 VALUES
 (1, 1, 'CARD', 10.74, 'TRX-CARD-001', '2026-11-17 12:35'),
 (2, 1, 'CASH', 14.97, NULL, '2026-11-17 13:15');
+
+INSERT INTO sale_payment (invoice_id, shift_id, payment_method, amount, reference, payment_date)
+VALUES
+(3, 3, 'CASH', 10.74, 'TRX-CASH-003', '2026-11-25 12:35');
 
 INSERT INTO cash_movement (shift_id, movement_type, description, amount, created_at)
 VALUES
@@ -718,10 +776,19 @@ VALUES
 (1, 'EXPENSE', 'Propina repartidor', 2.00, '2026-11-17 15:30'),
 (2, 'INCOME', 'Venta mostrador', 6.50, '2026-11-18 09:45');
 
+INSERT INTO cash_movement (shift_id, movement_type, description, amount, created_at)
+VALUES
+(3, 'INCOME', 'Pago de factura contado', 10.74, '2026-11-25 12:35');
+
 UPDATE document_sequence
 SET last_number = 1
 WHERE branch_id = 1
   AND document_type IN ('FINAL_CONSUMER', 'CREDIT_TAX');
+
+UPDATE document_sequence
+SET last_number = 2
+WHERE branch_id = 1
+  AND document_type = 'FINAL_CONSUMER';
 
 
 -- =====================================================
@@ -755,6 +822,76 @@ FROM (
     ('Rice', 'CONSUMPTION', 100, 'Consumo por venta', '2026-11-17 13:15'),
     ('Potato', 'ADJUSTMENT', 500, 'Ajuste por merma', '2026-11-17 17:00')
 ) AS v(ingredient_name, movement_type, quantity, reason, created_at)
+JOIN ingredient i
+    ON i.name = v.ingredient_name
+CROSS JOIN employee e
+WHERE e.email = 'gerente@origenessv.com';
+
+-- CONSUMO DE LA FACTURA 3 (2026-11-25)
+UPDATE branch_inventory bi
+SET quantity = bi.quantity - v.quantity
+FROM (
+    VALUES
+    ('Chicken', 200),
+    ('Rice', 100),
+    ('Broccoli', 50),
+    ('Carrot', 50),
+    ('Oil', 15),
+    ('Salt and pepper', 3),
+    ('Large flat plate', 1),
+    ('Fork', 1),
+    ('Knife', 1),
+    ('Napkin', 2),
+    ('Lemons', 3),
+    ('Water', 300),
+    ('Sugar', 30),
+    ('Ice', 100),
+    ('Large glass 16 oz', 1),
+    ('Straw', 1),
+    ('Coaster', 1)
+) AS v(ingredient_name, quantity)
+JOIN ingredient i
+    ON i.name = v.ingredient_name
+WHERE bi.branch_id = 1
+  AND bi.ingredient_id = i.ingredient_id;
+
+INSERT INTO inventory_movement (
+    branch_id,
+    ingredient_id,
+    employee_id,
+    movement_type,
+    quantity,
+    reason,
+    created_at
+)
+SELECT
+    1,
+    i.ingredient_id,
+    e.employee_id,
+    'CONSUMPTION',
+    v.quantity,
+    'Consumo por venta factura 3',
+    CAST('2026-11-25 12:35' AS TIMESTAMP)
+FROM (
+    VALUES
+    ('Chicken', 200),
+    ('Rice', 100),
+    ('Broccoli', 50),
+    ('Carrot', 50),
+    ('Oil', 15),
+    ('Salt and pepper', 3),
+    ('Large flat plate', 1),
+    ('Fork', 1),
+    ('Knife', 1),
+    ('Napkin', 2),
+    ('Lemons', 3),
+    ('Water', 300),
+    ('Sugar', 30),
+    ('Ice', 100),
+    ('Large glass 16 oz', 1),
+    ('Straw', 1),
+    ('Coaster', 1)
+) AS v(ingredient_name, quantity)
 JOIN ingredient i
     ON i.name = v.ingredient_name
 CROSS JOIN employee e

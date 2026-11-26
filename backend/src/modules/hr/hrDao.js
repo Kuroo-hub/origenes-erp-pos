@@ -1,4 +1,5 @@
 import { pool } from "../../config/database.js";
+import { parseBranchFilter } from "../../utils/validation.js";
 
 export async function findAllEmployees(branchId = null) {
     const params = [];
@@ -73,6 +74,8 @@ export async function findPayrollPerformanceByEmployeeId(employeeId) {
 }
 
 export async function findActiveEmployeesForPayroll(client, branchId = null) {
+    const parsedBranchId = parseBranchFilter(branchId);
+
     const result = await client.query(`
         SELECT
             e.employee_id AS "employeeId",
@@ -80,9 +83,9 @@ export async function findActiveEmployeesForPayroll(client, branchId = null) {
             e.base_salary AS "baseSalary"
         FROM employee e
         WHERE e.active = TRUE
-          AND ($2::INTEGER IS NULL OR e.branch_id = $2)
+          AND ($1::INTEGER IS NULL OR e.branch_id = $1)
         ORDER BY e.employee_id ASC
-    `, [branchId]);
+    `, [parsedBranchId]);
 
     return result.rows;
 }

@@ -33,8 +33,7 @@ export async function openCashSessionController(req, res) {
 }
 
 export async function getCashRegistersByBranchController(req, res) {
-  const branchId = resolveBranchId(req, req.query.branchId);
-  const registers = await getCashRegistersByBranchService(branchId);
+  const registers = await getCashRegistersByBranchService(scopedBranchId(req));
 
   return res.status(200).json({
     success: true,

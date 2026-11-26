@@ -37,6 +37,26 @@ export async function findAllProducts()
     return result.rows;
 }
 
+export async function findAllSuppliers()
+{
+    const query = `
+        SELECT
+            supplier_id AS "supplierId",
+            name,
+            email,
+            phone,
+            address,
+            tax_id AS "taxId",
+            active
+        FROM supplier
+        ORDER BY name ASC
+    `;
+
+    const result = await pool.query(query);
+
+    return result.rows;
+}
+
 export async function createIngredient(name, ingredientType, unit)
 {
     const query = `INSERT INTO ingredient (name, ingredient_type, unit)

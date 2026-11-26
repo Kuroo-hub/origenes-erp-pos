@@ -19,7 +19,7 @@ const OwnerPage = () => {
   const esAdministrador = user?.role === 'ADMINISTRATOR';
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedBranch, setSelectedBranch] = useState(esAdministrador ? 'ALL' : String(user?.branchId ?? ''));
-  const { sesionesActivas, sucursales } = useOrders();
+  const { sucursales } = useOrders();
 
   const [dashboard, setDashboard] = useState({ branches: [], top_products: [], payables: [] });
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,10 @@ const OwnerPage = () => {
   }, [selectedBranch, loadDashboard]);
 
   const cajaAbiertaPorSucursal = (branchId) =>
-    sesionesActivas.some((sesion) => Number(sesion.branchId) === Number(branchId));
+    dashboard.branches.some(
+      (sucursal) =>
+        Number(sucursal.branch_id) === Number(branchId) && Boolean(sucursal.cash_open)
+    );
 
   // Filtrado por sucursal si el gerente selecciona una específica
   const visibleBranches =
