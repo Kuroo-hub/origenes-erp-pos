@@ -1,4 +1,6 @@
-<div align="center">
+
+
+![Descripción de la imagen](readme_images/logo.png)
 
 # Orígenes SV
 
@@ -28,6 +30,14 @@ Frontend para operar ventas, cocina, entregas, inventario, recursos humanos, caj
 
 ## Inicio rápido
 
+Ejecutar en la primera terminal el backend
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Ejecutar en la segunda terminal el frontend
 ```bash
 cd frontend
 npm install
@@ -39,8 +49,6 @@ npm run dev
 | `npm run dev` | Levanta el servidor local de Vite |
 | `npm run build` | Genera el build de producción |
 | `npm run preview` | Previsualiza el build generado |
-
-> Las credenciales, contraseñas temporales y movimientos son demostrativos. No existe autenticación real.
 
 ---
 
@@ -133,6 +141,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Revisar un pedido a domicilio | Se muestra la marca correspondiente de entrega. |
 | Cambiar de sucursal en el contexto compartido | Cocina muestra las órdenes de la nueva sucursal. |
 
+![texto alternativo](readme_images/mockup_cocina.png)
+
 ---
 
 ### Recursos Humanos — `/rrhh`
@@ -157,6 +167,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Contratar con datos válidos | El empleado aparece en la lista y en planillas con credenciales demo. |
 | Revisar el cargo | El cargo mostrado depende del rol seleccionado, no de un campo manual. |
 | Revisar una planilla | Se muestran los descuentos y el neto correspondiente. |
+
+![texto alternativo](readme_images/mockup_rrhh.png)
 
 ---
 
@@ -183,6 +195,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Registrar factura de compra | La factura aparece en Compras y el stock se incrementa. |
 | Registrar abono | El saldo pendiente de la factura se reduce. |
 | Filtrar movimientos | La bitácora responde a búsqueda y tipo de movimiento. |
+
+![texto alternativo](readme_images/mockup_inventario.png)
 
 ---
 
@@ -211,6 +225,9 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Cambiar de sucursal | La lista se filtra por la sucursal activa. |
 | Abrir sin backend | Se muestra el modo de demostración con datos mock. |
 
+![texto alternativo](readme_images/mockup_delivery.png)
+
+
 ---
 
 ### Manager — `/manager`
@@ -234,6 +251,8 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Cambiar de sucursal | Se consulta la caja independiente de la sucursal elegida. |
 | Revisar Resumen | Las ventas corresponden a los pedidos del turno de la sucursal. |
 | Revisar Flujo de caja | Los movimientos corresponden a las órdenes de la sucursal activa. |
+
+![texto alternativo](readme_images/mockup_manager.png)
 
 ---
 
@@ -259,204 +278,71 @@ Cada bloque resume la funcionalidad actual y los puntos que conviene comprobar m
 | Revisar Sucursales | Cada tarjeta muestra métricas y estado de caja. |
 | Comparar Manager y Owner | Son páginas separadas con rutas y paneles propios. |
 
+![texto alternativo](readme_images/mockup_admin.png)
+
 ---
 
 ## Estructura actual
 
 ```text
 origenes-erp-pos/
-├─ .gitignore
 ├─ README.md
-├─ users.md
-├─ backend/
-│  ├─ .env.example
-│  ├─ package.json
-│  ├─ package-lock.json
-│  └─ src/
-│     ├─ app.js
-│     ├─ server.js
-│     ├─ config/
-│     │  ├─ cookies.js
-│     │  ├─ database.js
-│     │  └─ environment.js
-│     ├─ gateway/
-│     │  └─ apiGateway.js
-│     ├─ middlewares/
-│     │  ├─ authenticate.js
-│     │  ├─ authorize.js
-│     │  └─ errorMiddleware.js
-│     ├─ modules/
-│     │  ├─ auth/
-│     │  │  ├─ authController.js
-│     │  │  ├─ authDao.js
-│     │  │  ├─ authRoutes.js
-│     │  │  ├─ authService.js
-│     │  │  ├─ authValidation.js
-│     │  │  └─ token.js
-│     │  ├─ cash-flow/
-│     │  │  ├─ cashflowController.js
-│     │  │  ├─ cashflowDao.js
-│     │  │  ├─ cashflowRoutes.js
-│     │  │  └─ cashflowService.js
-│     │  ├─ hr/
-│     │  │  ├─ hrController.js
-│     │  │  ├─ hrDao.js
-│     │  │  ├─ hrRoutes.js
-│     │  │  ├─ hrService.js
-│     │  │  └─ payrollCalculator.js
-│     │  ├─ inventory/
-│     │  │  ├─ inventoryController.js
-│     │  │  ├─ inventoryDao.js
-│     │  │  ├─ inventoryRoutes.js
-│     │  │  └─ inventoryService.js
-│     │  ├─ purchases/
-│     │  │  ├─ core/
-│     │  │  │  ├─ purchasesController.js
-│     │  │  │  ├─ purchasesDao.js
-│     │  │  │  ├─ purchasesRoutes.js
-│     │  │  │  └─ purchasesService.js
-│     │  │  └─ payables/
-│     │  │     ├─ payablesController.js
-│     │  │     ├─ payablesDao.js
-│     │  │     ├─ payablesRoutes.js
-│     │  │     └─ payablesService.js
-│     │  └─ sales/
-│     │     ├─ core/
-│     │     │  ├─ salesController.js
-│     │     │  ├─ salesDao.js
-│     │     │  ├─ salesRoutes.js
-│     │     │  └─ salesService.js
-│     │     ├─ orders/
-│     │     │  ├─ ordersController.js
-│     │     │  ├─ ordersDao.js
-│     │     │  ├─ ordersRoutes.js
-│     │     │  └─ ordersService.js
-│     │     └─ reports/
-│     │        ├─ reportsController.js
-│     │        ├─ reportsDao.js
-│     │        ├─ reportsRoutes.js
-│     │        └─ reportsService.js
-│     └─ utils/
-│        ├─ AppError.js
-│        ├─ branchAccess.js
-│        ├─ errors.js
-│        ├─ money.js
-│        ├─ transaction.js
-│        └─ validation.js
-├─ docs/
-│  └─ inventory.md
-├─ frontend/
-│  ├─ .env.example
-│  ├─ index.html
-│  ├─ package.json
-│  ├─ package-lock.json
-│  ├─ vite.config.js
-│  ├─ public/
-│  │  └─ logo-origenes.png
-│  └─ src/
-│     ├─ App.jsx
-│     ├─ main.jsx
-│     ├─ auth/
-│     │  └─ roles.js
-│     ├─ components/
-│     │  ├─ auth/
-│     │  │  ├─ Brand.jsx
-│     │  │  └─ BrandMark.jsx
-│     │  ├─ cashier/
-│     │  │  ├─ CashierCart.jsx
-│     │  │  ├─ CashierCashFlow.jsx
-│     │  │  ├─ CashierOrders.jsx
-│     │  │  ├─ CashierPOS.jsx
-│     │  │  ├─ CashierSidebar.jsx
-│     │  │  ├─ CashierSummary.jsx
-│     │  │  ├─ CashierTopbar.jsx
-│     │  │  └─ InvoiceModal.jsx
-│     │  ├─ chef/
-│     │  │  └─ ChefOrderCard.jsx
-│     │  ├─ common/
-│     │  │  └─ OrigenesLogo.jsx
-│     │  ├─ delivery/
-│     │  │  ├─ DeliveryIcons.jsx
-│     │  │  ├─ DeliverySidebar.jsx
-│     │  │  └─ DeliveryTopbar.jsx
-│     │  ├─ hr/
-│     │  │  ├─ HrEmployeeDetail.jsx
-│     │  │  ├─ HrEmployees.jsx
-│     │  │  ├─ HrHiring.jsx
-│     │  │  ├─ HrPayroll.jsx
-│     │  │  ├─ HrSidebar.jsx
-│     │  │  ├─ HrSummary.jsx
-│     │  │  └─ HrTopbar.jsx
-│     │  ├─ inventory/
-│     │  │  ├─ InventoryIcons.jsx
-│     │  │  ├─ InventoryMovements.jsx
-│     │  │  ├─ InventoryPurchases.jsx
-│     │  │  ├─ InventorySidebar.jsx
-│     │  │  ├─ InventoryStock.jsx
-│     │  │  └─ InventoryTopbar.jsx
-│     │  ├─ manager/
-│     │  │  ├─ ManagerCashRegister.jsx
-│     │  │  ├─ ManagerSidebar.jsx
-│     │  │  └─ ManagerTopbar.jsx
-│     │  └─ owner/
-│     │     ├─ OwnerIcons.jsx
-│     │     ├─ OwnerSidebar.jsx
-│     │     └─ OwnerTopbar.jsx
-│     ├─ constants/
-│     │  └─ paymentMethods.js
-│     ├─ context/
-│     │  ├─ AuthContext.jsx
-│     │  └─ OrderContext.jsx
-│     ├─ hooks/
-│     │  └─ useAuth.js
-│     ├─ pages/
-│     │  ├─ auth/
-│     │  │  └─ LoginPage.jsx
-│     │  ├─ cashier/
-│     │  │  └─ CashierPage.jsx
-│     │  ├─ chef/
-│     │  │  └─ ChefPage.jsx
-│     │  ├─ delivery/
-│     │  │  └─ DeliveryPage.jsx
-│     │  ├─ hr/
-│     │  │  └─ HrPage.jsx
-│     │  ├─ inventory/
-│     │  │  └─ InventoryPage.jsx
-│     │  ├─ manager/
-│     │  │  └─ ManagerPage.jsx
-│     │  └─ owner/
-│     │     └─ OwnerPage.jsx
-│     ├─ public/
-│     │  └─ origenes-logo.svg
-│     ├─ routes/
-│     │  ├─ AppRoutes.jsx
-│     │  └─ ProtectedRoute.jsx
-│     ├─ services/
-│     │  ├─ apiClient.js
-│     │  ├─ authApi.js
-│     │  ├─ cashFlowApi.js
-│     │  ├─ catalogApi.js
-│     │  ├─ deliveryApi.js
-│     │  ├─ hrApi.js
-│     │  ├─ inventoryApi.js
-│     │  ├─ ownerApi.js
-│     │  └─ salesApi.js
-│     ├─ styles/
-│     │  ├─ auth.css
-│     │  ├─ cashier.css
-│     │  ├─ chef.css
-│     │  ├─ delivery.css
-│     │  ├─ hr.css
-│     │  ├─ inventory.css
-│     │  ├─ manager.css
-│     │  ├─ owner.css
-│     │  └─ variables.css
-│     └─ utils/
-│        ├─ formatters.js
-│        └─ rrhh.js
-└─ scripts-sql/
-   ├─ origenes-data.sql
-   └─ origenes-ddl.sql
+└─ frontend/
+   ├─ index.html
+   ├─ package.json
+   ├─ package-lock.json
+   ├─ vite.config.js
+   ├─ public/
+   └─ src/
+       ├─ App.jsx
+       ├─ main.jsx
+       ├─ components/
+       │  ├─ auth/
+       │  ├─ cashier/
+       │  ├─ chef/
+       │  ├─ common/
+      │  ├─ delivery/
+      │  ├─ hr/
+      │  ├─ inventory/
+      │  ├─ manager/
+      │  └─ owner/
+      ├─ context/
+      │  └─ OrderContext.jsx
+      ├─ hooks/
+      │  └─ useAuth.js
+      ├─ mocks/
+      │  ├─ CashierMocks.js
+      │  ├─ ChefMocks.js
+      │  ├─ DeliveryMocks.js
+      │  ├─ HrMocks.js
+      │  ├─ InventoryMocks.js
+      │  ├─ OwnerMocks.js
+      │  └─ SucursalesMocks.js
+      ├─ pages/
+      │  ├─ auth/LoginPage.jsx
+      │  ├─ cashier/CashierPage.jsx
+       │  ├─ chef/ChefPage.jsx
+       │  ├─ delivery/DeliveryPage.jsx
+      │  ├─ hr/HrPage.jsx
+      │  ├─ inventory/InventoryPage.jsx
+      │  ├─ manager/ManagerPage.jsx
+      │  └─ owner/OwnerPage.jsx
+      ├─ routes/
+      │  └─ AppRoutes.jsx
+      ├─ services/
+      │  ├─ deliveryApi.js
+      │  ├─ inventoryApi.js
+      │  └─ ownerApi.js
+      └─ styles/
+         ├─ auth.css
+         ├─ cashier.css
+          ├─ chef.css
+          ├─ delivery.css
+         ├─ hr.css
+         ├─ inventory.css
+         ├─ manager.css
+         ├─ owner.css
+         └─ variables.css
 ```
 
 ### Responsabilidad de cada carpeta
@@ -492,9 +378,6 @@ origenes-erp-pos/
 | Validación manual en navegador | Pendiente de ejecutar con `npm run dev` |
 | Pruebas automatizadas | No hay framework de tests configurado |
 
-## Límites actuales
+## Persistencia de datos
 
-- Los datos viven en memoria: recargar reinicia pedidos, caja y cambios de stock.
-- No existe autenticación ni backend real.
-- El stock inicial del Cajero se copia para las tres sucursales como dato de demostración.
-- Delivery e Inventario intentan consumir servicios y caen a mocks si no hay backend disponible.
+Todos los pedidos, caja, cambios de stock y todo lo demas se guarda en la base de datos dedicada a la pagina web del producto para eliminar la limitante de los mocks.
