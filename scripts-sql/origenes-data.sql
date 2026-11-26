@@ -1,3 +1,9 @@
+-- ORIGENES SV - DATOS DE PRUEBA
+-- Ejecutar DESPUES de origenes-ddl.sql, conectado a la BD origenessv.
+-- Ejecutar una sola vez sobre una base recien creada y vacia.
+-- Contraseña demo de los usuarios: Prueba123!
+-- No ejecutar nuevamente sobre una BD que ya tenga estos registros.
+
 -- =====================================================
 -- PRODUCT CATALOG
 -- 15 PREPARED PRODUCTS
@@ -373,6 +379,22 @@ CROSS JOIN (
     SELECT crypt('Prueba123!', gen_salt('bf')) AS password_hash
 ) AS p;
 
+-- Usuarios adicionales para probar RRHH e Inventario.
+-- Contraseña demo para ambos: Prueba123!
+INSERT INTO employee (
+    branch_id, email, password_hash, role, active,
+    full_name, job_title, hire_date, base_salary
+)
+SELECT
+    1, v.email, crypt('Prueba123!', gen_salt('bf')), v.role, TRUE,
+    v.full_name, v.job_title, DATE '2024-01-01', v.base_salary
+FROM (
+    VALUES
+      ('rrhh@origenessv.com', 'HR', 'Encargado de Recursos Humanos', 'RRHH', 900.00),
+      ('inventario@origenessv.com', 'INVENTORY_MANAGER', 'Encargado de Inventario', 'Inventario', 900.00)
+) AS v(email, role, full_name, job_title, base_salary);
+
+
 -- =====================================================
 -- CUSTOMER
 -- =====================================================
@@ -611,8 +633,8 @@ INSERT INTO purchase (
 )
 VALUES
 (1, 1, (SELECT employee_id FROM employee WHERE email = 'gerente@origenessv.com'), 'FAC-001', '2026-11-15 09:00', 150.00, 19.50, 169.50, 'PAID'),
-(2, 1, (SELECT employee_id FROM employee WHERE email = 'gerente.santaana@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
-(3, 2, (SELECT employee_id FROM employee WHERE email = 'gerente.sanmiguel@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
+(2, 2, (SELECT employee_id FROM employee WHERE email = 'gerente.santaana@origenessv.com'), 'FAC-002', '2026-11-16 10:30', 200.00, 26.00, 226.00, 'PENDING'),
+(3, 3, (SELECT employee_id FROM employee WHERE email = 'gerente.sanmiguel@origenessv.com'), 'FAC-003', '2026-11-17 11:15', 100.00, 13.00, 113.00, 'PENDING');
 
 INSERT INTO purchase_detail (purchase_id, ingredient_id, quantity, unit_cost, subtotal)
 SELECT
@@ -686,8 +708,8 @@ INSERT INTO invoice (
     status
 )
 VALUES
-(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'CANCELLED'),
-(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'CANCELLED');
+(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'PAID'),
+(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'PAID');
 
 INSERT INTO invoice_detail (invoice_id, product_id, quantity, unit_price, subtotal)
 SELECT
@@ -713,6 +735,7 @@ VALUES
 
 INSERT INTO cash_movement (shift_id, movement_type, description, amount, created_at)
 VALUES
+(1, 'INCOME', 'Pago con tarjeta de factura DTE-01-0001', 10.74, '2026-11-17 12:35'),
 (1, 'INCOME', 'Pago de factura contado', 14.97, '2026-11-17 13:15'),
 (1, 'EXPENSE', 'Compra de hielo', 3.50, '2026-11-17 10:00'),
 (1, 'EXPENSE', 'Propina repartidor', 2.00, '2026-11-17 15:30'),

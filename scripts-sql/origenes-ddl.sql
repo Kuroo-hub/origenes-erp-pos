@@ -3,10 +3,9 @@
 -- Commercial and Administrative Management System
 -- =====================================================
 
-CREATE DATABASE origenessv;
-
--- Connect to origenessv before executing the rest (psql meta-command).
-\c origenessv
+-- IMPORTANTE: primero crea la base de datos 'origenessv' desde pgAdmin.
+-- Luego selecciona/conéctate a esa base y ejecuta este archivo completo.
+-- No uses CREATE DATABASE ni \c dentro del Query Tool.
 
 -- Required for bcrypt password hashing (crypt/gen_salt).
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
