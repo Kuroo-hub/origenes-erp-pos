@@ -208,7 +208,7 @@ export async function findSessionPayments(client, sessionId) {
          INNER JOIN invoice i
             ON i.invoice_id = sp.invoice_id
          WHERE sp.shift_id = $1
-         AND i.status = 'PAID'
+         AND i.status IN ('PAID', 'COMPLETED')
          GROUP BY sp.payment_method
          ORDER BY sp.payment_method`,
         [sessionId]
@@ -253,7 +253,7 @@ export async function findExpectedCash(client, sessionId) {
                     INNER JOIN invoice i
                         ON i.invoice_id = sp.invoice_id
                     WHERE sp.shift_id = cs.shift_id
-                    AND i.status = 'PAID'
+                    AND i.status IN ('PAID', 'COMPLETED')
                     AND sp.payment_method = 'CASH'
                 ), 0)
                 + COALESCE((
@@ -340,7 +340,7 @@ export async function findCashSessionHistory(limit, offset, branchId = null) {
             (cs.opening_amount
               + COALESCE((SELECT SUM(sp.amount) FROM sale_payment sp
                   JOIN invoice i ON i.invoice_id = sp.invoice_id
-                  WHERE sp.shift_id = cs.shift_id AND i.status = 'PAID'
+                  WHERE sp.shift_id = cs.shift_id AND i.status IN ('PAID', 'COMPLETED')
                     AND sp.payment_method = 'CASH'), 0)
               + COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
                   WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'INCOME'), 0)
@@ -351,7 +351,7 @@ export async function findCashSessionHistory(limit, offset, branchId = null) {
               cs.closing_amount - (cs.opening_amount
                 + COALESCE((SELECT SUM(sp.amount) FROM sale_payment sp
                     JOIN invoice i ON i.invoice_id = sp.invoice_id
-                    WHERE sp.shift_id = cs.shift_id AND i.status = 'PAID'
+                    WHERE sp.shift_id = cs.shift_id AND i.status IN ('PAID', 'COMPLETED')
                       AND sp.payment_method = 'CASH'), 0)
                 + COALESCE((SELECT SUM(cm.amount) FROM cash_movement cm
                     WHERE cm.shift_id = cs.shift_id AND cm.movement_type = 'INCOME'), 0)

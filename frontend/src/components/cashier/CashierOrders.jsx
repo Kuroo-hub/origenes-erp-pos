@@ -9,9 +9,12 @@ const ESTADOS = [
   'En preparación',
   'Listo',
   'Entregado',
+  'Completa',
 ];
 
-const ESTADOS_CAMBIO = ESTADOS.filter((estado) => estado !== 'Todos');
+const ESTADOS_CAMBIO = ESTADOS.filter(
+  (estado) => estado !== 'Todos' && estado !== 'Completa'
+);
 
 const obtenerClaseEstado = (estado) => {
   const clases = {
@@ -19,6 +22,7 @@ const obtenerClaseEstado = (estado) => {
     'En preparación': 'cashier-order-status--preparing',
     Listo: 'cashier-order-status--ready',
     Entregado: 'cashier-order-status--delivered',
+    Completa: 'cashier-order-status--completed',
   };
 
   return clases[estado] ?? '';

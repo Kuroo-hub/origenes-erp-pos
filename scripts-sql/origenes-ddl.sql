@@ -1,11 +1,13 @@
 -- =====================================================
 -- ORIGENES SV - POSTGRESQL
--- Commercial and Administrative Management System
+-- Esquema de la base de datos
 -- =====================================================
 
 -- IMPORTANTE: primero crea la base de datos 'origenessv' desde pgAdmin.
--- Luego selecciona/conéctate a esa base y ejecuta este archivo completo.
+-- Luego selecciona/conectate a esa base y ejecuta este archivo.
+-- Despues ejecuta scripts-sql/origenes-data.sql sobre la misma base.
 -- No uses CREATE DATABASE ni \c dentro del Query Tool.
+-- Este archivo solo crea las tablas; no carga datos.
 
 -- Required for bcrypt password hashing (crypt/gen_salt).
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -275,7 +277,7 @@ CREATE TABLE invoice (
     total NUMERIC(12,2) NOT NULL CHECK (total >= 0),
 
     status VARCHAR(20) NOT NULL CHECK (
-        status IN ('PENDING', 'PAID', 'CANCELLED')
+        status IN ('PENDING', 'PAID', 'COMPLETED', 'CANCELLED')
     ),
 
     is_delivery BOOLEAN NOT NULL DEFAULT FALSE,

@@ -69,7 +69,12 @@ export async function findDeliveryInvoiceForUpdate(invoiceId) {
 export async function updateDeliveryStatus(invoiceId, currentStatus, nextStatus) {
     const result = await pool.query(
         `UPDATE invoice i
-         SET delivery_status = $3
+         SET
+             delivery_status = $3,
+             status = CASE
+                 WHEN $3::VARCHAR = 'DELIVERED' THEN 'COMPLETED'
+                 ELSE status
+             END
          WHERE i.invoice_id = $1
            AND i.is_delivery = TRUE
            AND i.delivery_status = $2
@@ -77,6 +82,7 @@ export async function updateDeliveryStatus(invoiceId, currentStatus, nextStatus)
              i.invoice_id,
              i.branch_id,
              i.delivery_status,
+             i.status,
              ${LATEST_PAYMENT_METHOD} AS payment_method`,
         [invoiceId, currentStatus, nextStatus]
     );
@@ -85,7 +91,7 @@ export async function updateDeliveryStatus(invoiceId, currentStatus, nextStatus)
 }
 export async function findKitchenInvoiceForUpdate(invoiceId) {
     const result = await pool.query(
-        `SELECT invoice_id, branch_id, kitchen_status
+        `SELECT invoice_id, branch_id, kitchen_status, is_delivery, status
          FROM invoice
          WHERE invoice_id = $1
          FOR UPDATE`,
@@ -98,10 +104,15 @@ export async function findKitchenInvoiceForUpdate(invoiceId) {
 export async function updateKitchenStatus(invoiceId, currentStatus, nextStatus) {
     const result = await pool.query(
         `UPDATE invoice
-         SET kitchen_status = $3
+         SET
+             kitchen_status = $3,
+             status = CASE
+                 WHEN $3::VARCHAR = 'READY' AND is_delivery = FALSE THEN 'COMPLETED'
+                 ELSE status
+             END
          WHERE invoice_id = $1
            AND kitchen_status = $2
-         RETURNING invoice_id, branch_id, kitchen_status`,
+         RETURNING invoice_id, branch_id, kitchen_status, status`,
         [invoiceId, currentStatus, nextStatus]
     );
 

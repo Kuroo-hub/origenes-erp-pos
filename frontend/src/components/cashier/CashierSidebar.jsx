@@ -75,7 +75,6 @@ export default function CashierSidebar({
       </nav>
 
       <div className="cashier-sidebar__footer">
-        <span className="cashier-sidebar__status-text">Modo demostración</span>
         <button type="button" className="cashier-sidebar__logout" onClick={onLogout}>
           <i className="bi bi-box-arrow-right" aria-hidden="true" />
           <span>Cerrar sesión</span>

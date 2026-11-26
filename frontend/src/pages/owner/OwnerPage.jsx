@@ -118,7 +118,6 @@ const OwnerPage = () => {
       <OwnerSidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 

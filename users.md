@@ -4,7 +4,7 @@ API base: `http://localhost:3000/api/v1`
 
 Contraseña para todos los usuarios: `Prueba123!`
 
-Los IDs corresponden a una carga limpia de `scripts-sql/origenes-ddl.sql` y `scripts-sql/origenes-data.sql`.
+Los IDs corresponden a una carga limpia con `scripts-sql/origenes-ddl.sql` (esquema) y `scripts-sql/origenes-data.sql` (datos de prueba), ejecutados en ese orden.
 
 Distribución: 1 administrador general, 1 manager por sucursal y 26 empleados. No hay usuarios `HR` ni `INVENTORY_MANAGER` en el seed.
 

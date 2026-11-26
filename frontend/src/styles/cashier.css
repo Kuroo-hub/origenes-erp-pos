@@ -253,6 +253,50 @@
   box-shadow: 0 0 0 3px var(--ember-ring);
 }
 
+/* Botones compartidos por flujo de caja y cuadre de caja. */
+.cashflow-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  color: #ffffff;
+  font: 600 0.8rem/1 var(--ember-font);
+  background: var(--ember-primary);
+  border: 1px solid var(--ember-primary);
+  border-radius: var(--ember-radius-control);
+  cursor: pointer;
+  transition: background-color var(--ember-transition), border-color var(--ember-transition),
+    color var(--ember-transition), transform var(--ember-transition);
+}
+
+.cashflow-button:hover:not(:disabled) {
+  background: var(--ember-primary-hover);
+  border-color: var(--ember-primary-hover);
+}
+
+.cashflow-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.cashflow-button.is-secondary {
+  color: var(--ember-primary);
+  background: var(--ember-primary-soft);
+  border-color: transparent;
+}
+
+.cashflow-button.is-secondary:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--ember-primary);
+  border-color: var(--ember-primary);
+}
+
+.cashflow-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .cashier-section-header,
 .cashier-activity__header {
   display: flex;
@@ -1147,7 +1191,8 @@
 }
 
 .cashier-order-status--ready,
-.cashier-order-status--delivered {
+.cashier-order-status--delivered,
+.cashier-order-status--completed {
   color: #237804;
   background: #f6ffed;
 }
@@ -1442,6 +1487,85 @@
   font-size: 13px;
 }
 
+.cashier-cashflow .alert-danger {
+  margin: 0;
+  padding: 11px 14px;
+  color: #b42318;
+  background: #fee4e2;
+  border: 1px solid #fecdca;
+  border-radius: var(--ember-radius-control);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.cashflow-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 14px;
+}
+
+.cashflow-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--ember-muted-fg);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cashflow-form input,
+.cashflow-form select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  color: var(--ember-fg);
+  font-size: 0.84rem;
+  font-weight: 600;
+  background: var(--ember-bg);
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+}
+
+.cashflow-form .cashflow-button {
+  align-self: end;
+}
+
+.cashflow-reconciliation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  color: var(--ember-muted-fg);
+  font-size: 0.78rem;
+  background: var(--ember-muted);
+  border: 1px solid var(--ember-border);
+  border-radius: var(--ember-radius-control);
+}
+
+.cashflow-reconciliation span {
+  color: var(--ember-fg);
+  font-weight: 700;
+}
+
+.cashflow-reconciliation .cashflow-button {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+.cashflow-note,
+.cashflow-result {
+  margin: 0;
+  color: var(--ember-muted-fg);
+  font-size: 0.78rem;
+}
+
+.cashflow-result span {
+  color: var(--ember-fg);
+  font-weight: 700;
+}
+
 @media (max-width: 1200px) {
   .cashier-pos__layout {
     grid-template-columns: minmax(0, 1fr) 310px;
@@ -1563,6 +1687,10 @@
     flex-direction: column;
   }
 
+  .cashflow-form {
+    grid-template-columns: 1fr;
+  }
+
   .cashier-summary__branch {
     white-space: normal;
   }
@@ -1677,6 +1805,12 @@
 
 .cashier-caja-banner span {
   font-size: 0.78rem;
+}
+
+.cashier-caja-banner.is-success {
+  color: #15803d;
+  background: #dcfce7;
+  border-color: #bbf7d0;
 }
 
 .cashier-stock-alert {

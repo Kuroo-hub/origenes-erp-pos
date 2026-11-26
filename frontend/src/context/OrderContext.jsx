@@ -44,6 +44,8 @@ function formatearHora(fecha) {
 function mapearVenta(venta) {
   const paymentMethod = METODOS_BACKEND_FRONTEND[venta.paymentMethod] ?? 'efectivo';
   const prefijo = venta.documentType === 'CREDIT_TAX' ? 'CCF' : 'FAC';
+  const estadoFactura = venta.status ?? 'PENDING';
+  const completada = estadoFactura === 'COMPLETED';
 
   return {
     id: `${prefijo}-${venta.consecutiveNumber ?? venta.invoiceId}`,
@@ -52,11 +54,15 @@ function mapearVenta(venta) {
     origen: 'Presencial',
     hora: formatearHora(venta.issueDate),
     created_at: venta.issueDate,
-    estado: {
-      PENDING: 'Pendiente',
-      PREPARING: 'En preparación',
-      READY: 'Listo',
-    }[venta.kitchenStatus] ?? 'Pendiente',
+    estadoFactura,
+    completada,
+    estado: completada
+      ? 'Completa'
+      : {
+          PENDING: 'Pendiente',
+          PREPARING: 'En preparación',
+          READY: 'Listo',
+        }[venta.kitchenStatus] ?? 'Pendiente',
     sucursalId: Number(venta.branchId),
     sucursal: venta.branchName,
     tipoEntrega: venta.isDelivery ? 'domicilio' : 'local',
@@ -357,20 +363,31 @@ export function OrderProvider({ children }) {
     );
 
     const estadoBackendGuardado =
+      respuesta?.data?.invoice_status ??
+      respuesta?.data?.status ??
       respuesta?.data?.kitchen_status ??
       respuesta?.data?.kitchenStatus ??
       nuevoEstado;
 
-    const estadoGuardado = {
-      PENDING: 'Pendiente',
-      PREPARING: 'En preparación',
-      READY: 'Listo'
-    }[estadoBackendGuardado] ?? estado;
+    const completadaGuardada = estadoBackendGuardado === 'COMPLETED';
+
+    const estadoGuardado = completadaGuardada
+      ? 'Completa'
+      : {
+          PENDING: 'Pendiente',
+          PREPARING: 'En preparación',
+          READY: 'Listo'
+        }[estadoBackendGuardado] ?? estado;
 
     setOrdenes((actuales) =>
       actuales.map((item) =>
         item.id === id
-          ? { ...item, estado: estadoGuardado }
+          ? {
+              ...item,
+              estadoFactura: estadoBackendGuardado,
+              completada: completadaGuardada,
+              estado: estadoGuardado
+            }
           : item
       )
     );

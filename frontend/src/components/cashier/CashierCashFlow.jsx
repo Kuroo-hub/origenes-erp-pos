@@ -50,7 +50,15 @@ export default function CashierCashFlow({ sucursal }) {
   return (
     <section className="cashier-cashflow">
       <header className="cashier-section-header"><div><h1>Flujo y cuadre de caja</h1><p>Control de efectivo de {sucursal}.</p></div>
-        <button className="cashflow-button is-secondary" onClick={cargar} disabled={cargando}>Actualizar</button></header>
+        <button
+          type="button"
+          className="cashflow-button is-secondary"
+          onClick={cargar}
+          disabled={cargando}
+        >
+          <i className="bi bi-arrow-clockwise" aria-hidden="true" />
+          Actualizar
+        </button></header>
       {error && <p className="alert alert-danger" role="alert">{error}</p>}
       {cargando && <p>Consultando caja...</p>}
       {resumen ? <>
@@ -69,7 +77,10 @@ export default function CashierCashFlow({ sucursal }) {
             <label>Tipo<select  value={tipo} onChange={e => setTipo(e.target.value)}><option value="INGRESO">Ingreso</option><option value="EGRESO">Egreso</option></select></label>
             <label>Monto ($)<input  type="number" min="0.01" step="0.01" required value={monto} onChange={e => setMonto(e.target.value)} /></label>
             <label>Concepto<input  maxLength={150} required value={concepto} onChange={e => setConcepto(e.target.value)} /></label>
-            <button className="cashflow-button" disabled={ocupado}>Registrar movimiento</button>
+            <button type="submit" className="cashflow-button" disabled={ocupado}>
+              <i className="bi bi-plus-circle" aria-hidden="true" />
+              Registrar movimiento
+            </button>
           </form>
         </section>
         <CashMovementTable movements={resumen.movementDetails} />

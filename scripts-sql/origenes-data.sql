@@ -1,4 +1,4 @@
--- ORIGENES SV - DATOS DE PRUEBA
+-- ORIGENES SV - DATOS DE LA BASE DE DATOS
 -- Ejecutar DESPUES de origenes-ddl.sql, conectado a la BD origenessv.
 -- Ejecutar una sola vez sobre una base recien creada y vacia.
 -- Contraseña demo de los usuarios: Prueba123!
@@ -708,8 +708,8 @@ INSERT INTO invoice (
     status
 )
 VALUES
-(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'PAID'),
-(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'PAID');
+(1, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'CREDIT_TAX', 1, 'DTE-01-0001', '11111111-1111-1111-1111-111111111111', 'REC-2026-0001', '2026-11-17 12:30', 9.50, 1.24, 10.74, 'COMPLETED'),
+(NULL, 1, (SELECT employee_id FROM employee WHERE email = 'empleado@origenessv.com'), 'FINAL_CONSUMER', 1, 'DTE-FC-0001', '22222222-2222-2222-2222-222222222222', 'REC-2026-0002', '2026-11-17 13:10', 13.25, 1.72, 14.97, 'COMPLETED');
 
 INSERT INTO invoice_detail (invoice_id, product_id, quantity, unit_price, subtotal)
 SELECT
@@ -782,3 +782,434 @@ JOIN ingredient i
     ON i.name = v.ingredient_name
 CROSS JOIN employee e
 WHERE e.email = 'gerente@origenessv.com';
+
+-- =====================================================
+-- 13. DATOS DEMO OPERATIVOS (TODAS LAS SUCURSALES)
+-- =====================================================
+-- Deja turnos de caja abiertos, ventas del dia con estados variados,
+-- pagos, movimientos de caja, entregas y alertas de stock en las tres
+-- sucursales. El bloque es reejecutable: primero retira los registros
+-- que el mismo genero.
+
+BEGIN;
+
+-- -----------------------------------------------------
+-- 1. Limpieza de una ejecucion anterior
+-- -----------------------------------------------------
+
+DELETE FROM sale_payment
+WHERE invoice_id IN (
+    SELECT invoice_id FROM invoice
+    WHERE control_number LIKE 'DEMO-%'
+);
+
+DELETE FROM invoice_detail
+WHERE invoice_id IN (
+    SELECT invoice_id FROM invoice
+    WHERE control_number LIKE 'DEMO-%'
+);
+
+DELETE FROM invoice
+WHERE control_number LIKE 'DEMO-%';
+
+DELETE FROM cash_movement
+WHERE description LIKE 'Demo %';
+
+DELETE FROM cash_shift cs
+WHERE cs.status = 'OPEN'
+  AND cs.opening_date::date = CURRENT_DATE
+  AND cs.opening_amount IN (150.00, 120.00, 100.00)
+  AND cs.cash_register_id IN (
+      SELECT cash_register_id FROM cash_register
+      WHERE name = 'Caja Principal'
+  )
+  AND cs.employee_id IN (
+      SELECT employee_id FROM employee
+      WHERE email IN (
+          'empleado@origenessv.com',
+          'cajero.santaana@origenessv.com',
+          'cajero.sanmiguel@origenessv.com'
+      )
+  );
+
+-- -----------------------------------------------------
+-- 2. Turnos de caja abiertos por sucursal
+-- -----------------------------------------------------
+
+CREATE TEMP TABLE demo_shift (
+    branch_id INTEGER NOT NULL,
+    shift_id INTEGER NOT NULL
+) ON COMMIT DROP;
+
+WITH nuevo_turno AS (
+    INSERT INTO cash_shift (
+        cash_register_id,
+        employee_id,
+        opening_date,
+        opening_amount,
+        status
+    )
+    SELECT
+        cr.cash_register_id,
+        e.employee_id,
+        CURRENT_DATE + TIME '08:00',
+        v.opening_amount,
+        'OPEN'
+    FROM (
+        VALUES
+            (1, 'empleado@origenessv.com',        150.00),
+            (2, 'cajero.santaana@origenessv.com', 120.00),
+            (3, 'cajero.sanmiguel@origenessv.com',100.00)
+    ) AS v(branch_id, employee_email, opening_amount)
+    JOIN cash_register cr
+        ON cr.branch_id = v.branch_id
+       AND cr.name = 'Caja Principal'
+    JOIN employee e
+        ON e.email = v.employee_email
+    RETURNING shift_id, cash_register_id
+)
+INSERT INTO demo_shift (branch_id, shift_id)
+SELECT cr.branch_id, n.shift_id
+FROM nuevo_turno n
+JOIN cash_register cr
+    ON cr.cash_register_id = n.cash_register_id;
+
+-- -----------------------------------------------------
+-- 3. Ordenes del dia
+-- -----------------------------------------------------
+
+CREATE TEMP TABLE demo_order (
+    control_number VARCHAR(100) PRIMARY KEY,
+    branch_id INTEGER NOT NULL,
+    employee_email VARCHAR(150) NOT NULL,
+    customer_id INTEGER,
+    document_type VARCHAR(30) NOT NULL,
+    consecutive_number BIGINT NOT NULL,
+    generation_code UUID NOT NULL,
+    reception_stamp VARCHAR(150) NOT NULL,
+    hora TIME NOT NULL,
+    is_delivery BOOLEAN NOT NULL,
+    delivery_status VARCHAR(20),
+    kitchen_status VARCHAR(20) NOT NULL,
+    delivery_address VARCHAR(255),
+    delivery_phone VARCHAR(20),
+    payment_method VARCHAR(30) NOT NULL,
+    reference VARCHAR(150) NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO demo_order (
+    control_number,
+    branch_id,
+    employee_email,
+    customer_id,
+    document_type,
+    consecutive_number,
+    generation_code,
+    reception_stamp,
+    hora,
+    is_delivery,
+    delivery_status,
+    kitchen_status,
+    delivery_address,
+    delivery_phone,
+    payment_method,
+    reference
+)
+VALUES
+    -- San Salvador
+    ('DEMO-GERENTE-001',    1, 'empleado@origenessv.com',     NULL, 'FINAL_CONSUMER',  2, '00000000-0000-4000-8000-000000000001', 'REC-GERENTE-001',    TIME '08:15', FALSE, NULL,         'READY',     NULL,                          NULL,       'CASH',  'TRX-DG-001'),
+    ('DEMO-GERENTE-002',    1, 'empleado@origenessv.com',     2,    'FINAL_CONSUMER',  3, '00000000-0000-4000-8000-000000000002', 'REC-GERENTE-002',    TIME '08:40', FALSE, NULL,         'PREPARING', NULL,                          NULL,       'CARD',  'TRX-DG-002'),
+    ('DEMO-GERENTE-003',    1, 'empleado@origenessv.com',     NULL, 'FINAL_CONSUMER',  4, '00000000-0000-4000-8000-000000000003', 'REC-GERENTE-003',    TIME '09:10', FALSE, NULL,         'PENDING',   NULL,                          NULL,       'CASH',  'TRX-DG-003'),
+    ('DEMO-GERENTE-004',    1, 'empleado@origenessv.com',     4,    'FINAL_CONSUMER',  5, '00000000-0000-4000-8000-000000000004', 'REC-GERENTE-004',    TIME '09:35', TRUE,  'READY',      'READY',     'Calle El Mirador, Casa 12',       '7890-1234', 'CASH',  'TRX-DG-004'),
+    ('DEMO-GERENTE-005',    1, 'empleado@origenessv.com',     1,    'CREDIT_TAX',      2, '00000000-0000-4000-8000-000000000005', 'REC-GERENTE-005',    TIME '10:05', FALSE, NULL,         'READY',     NULL,                          NULL,       'CARD',  'TRX-DG-005'),
+    ('DEMO-GERENTE-006',    1, 'empleado@origenessv.com',     NULL, 'FINAL_CONSUMER',  6, '00000000-0000-4000-8000-000000000006', 'REC-GERENTE-006',    TIME '10:30', TRUE,  'IN_TRANSIT', 'READY',     'Avenida Merliot, Casa 7',         '7765-8891', 'CHIVO', 'TRX-DG-006'),
+    ('DEMO-GERENTE-007',    1, 'empleado@origenessv.com',     6,    'FINAL_CONSUMER',  7, '00000000-0000-4000-8000-000000000007', 'REC-GERENTE-007',    TIME '10:55', FALSE, NULL,         'PENDING',   NULL,                          NULL,       'CASH',  'TRX-DG-007'),
+    ('DEMO-GERENTE-008',    1, 'empleado@origenessv.com',     NULL, 'FINAL_CONSUMER',  8, '00000000-0000-4000-8000-000000000008', 'REC-GERENTE-008',    TIME '11:20', FALSE, NULL,         'PREPARING', NULL,                          NULL,       'CASH',  'TRX-DG-008'),
+    ('DEMO-GERENTE-009',    1, 'empleado@origenessv.com',     3,    'FINAL_CONSUMER',  9, '00000000-0000-4000-8000-000000000009', 'REC-GERENTE-009',    TIME '11:45', FALSE, NULL,         'READY',     NULL,                          NULL,       'CARD',  'TRX-DG-009'),
+    ('DEMO-GERENTE-010',    1, 'empleado@origenessv.com',     NULL, 'FINAL_CONSUMER', 10, '00000000-0000-4000-8000-000000000010', 'REC-GERENTE-010',    TIME '12:10', FALSE, NULL,         'PREPARING', NULL,                          NULL,       'CASH',  'TRX-DG-010'),
+    ('DEMO-GERENTE-011',    1, 'empleado@origenessv.com',     5,    'CREDIT_TAX',      3, '00000000-0000-4000-8000-000000000011', 'REC-GERENTE-011',    TIME '12:35', TRUE,  'READY',      'READY',     'Calle Circundante, Casa 9',       '7890-5566', 'CHIVO', 'TRX-DG-011'),
+    ('DEMO-GERENTE-012',    1, 'empleado@origenessv.com',     NULL, 'FINAL_CONSUMER', 11, '00000000-0000-4000-8000-000000000012', 'REC-GERENTE-012',    TIME '13:00', FALSE, NULL,         'PENDING',   NULL,                          NULL,       'CASH',  'TRX-DG-012'),
+
+    -- Santa Ana
+    ('DEMO-SANTAANA-001',   2, 'cajero.santaana@origenessv.com',  9,    'FINAL_CONSUMER', 1, '00000000-0000-4000-8000-000000000013', 'REC-SANTAANA-001', TIME '08:20', FALSE, NULL,         'READY',     NULL,                          NULL,       'CASH',  'TRX-SA-001'),
+    ('DEMO-SANTAANA-002',   2, 'cajero.santaana@origenessv.com',  10,   'CREDIT_TAX',     1, '00000000-0000-4000-8000-000000000014', 'REC-SANTAANA-002', TIME '08:55', FALSE, NULL,         'PREPARING', NULL,                          NULL,       'CARD',  'TRX-SA-002'),
+    ('DEMO-SANTAANA-003',   2, 'cajero.santaana@origenessv.com',  11,   'FINAL_CONSUMER', 2, '00000000-0000-4000-8000-000000000015', 'REC-SANTAANA-003', TIME '09:30', TRUE,  'READY',      'READY',     'Avenida Independencia, Casa 24',  '2444-1201', 'CASH',  'TRX-SA-003'),
+    ('DEMO-SANTAANA-004',   2, 'cajero.santaana@origenessv.com',  NULL, 'FINAL_CONSUMER', 3, '00000000-0000-4000-8000-000000000016', 'REC-SANTAANA-004', TIME '10:05', FALSE, NULL,         'PENDING',   NULL,                          NULL,       'CARD',  'TRX-SA-004'),
+    ('DEMO-SANTAANA-005',   2, 'cajero.santaana@origenessv.com',  12,   'FINAL_CONSUMER', 4, '00000000-0000-4000-8000-000000000017', 'REC-SANTAANA-005', TIME '10:40', TRUE,  'IN_TRANSIT', 'READY',     'Urbanizacion El Carmen, Casa 8',  '2444-2202', 'CHIVO', 'TRX-SA-005'),
+    ('DEMO-SANTAANA-006',   2, 'cajero.santaana@origenessv.com',  13,   'CREDIT_TAX',     2, '00000000-0000-4000-8000-000000000018', 'REC-SANTAANA-006', TIME '11:15', FALSE, NULL,         'READY',     NULL,                          NULL,       'CASH',  'TRX-SA-006'),
+    ('DEMO-SANTAANA-007',   2, 'cajero.santaana@origenessv.com',  NULL, 'FINAL_CONSUMER', 5, '00000000-0000-4000-8000-000000000019', 'REC-SANTAANA-007', TIME '11:50', FALSE, NULL,         'PREPARING', NULL,                          NULL,       'CARD',  'TRX-SA-007'),
+
+    -- San Miguel
+    ('DEMO-SANMIGUEL-001',  3, 'cajero.sanmiguel@origenessv.com', 19,   'FINAL_CONSUMER', 1, '00000000-0000-4000-8000-000000000020', 'REC-SANMIGUEL-001', TIME '08:30', FALSE, NULL,         'READY',     NULL,                          NULL,       'CASH',  'TRX-SM-001'),
+    ('DEMO-SANMIGUEL-002',  3, 'cajero.sanmiguel@origenessv.com', 20,   'FINAL_CONSUMER', 2, '00000000-0000-4000-8000-000000000021', 'REC-SANMIGUEL-002', TIME '09:05', FALSE, NULL,         'PREPARING', NULL,                          NULL,       'CARD',  'TRX-SM-002'),
+    ('DEMO-SANMIGUEL-003',  3, 'cajero.sanmiguel@origenessv.com', 21,   'CREDIT_TAX',     1, '00000000-0000-4000-8000-000000000022', 'REC-SANMIGUEL-003', TIME '09:40', TRUE,  'READY',      'READY',     'Calle Siramay, Casa 15',          '2261-3301', 'CHIVO', 'TRX-SM-003'),
+    ('DEMO-SANMIGUEL-004',  3, 'cajero.sanmiguel@origenessv.com', NULL, 'FINAL_CONSUMER', 3, '00000000-0000-4000-8000-000000000023', 'REC-SANMIGUEL-004', TIME '10:15', FALSE, NULL,         'PENDING',   NULL,                          NULL,       'CASH',  'TRX-SM-004'),
+    ('DEMO-SANMIGUEL-005',  3, 'cajero.sanmiguel@origenessv.com', 23,   'FINAL_CONSUMER', 4, '00000000-0000-4000-8000-000000000024', 'REC-SANMIGUEL-005', TIME '10:50', TRUE,  'IN_TRANSIT', 'READY',     'Barrio La Casona, Casa 3',        '2261-4402', 'CARD',  'TRX-SM-005');
+
+INSERT INTO invoice (
+    customer_id,
+    branch_id,
+    employee_id,
+    document_type,
+    consecutive_number,
+    control_number,
+    generation_code,
+    reception_stamp,
+    issue_date,
+    subtotal,
+    vat,
+    total,
+    status,
+    is_delivery,
+    delivery_status,
+    kitchen_status,
+    delivery_address,
+    delivery_phone
+)
+SELECT
+    o.customer_id,
+    o.branch_id,
+    e.employee_id,
+    o.document_type,
+    o.consecutive_number,
+    o.control_number,
+    o.generation_code,
+    o.reception_stamp,
+    CURRENT_DATE + o.hora,
+    0,
+    0,
+    0,
+    'COMPLETED',
+    o.is_delivery,
+    o.delivery_status,
+    o.kitchen_status,
+    o.delivery_address,
+    o.delivery_phone
+FROM demo_order o
+JOIN employee e
+    ON e.email = o.employee_email;
+
+-- -----------------------------------------------------
+-- 4. Detalle de las ordenes (precios tomados del catalogo)
+-- -----------------------------------------------------
+
+CREATE TEMP TABLE demo_order_detail (
+    control_number VARCHAR(100) NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL
+) ON COMMIT DROP;
+
+INSERT INTO demo_order_detail (control_number, product_id, quantity)
+VALUES
+    -- San Salvador
+    ('DEMO-GERENTE-001',   6, 2), ('DEMO-GERENTE-001',  10, 2),
+    ('DEMO-GERENTE-002',   2, 1), ('DEMO-GERENTE-002',   9, 1),
+    ('DEMO-GERENTE-003',   1, 1), ('DEMO-GERENTE-003',  11, 1),
+    ('DEMO-GERENTE-004',   4, 2), ('DEMO-GERENTE-004',  12, 1),
+    ('DEMO-GERENTE-005',   3, 2), ('DEMO-GERENTE-005',   5, 1), ('DEMO-GERENTE-005', 9, 2),
+    ('DEMO-GERENTE-006',   8, 1), ('DEMO-GERENTE-006',  14, 1),
+    ('DEMO-GERENTE-007',   7, 1), ('DEMO-GERENTE-007',  15, 1),
+    ('DEMO-GERENTE-008',  13, 1), ('DEMO-GERENTE-008',  14, 1), ('DEMO-GERENTE-008', 10, 1),
+    ('DEMO-GERENTE-009',   3, 3), ('DEMO-GERENTE-009',   5, 2), ('DEMO-GERENTE-009', 11, 2),
+    ('DEMO-GERENTE-010',   8, 3), ('DEMO-GERENTE-010',  12, 2), ('DEMO-GERENTE-010', 13, 2),
+    ('DEMO-GERENTE-011',   1, 2), ('DEMO-GERENTE-011',   4, 3), ('DEMO-GERENTE-011', 10, 3),
+    ('DEMO-GERENTE-012',   5, 3), ('DEMO-GERENTE-012',   3, 2), ('DEMO-GERENTE-012', 15, 2), ('DEMO-GERENTE-012', 14, 2),
+
+    -- Santa Ana
+    ('DEMO-SANTAANA-001',  3, 3), ('DEMO-SANTAANA-001',  9, 2),
+    ('DEMO-SANTAANA-002',  8, 3), ('DEMO-SANTAANA-002', 12, 2), ('DEMO-SANTAANA-002', 13, 2),
+    ('DEMO-SANTAANA-003',  5, 3), ('DEMO-SANTAANA-003', 10, 3), ('DEMO-SANTAANA-003', 11, 2),
+    ('DEMO-SANTAANA-004',  1, 3), ('DEMO-SANTAANA-004',  4, 3), ('DEMO-SANTAANA-004', 15, 2),
+    ('DEMO-SANTAANA-005',  2, 4), ('DEMO-SANTAANA-005', 14, 3), ('DEMO-SANTAANA-005', 12, 2),
+    ('DEMO-SANTAANA-006',  6, 3), ('DEMO-SANTAANA-006',  5, 2), ('DEMO-SANTAANA-006', 13, 3),
+    ('DEMO-SANTAANA-007',  3, 4), ('DEMO-SANTAANA-007',  8, 2), ('DEMO-SANTAANA-007', 10, 4),
+
+    -- San Miguel
+    ('DEMO-SANMIGUEL-001', 4, 4), ('DEMO-SANMIGUEL-001', 10, 4), ('DEMO-SANMIGUEL-001', 12, 3),
+    ('DEMO-SANMIGUEL-002', 3, 3), ('DEMO-SANMIGUEL-002',  5, 2), ('DEMO-SANMIGUEL-002',  9, 3),
+    ('DEMO-SANMIGUEL-003', 1, 2), ('DEMO-SANMIGUEL-003',  8, 2), ('DEMO-SANMIGUEL-003', 14, 4),
+    ('DEMO-SANMIGUEL-004', 6, 3), ('DEMO-SANMIGUEL-004', 13, 3), ('DEMO-SANMIGUEL-004', 15, 3),
+    ('DEMO-SANMIGUEL-005', 2, 4), ('DEMO-SANMIGUEL-005',  5, 2), ('DEMO-SANMIGUEL-005', 12, 3);
+
+INSERT INTO invoice_detail (
+    invoice_id,
+    product_id,
+    quantity,
+    unit_price,
+    subtotal
+)
+SELECT
+    i.invoice_id,
+    p.product_id,
+    d.quantity,
+    p.price,
+    ROUND(p.price * d.quantity, 2)
+FROM demo_order_detail d
+JOIN invoice i
+    ON i.control_number = d.control_number
+JOIN product p
+    ON p.product_id = d.product_id;
+
+-- -----------------------------------------------------
+-- 5. Subtotal, IVA y total calculados desde el detalle
+-- -----------------------------------------------------
+
+UPDATE invoice i
+SET
+    subtotal = calculo.subtotal,
+    vat = ROUND(calculo.subtotal * 0.13, 2),
+    total = calculo.subtotal + ROUND(calculo.subtotal * 0.13, 2)
+FROM (
+    SELECT
+        i2.invoice_id,
+        COALESCE(SUM(d.subtotal), 0) AS subtotal
+    FROM invoice i2
+    LEFT JOIN invoice_detail d
+        ON d.invoice_id = i2.invoice_id
+    WHERE i2.control_number IN (SELECT control_number FROM demo_order)
+    GROUP BY i2.invoice_id
+) AS calculo
+WHERE i.invoice_id = calculo.invoice_id;
+
+-- -----------------------------------------------------
+-- 6. Pagos vinculados al turno de cada sucursal
+-- -----------------------------------------------------
+
+INSERT INTO sale_payment (
+    invoice_id,
+    shift_id,
+    payment_method,
+    amount,
+    reference,
+    payment_date
+)
+SELECT
+    i.invoice_id,
+    ds.shift_id,
+    o.payment_method,
+    i.total,
+    o.reference,
+    i.issue_date + INTERVAL '2 minutes'
+FROM demo_order o
+JOIN invoice i
+    ON i.control_number = o.control_number
+JOIN demo_shift ds
+    ON ds.branch_id = o.branch_id;
+
+-- -----------------------------------------------------
+-- 7. Movimientos manuales de caja
+-- -----------------------------------------------------
+
+INSERT INTO cash_movement (
+    shift_id,
+    movement_type,
+    description,
+    amount,
+    created_at
+)
+SELECT
+    ds.shift_id,
+    v.tipo,
+    v.descripcion,
+    v.monto,
+    CURRENT_DATE + v.hora
+FROM demo_shift ds
+JOIN (
+    VALUES
+        (1, 'INCOME',  'Demo gerente: reintegro de caja chica',        20.00, TIME '07:55'),
+        (1, 'EXPENSE', 'Demo gerente: compra de hielo para exhibidor',  8.50, TIME '10:45'),
+        (1, 'EXPENSE', 'Demo gerente: propina a repartidor',            3.00, TIME '11:35'),
+        (2, 'INCOME',  'Demo Santa Ana: reintegro de caja chica',      15.00, TIME '07:50'),
+        (2, 'EXPENSE', 'Demo Santa Ana: compra de hielo',               6.25, TIME '10:50'),
+        (3, 'INCOME',  'Demo San Miguel: reintegro de caja chica',     10.00, TIME '07:45'),
+        (3, 'EXPENSE', 'Demo San Miguel: compra de hielo',              4.75, TIME '10:45')
+) AS v(branch_id, tipo, descripcion, monto, hora)
+    ON v.branch_id = ds.branch_id;
+
+-- -----------------------------------------------------
+-- 8. Estado final de todas las facturas del seed
+-- -----------------------------------------------------
+-- Una factura completada queda guardada en el backend,
+-- sigue sumando en los reportes y deja de mostrarse al cajero.
+
+UPDATE invoice
+SET
+    status = 'COMPLETED',
+    kitchen_status = 'READY',
+    delivery_status = CASE WHEN is_delivery THEN 'DELIVERED' ELSE NULL END
+WHERE status <> 'CANCELLED';
+
+-- -----------------------------------------------------
+-- 9. Cuadrar los turnos historicos del seed
+-- -----------------------------------------------------
+
+UPDATE cash_shift cs
+SET
+    closing_amount = calculo.monto_esperado,
+    closing_date = COALESCE(cs.closing_date, cs.opening_date + INTERVAL '9 hours')
+FROM (
+    SELECT
+        cs2.shift_id,
+        cs2.opening_amount
+        + COALESCE((
+            SELECT SUM(sp.amount)
+            FROM sale_payment sp
+            INNER JOIN invoice i
+                ON i.invoice_id = sp.invoice_id
+            WHERE sp.shift_id = cs2.shift_id
+              AND i.status IN ('PAID', 'COMPLETED')
+              AND sp.payment_method = 'CASH'
+        ), 0)
+        + COALESCE((
+            SELECT SUM(cm.amount)
+            FROM cash_movement cm
+            WHERE cm.shift_id = cs2.shift_id
+              AND cm.movement_type = 'INCOME'
+        ), 0)
+        - COALESCE((
+            SELECT SUM(cm.amount)
+            FROM cash_movement cm
+            WHERE cm.shift_id = cs2.shift_id
+              AND cm.movement_type = 'EXPENSE'
+        ), 0) AS monto_esperado
+    FROM cash_shift cs2
+    WHERE cs2.shift_id IN (1, 2)
+) AS calculo
+WHERE cs.shift_id = calculo.shift_id
+  AND cs.status = 'CLOSED';
+
+-- -----------------------------------------------------
+-- 10. Alertas de inventario y correlativos
+-- -----------------------------------------------------
+
+UPDATE branch_inventory bi
+SET quantity = v.quantity
+FROM (
+    VALUES
+        (1, 'Salt and pepper', 450),
+        (1, 'Coaster',          8),
+        (1, 'Wax paper',        8),
+        (2, 'Beef',           450),
+        (2, 'Coaster',          6),
+        (3, 'Napkin',         450),
+        (3, 'Fork',             8)
+) AS v(branch_id, ingredient_name, quantity)
+JOIN ingredient i
+    ON i.name = v.ingredient_name
+WHERE bi.branch_id = v.branch_id
+  AND bi.ingredient_id = i.ingredient_id;
+
+UPDATE document_sequence ds
+SET last_number = GREATEST(ds.last_number, v.last_number)
+FROM (
+    SELECT
+        branch_id,
+        document_type,
+        MAX(consecutive_number) AS last_number
+    FROM demo_order
+    GROUP BY branch_id, document_type
+) AS v
+WHERE ds.branch_id = v.branch_id
+  AND ds.document_type = v.document_type;
+
+COMMIT;

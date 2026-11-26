@@ -99,6 +99,7 @@ export function mapDeliveryStatusUpdate(row) {
         invoice_id: invoiceId,
         branch_id: Number(row.branch_id),
         delivery_status: row.delivery_status,
+        invoice_status: row.status ?? null,
         payment_status: derivePaymentStatus(row.delivery_status, row.payment_method)
     };
 }
@@ -182,6 +183,7 @@ export async function updateKitchenStatusService(orderId, body = {}, user = null
     return {
         invoice_id: Number(updated.invoice_id),
         branch_id: Number(updated.branch_id),
-        kitchen_status: updated.kitchen_status
+        kitchen_status: updated.kitchen_status,
+        invoice_status: updated.status
     };
 }

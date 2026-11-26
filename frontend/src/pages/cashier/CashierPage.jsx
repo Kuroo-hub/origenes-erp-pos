@@ -69,6 +69,11 @@ export default function CashierPage() {
   const [inventarioSucursal, setInventarioSucursal] = useState([]);
   const [factura, setFactura] = useState(null);
 
+  const ordenesVisibles = useMemo(
+    () => ordenesSucursal.filter((orden) => !orden.completada),
+    [ordenesSucursal]
+  );
+
   useEffect(() => {
     let activo = true;
 
@@ -250,7 +255,7 @@ export default function CashierPage() {
 
           {seccion === 'ordenes' && (
             <CashierOrders
-              ordenes={ordenesSucursal}
+              ordenes={ordenesVisibles}
               onCambiarEstado={cambiarEstado}
             />
           )}

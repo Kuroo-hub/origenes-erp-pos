@@ -132,7 +132,6 @@ const DeliveryPage = () => {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         pendingCount={activeOrders.length}
-        isOffline={Boolean(error)}
         onLogout={handleLogout}
       />
 

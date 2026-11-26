@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { id: 'movements', label: 'Movimientos', Icon: IconActivity },
 ];
 
-const InventorySidebar = ({ activeTab, onSelectTab, alertCount = 0, isOffline = false, onLogout }) => {
+const InventorySidebar = ({ activeTab, onSelectTab, alertCount = 0, onLogout }) => {
   return (
     <aside className="inv-sidebar">
       <div className="inv-sidebar__brand">
@@ -48,9 +48,6 @@ const InventorySidebar = ({ activeTab, onSelectTab, alertCount = 0, isOffline = 
       </nav>
 
       <div className="inv-sidebar__footer">
-        <span className="inv-sidebar__status-text">
-          {isOffline ? 'Modo demostración' : 'Conectado a API'}
-        </span>
         <button type="button" className="inv-sidebar__logout" onClick={onLogout}>
           Cerrar sesión
         </button>

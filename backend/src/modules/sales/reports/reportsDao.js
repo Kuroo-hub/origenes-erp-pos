@@ -89,7 +89,7 @@ export async function findTopProducts(branchId) {
               ON i.invoice_id = d.invoice_id
           INNER JOIN product p
               ON p.product_id = d.product_id
-          WHERE i.status = 'PAID'
+          WHERE i.status IN ('PAID', 'COMPLETED')
             AND i.issue_date >= date_trunc('month', CURRENT_DATE)
             AND ($1::INTEGER IS NULL OR i.branch_id = $1)
           GROUP BY p.product_id, p.name, p.product_type

@@ -185,7 +185,14 @@ export default function ManagerCashRegister({
             <div>Ventas en efectivo: {resumen ? formatearMonedaCajero((resumen.payments ?? []).filter(p => p.metodo === "CASH").reduce((sum, p) => sum + Number(p.total), 0)) : "—"}</div>
             <div>Ingresos: {formatearMonedaCajero(Number(resumen?.movements?.total_ingresos ?? 0))} | Egresos: {formatearMonedaCajero(Number(resumen?.movements?.total_egresos ?? 0))}</div>
             <div>Diferencia: <span>{diferencia === null ? 'Ingresá el monto contado' : `${formatearMonedaCajero(Math.abs(diferencia))} (${diferencia === 0 ? 'Cuadrada' : diferencia > 0 ? 'Sobrante' : 'Faltante'})`}</span></div>
-            <button type="button" className="cashflow-button is-secondary" onClick={() => setRevision(v => v + 1)}>Actualizar resumen</button>
+            <button
+              type="button"
+              className="cashflow-button is-secondary"
+              onClick={() => setRevision((v) => v + 1)}
+            >
+              <i className="bi bi-arrow-clockwise" aria-hidden="true" />
+              Actualizar resumen
+            </button>
           </div>}
           {error && (
             <p className="manager-caja-error" role="alert">
